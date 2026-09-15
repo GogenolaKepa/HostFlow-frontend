@@ -155,7 +155,7 @@ function Dashboard({ usuario, onLogout }) {
           </>
         )}
       </main>
-    </div>
+    </div> 
   );
 }
 

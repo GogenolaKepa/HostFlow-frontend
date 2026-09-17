@@ -278,36 +278,51 @@ function Reservas() {
   // CANCELACIÓN MANUAL
   // =========================================================
 
-  const cancelarReserva = async (
-    idReserva
-  ) => {
-    const confirmar = confirm(
-      "¿Seguro que querés cancelar esta reserva?"
-    );
+const cancelarReserva = async (
+  idReserva
+) => {
+  const confirmar = confirm(
+    "¿Seguro que querés cancelar esta reserva?"
+  );
 
-    if (!confirmar) {
-      return;
-    }
+  if (!confirmar) {
+    return;
+  }
 
-    try {
+  try {
+    setError("");
+    setMensaje("");
+
+    const response =
       await api.patch(
         `/reservas/${idReserva}/cancelar`
       );
 
-      setMensaje(
-        "Reserva cancelada correctamente."
-      );
+    const reservaActualizada =
+      response.data.reserva;
 
-      setError("");
+    setReservas((reservasAnteriores) =>
+      reservasAnteriores.map(
+        (reserva) =>
+          Number(reserva.idReserva) ===
+          Number(
+            reservaActualizada.idReserva
+          )
+            ? reservaActualizada
+            : reserva
+      )
+    );
 
-      await obtenerReservas();
-    } catch (error) {
-      setError(
-        error.response?.data?.mensaje ||
-          "No se pudo cancelar la reserva."
-      );
-    }
-  };
+    setMensaje(
+      "Reserva cancelada correctamente."
+    );
+  } catch (error) {
+    setError(
+      error.response?.data?.mensaje ||
+        "No se pudo cancelar la reserva."
+    );
+  }
+};
 
   // =========================================================
   // AIRBNB - PROPONER CAMBIO
@@ -776,6 +791,13 @@ function Reservas() {
   // =========================================================
   // ACCIONES SEGÚN BACKEND
   // =========================================================
+  const formatearFecha = (fecha) => {
+  if (!fecha) return "-";
+
+  const [anio, mes, dia] = fecha.split("-");
+
+  return `${dia}/${mes}/${anio}`;
+  };
 
   const tieneAccion = (
     reserva,
@@ -993,6 +1015,7 @@ function Reservas() {
 
               <input
                 type="date"
+                lang="es-AR"
                 name="fechaIngreso"
                 value={
                   formulario.fechaIngreso
@@ -1010,6 +1033,7 @@ function Reservas() {
 
               <input
                 type="date"
+                lang="es-AR"
                 name="fechaEgreso"
                 value={
                   formulario.fechaEgreso
@@ -1106,6 +1130,7 @@ function Reservas() {
 
               <input
                 type="date"
+                lang="es-AR"
                 name="fechaIngreso"
                 value={
                   formularioEdicion
@@ -1124,6 +1149,7 @@ function Reservas() {
 
               <input
                 type="date"
+                lang="es-AR"
                 name="fechaEgreso"
                 value={
                   formularioEdicion
@@ -1257,6 +1283,7 @@ function Reservas() {
 
               <input
                 type="date"
+                lang="es-AR"
                 name="fechaIngreso"
                 value={
                   formularioAirbnb
@@ -1276,6 +1303,7 @@ function Reservas() {
 
               <input
                 type="date"
+                lang="es-AR"
                 name="fechaEgreso"
                 value={
                   formularioAirbnb
@@ -1414,6 +1442,7 @@ function Reservas() {
 
                 <input
                   type="date"
+                  lang="es-AR"
                   value={
                     propuestaAirbnbVisualizando
                       .fechaIngreso
@@ -1429,6 +1458,7 @@ function Reservas() {
 
                 <input
                   type="date"
+                  lang="es-AR"
                   value={
                     propuestaAirbnbVisualizando
                       .solicitudAirbnbPendiente
@@ -1446,6 +1476,7 @@ function Reservas() {
 
                 <input
                   type="date"
+                  lang="es-AR"
                   value={
                     propuestaAirbnbVisualizando
                       .fechaEgreso
@@ -1461,6 +1492,7 @@ function Reservas() {
 
                 <input
                   type="date"
+                  lang="es-AR"
                   value={
                     propuestaAirbnbVisualizando
                       .solicitudAirbnbPendiente
@@ -1695,6 +1727,7 @@ function Reservas() {
 
                   <input
                     type="date"
+                    lang="es-AR"
                     value={
                       reservaBooking
                         .fechaIngreso
@@ -1710,6 +1743,7 @@ function Reservas() {
 
                   <input
                     type="date"
+                    lang="es-AR"
                     value={
                       reservaBooking
                         .fechaEgreso
@@ -1725,6 +1759,7 @@ function Reservas() {
 
                   <input
                     type="date"
+                    lang="es-AR"
                     name="fechaEgreso"
                     value={
                       formularioBookingEstadia
@@ -1952,6 +1987,7 @@ function Reservas() {
 
                     <input
                       type="date"
+                      lang="es-AR"
                       value={
                         operacionBookingVisualizando
                           .fechaIngreso
@@ -1967,6 +2003,7 @@ function Reservas() {
 
                     <input
                       type="date"
+                      lang="es-AR"
                       value={
                         operacionBookingVisualizando
                           .operacionBookingPendiente
@@ -1984,6 +2021,7 @@ function Reservas() {
 
                     <input
                       type="date"
+                      lang="es-AR"
                       value={
                         operacionBookingVisualizando
                           .fechaEgreso
@@ -1999,6 +2037,7 @@ function Reservas() {
 
                     <input
                       type="date"
+                      lang="es-AR"
                       value={
                         operacionBookingVisualizando
                           .operacionBookingPendiente
@@ -2170,17 +2209,8 @@ function Reservas() {
                     }
                   </td>
 
-                  <td>
-                    {
-                      reserva.fechaIngreso
-                    }
-                  </td>
-
-                  <td>
-                    {
-                      reserva.fechaEgreso
-                    }
-                  </td>
+                  <td>{formatearFecha(reserva.fechaIngreso)}</td>
+                  <td>{formatearFecha(reserva.fechaEgreso)}</td>
 
                   <td>
                     $
@@ -2363,6 +2393,7 @@ function Reservas() {
                             Sin acción
                           </span>
                         )}
+                        
                     </div>
                   </td>
                 </tr>

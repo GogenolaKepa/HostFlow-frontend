@@ -464,92 +464,408 @@ td {
     width: 100%;
   }
 }
+/* =========================================
+   PROPIEDADES
+========================================= */
+/* =========================================
+   CANALES DE PROPIEDAD
+========================================= */
+
+.property-channels-section {
+  margin-top: 6px;
+  margin-bottom: 20px;
+}
+
+.property-channels-header {
+  margin-bottom: 12px;
+}
+
+.property-channels-header h4 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  color: #111827;
+}
+
+.property-channels-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.property-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.property-channel-card {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.property-channel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.property-channel-title strong {
+  color: #111827;
+  font-size: 15px;
+}
+
+.channel-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  padding: 5px 9px;
+
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.channel-status.published {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.channel-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.channel-status.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.channel-status.unpublished {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.property-channel-id {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.property-channel-sync {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  font-size: 12px;
+  color: #475569;
+}
+
+.property-channel-error {
+  padding: 8px 10px;
+
+  background: #fee2e2;
+  color: #991b1b;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.property-channel-actions {
+  margin-top: auto;
+}
+
+.property-channel-actions button {
+  width: 100%;
+  padding: 9px 12px;
+}
+
+.property-channel-actions button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+@media (max-width: 750px) {
+  .property-channels-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .propiedades-page {
   width: 100%;
 }
 
+/* =========================================
+   GRILLA
+========================================= */
+
 .properties-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
 }
+
+/* =========================================
+   CARD
+========================================= */
 
 .property-card {
   background: white;
   border-radius: 18px;
   overflow: hidden;
+
   display: flex;
+  min-height: 310px;
+
   border: 1px solid #e5e7eb;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+.property-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.09);
+}
+
+/* =========================================
+   IMAGEN
+========================================= */
 
 .property-image {
   width: 170px;
-  min-height: 180px;
-  background: linear-gradient(135deg, #1e3a8a, #14b8a6);
+  min-width: 170px;
+
+  background: linear-gradient(
+    135deg,
+    #1e3a8a,
+    #14b8a6
+  );
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 54px;
 }
 
+/* =========================================
+   CONTENIDO
+========================================= */
+
 .property-info {
   flex: 1;
-  padding: 22px;
+
+  padding: 22px 24px;
+
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
 }
+
+/* =========================================
+   TÍTULO + ESTADOS
+========================================= */
 
 .property-title {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 10px;
+
+  margin-bottom: 14px;
 }
 
 .property-title h3 {
   margin: 0;
+
   font-size: 20px;
+  line-height: 1.2;
+
   color: #111827;
 }
 
-.property-info p {
-  margin: 10px 0 16px;
-  color: #6b7280;
+/* Contenedor de badges */
+
+.property-statuses {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
 }
+
+/* Badges solamente dentro de propiedades */
+
+.propiedades-page .estado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 11px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+/* =========================================
+   ESTADO OPERATIVO
+========================================= */
+
+.propiedades-page .estado.activa {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.propiedades-page .estado.mantenimiento {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.propiedades-page .estado.inactiva {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* =========================================
+   SITUACIÓN
+
+   El segundo badge representa:
+   Disponible / Ocupada / Reservada /
+   No disponible.
+========================================= */
+
+.property-statuses
+  .estado:nth-child(2).activa {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.property-statuses
+  .estado:nth-child(2).mantenimiento {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.property-statuses
+  .estado:nth-child(2).inactiva {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* =========================================
+   UBICACIÓN
+========================================= */
+
+.property-info > p {
+  margin: 0 0 6px;
+
+  color: #64748b;
+
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.property-info > p:nth-of-type(2) {
+  margin-bottom: 16px;
+}
+
+/* =========================================
+   DATOS GENERALES
+========================================= */
 
 .property-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+
+  gap: 6px;
+
   color: #374151;
+
   font-size: 14px;
+  line-height: 1.35;
+
+  margin-bottom: 16px;
 }
+
+/* =========================================
+   DISPONIBILIDAD / RESERVAS
+========================================= */
+
+.property-reservation-info {
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  padding: 12px 14px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  margin-top: 2px;
+  margin-bottom: 18px;
+
+  font-size: 13px;
+  line-height: 1.35;
+
+  color: #475569;
+}
+
+.property-reservation-info strong {
+  display: block;
+
+  color: #1e293b;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.property-reservation-info span {
+  display: block;
+}
+
+/* =========================================
+   ACCIONES
+========================================= */
 
 .property-actions {
   display: flex;
+
   gap: 10px;
-  margin-top: 20px;
+
+  margin-top: auto;
 }
 
 .property-actions button {
   flex: 1;
 }
 
-.estado.activa {
-  background: #dcfce7;
-  color: #166534;
-}
+/* =========================================
+   RESPONSIVE
+========================================= */
 
-.estado.mantenimiento {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.estado.inactiva {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-@media (max-width: 1000px) {
+@media (max-width: 1150px) {
   .properties-grid {
     grid-template-columns: 1fr;
   }
@@ -562,16 +878,20 @@ td {
 
   .property-image {
     width: 100%;
-    min-height: 130px;
+    min-width: 100%;
+    min-height: 150px;
   }
 
-  .property-title {
-    flex-direction: column;
-    align-items: flex-start;
+  .property-info {
+    padding: 20px;
   }
 
   .property-actions {
     flex-direction: column;
+  }
+
+  .property-actions button {
+    width: 100%;
   }
 }
 /* ========================= */
@@ -861,4 +1181,264 @@ td {
 
 .reserva-destacada td {
   background: #eef4ff;
+}
+
+/* =========================================================
+   GALERÍA DE IMÁGENES - PROPIEDADES
+   ========================================================= */
+
+.property-gallery-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Encabezado de galería */
+
+.property-gallery-section .property-channels-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.property-gallery-section .property-channels-header h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: #172033;
+}
+
+.property-gallery-section .property-channels-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* =========================================================
+   GRID
+   ========================================================= */
+
+.property-gallery-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(190px, 1fr)
+    );
+
+  gap: 14px;
+
+  margin-top: 16px;
+}
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.property-gallery-card {
+  min-width: 0;
+
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 2px 8px
+    rgba(15, 23, 42, 0.05);
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================================
+   IMAGEN
+   ========================================================= */
+
+.property-gallery-image {
+  position: relative;
+
+  width: 100%;
+
+  height: 130px;
+
+  overflow: hidden;
+
+  background: #f1f5f9;
+}
+
+.property-gallery-image img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  transition:
+    transform 0.2s ease;
+}
+
+.property-gallery-card:hover
+.property-gallery-image img {
+  transform: scale(1.025);
+}
+
+/* =========================================================
+   BADGE PRINCIPAL
+   ========================================================= */
+
+.property-gallery-main-badge {
+  position: absolute;
+
+  top: 10px;
+  left: 10px;
+
+  padding:
+    5px 9px;
+
+  border-radius: 999px;
+
+  background: rgba(
+    15,
+    23,
+    42,
+    0.88
+  );
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  box-shadow:
+    0 2px 6px
+    rgba(0, 0, 0, 0.18);
+}
+
+/* =========================================================
+   INFORMACIÓN DE LA FOTO
+   ========================================================= */
+
+.property-gallery-info {
+  padding:
+    13px 14px 10px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+
+  min-height: 92px;
+}
+
+.property-gallery-info strong {
+  display: block;
+
+  color: #172033;
+
+  font-size: 14px;
+
+  line-height: 1.35;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.property-gallery-info span {
+  display: block;
+
+  color: #64748b;
+
+  font-size: 13px;
+
+  line-height: 1.3;
+}
+
+/* =========================================================
+   ACCIONES
+   ========================================================= */
+
+.property-gallery-actions {
+  display: flex;
+
+  gap: 8px;
+
+  padding:
+    0 14px 14px;
+
+  margin-top: auto;
+}
+
+.property-gallery-actions button {
+  flex: 1;
+
+  min-width: 0;
+
+  padding:
+    9px 10px;
+
+  font-size: 12px;
+}
+
+/* =========================================================
+   FORMULARIO AGREGAR IMAGEN
+   ========================================================= */
+
+.property-gallery-section
+.form-card {
+  margin-top: 16px;
+  margin-bottom: 18px;
+
+  box-shadow: none;
+
+  border: 1px solid #e2e8f0;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (
+  max-width: 900px
+) {
+  .property-gallery-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+@media (
+  max-width: 650px
+) {
+  .property-gallery-section
+  .property-channels-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .property-gallery-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .property-gallery-image {
+    height: 170px;
+  }
+
+  .property-gallery-actions {
+    flex-direction: column;
+  }
 }

@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 
 function Reservas() {
+  const [
+    idReservaObjetivo,
+    setIdReservaObjetivo,
+  ] = useState(() =>
+    window.sessionStorage.getItem(
+      "hostflowReservaObjetivo"
+    )
+  );
+
   const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -89,6 +98,66 @@ function Reservas() {
   useEffect(() => {
     obtenerReservas();
   }, []);
+
+  useEffect(() => {
+    if (
+      !idReservaObjetivo ||
+      reservas.length === 0
+    ) {
+      return;
+    }
+
+    const existeReserva =
+      reservas.some(
+        (reserva) =>
+          Number(
+            reserva.idReserva
+          ) ===
+          Number(
+            idReservaObjetivo
+          )
+      );
+
+    // La petición "Ver reserva" se consume una sola vez.
+    window.sessionStorage.removeItem(
+      "hostflowReservaObjetivo"
+    );
+
+    if (!existeReserva) {
+      setIdReservaObjetivo(null);
+      return;
+    }
+
+    const timer =
+      setTimeout(() => {
+        const fila =
+          document.getElementById(
+            `reserva-${idReservaObjetivo}`
+          );
+
+        if (fila) {
+          fila.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }, 100);
+
+    return () =>
+      clearTimeout(timer);
+  }, [
+    reservas,
+    idReservaObjetivo,
+  ]);
+
+  const limpiarReservaDestacada =
+    () => {
+      window.sessionStorage.removeItem(
+        "hostflowReservaObjetivo"
+      );
+
+      setIdReservaObjetivo(null);
+    };
 
   const obtenerReservas = async () => {
     try {
@@ -859,7 +928,16 @@ const cancelarReserva = async (
   // =========================================================
 
   return (
-    <section className="reservas-page">
+    <section
+      className="reservas-page"
+      onClickCapture={(e) => {
+        if (
+          e.target.closest("button")
+        ) {
+          limpiarReservaDestacada();
+        }
+      }}
+    >
       {/* CABECERA */}
 
       <div className="section-header">
@@ -2187,10 +2265,21 @@ const cancelarReserva = async (
             {reservas.map(
               (reserva) => (
                 <tr
-                  key={
+                key={
+                  reserva.idReserva
+                }
+                id={`reserva-${reserva.idReserva}`}
+                className={
+                  Number(
                     reserva.idReserva
-                  }
-                >
+                  ) ===
+                  Number(
+                    idReservaObjetivo
+                  )
+                    ? "reserva-destacada"
+                    : ""
+                }
+              >
                   <td>
                     {
                       reserva.huesped

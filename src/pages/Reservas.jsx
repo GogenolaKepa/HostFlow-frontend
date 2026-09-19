@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import api from "../services/api";
 
 function Reservas() {
-  const [
-    idReservaObjetivo,
-    setIdReservaObjetivo,
-  ] = useState(() =>
-    window.sessionStorage.getItem(
-      "hostflowReservaObjetivo"
-    )
-  );
-
   const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+
+  // =========================================================
+  // DETALLE DE RESERVA
+  // =========================================================
+
+  const [reservaDetalle, setReservaDetalle] =
+    useState(null);
 
   // =========================================================
   // RESERVA MANUAL
@@ -100,64 +99,37 @@ function Reservas() {
   }, []);
 
   useEffect(() => {
-    if (
-      !idReservaObjetivo ||
-      reservas.length === 0
-    ) {
-      return;
+    if (!reservaDetalle) {
+      return undefined;
     }
 
-    const existeReserva =
-      reservas.some(
-        (reserva) =>
-          Number(
-            reserva.idReserva
-          ) ===
-          Number(
-            idReservaObjetivo
-          )
-      );
+    const overflowAnterior =
+      document.body.style.overflow;
 
-    // La petición "Ver reserva" se consume una sola vez.
-    window.sessionStorage.removeItem(
-      "hostflowReservaObjetivo"
+    document.body.style.overflow =
+      "hidden";
+
+    const manejarEscape = (e) => {
+      if (e.key === "Escape") {
+        setReservaDetalle(null);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      manejarEscape
     );
 
-    if (!existeReserva) {
-      setIdReservaObjetivo(null);
-      return;
-    }
+    return () => {
+      document.body.style.overflow =
+        overflowAnterior;
 
-    const timer =
-      setTimeout(() => {
-        const fila =
-          document.getElementById(
-            `reserva-${idReservaObjetivo}`
-          );
-
-        if (fila) {
-          fila.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
-      }, 100);
-
-    return () =>
-      clearTimeout(timer);
-  }, [
-    reservas,
-    idReservaObjetivo,
-  ]);
-
-  const limpiarReservaDestacada =
-    () => {
-      window.sessionStorage.removeItem(
-        "hostflowReservaObjetivo"
+      window.removeEventListener(
+        "keydown",
+        manejarEscape
       );
-
-      setIdReservaObjetivo(null);
     };
+  }, [reservaDetalle]);
 
   const obtenerReservas = async () => {
     try {
@@ -347,51 +319,36 @@ function Reservas() {
   // CANCELACIÓN MANUAL
   // =========================================================
 
-const cancelarReserva = async (
-  idReserva
-) => {
-  const confirmar = confirm(
-    "¿Seguro que querés cancelar esta reserva?"
-  );
+  const cancelarReserva = async (
+    idReserva
+  ) => {
+    const confirmar = confirm(
+      "¿Seguro que querés cancelar esta reserva?"
+    );
 
-  if (!confirmar) {
-    return;
-  }
+    if (!confirmar) {
+      return;
+    }
 
-  try {
-    setError("");
-    setMensaje("");
-
-    const response =
+    try {
       await api.patch(
         `/reservas/${idReserva}/cancelar`
       );
 
-    const reservaActualizada =
-      response.data.reserva;
+      setMensaje(
+        "Reserva cancelada correctamente."
+      );
 
-    setReservas((reservasAnteriores) =>
-      reservasAnteriores.map(
-        (reserva) =>
-          Number(reserva.idReserva) ===
-          Number(
-            reservaActualizada.idReserva
-          )
-            ? reservaActualizada
-            : reserva
-      )
-    );
+      setError("");
 
-    setMensaje(
-      "Reserva cancelada correctamente."
-    );
-  } catch (error) {
-    setError(
-      error.response?.data?.mensaje ||
-        "No se pudo cancelar la reserva."
-    );
-  }
-};
+      await obtenerReservas();
+    } catch (error) {
+      setError(
+        error.response?.data?.mensaje ||
+          "No se pudo cancelar la reserva."
+      );
+    }
+  };
 
   // =========================================================
   // AIRBNB - PROPONER CAMBIO
@@ -861,11 +818,11 @@ const cancelarReserva = async (
   // ACCIONES SEGÚN BACKEND
   // =========================================================
   const formatearFecha = (fecha) => {
-  if (!fecha) return "-";
+    if (!fecha) return "-";
 
-  const [anio, mes, dia] = fecha.split("-");
+    const [anio, mes, dia] = fecha.split("-");
 
-  return `${dia}/${mes}/${anio}`;
+    return `${dia}/${mes}/${anio.slice(-2)}`;
   };
 
   const tieneAccion = (
@@ -875,6 +832,76 @@ const cancelarReserva = async (
     return reserva.accionesDisponibles?.includes(
       accion
     );
+  };
+
+  const calcularNoches = (
+    fechaIngreso,
+    fechaEgreso
+  ) => {
+    if (
+      !fechaIngreso ||
+      !fechaEgreso
+    ) {
+      return 0;
+    }
+
+    const ingreso =
+      new Date(
+        `${fechaIngreso}T00:00:00`
+      );
+
+    const egreso =
+      new Date(
+        `${fechaEgreso}T00:00:00`
+      );
+
+    const diferencia =
+      egreso.getTime() -
+      ingreso.getTime();
+
+    return Math.max(
+      0,
+      Math.round(
+        diferencia /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+  };
+
+  const formatearMonto = (
+    monto
+  ) => {
+    const numero =
+      Number(monto) || 0;
+
+    return numero.toLocaleString(
+      "es-AR",
+      {
+        style: "currency",
+        currency: "ARS",
+        maximumFractionDigits: 0,
+      }
+    );
+  };
+
+  const abrirDetalleReserva = (
+    reserva
+  ) => {
+    setMostrarFormulario(false);
+    setReservaEditando(null);
+
+    cerrarPanelesExternos();
+
+    setReservaDetalle(
+      reserva
+    );
+
+    setError("");
+    setMensaje("");
+  };
+
+  const cerrarDetalleReserva = () => {
+    setReservaDetalle(null);
   };
 
   // =========================================================
@@ -928,16 +955,7 @@ const cancelarReserva = async (
   // =========================================================
 
   return (
-    <section
-      className="reservas-page"
-      onClickCapture={(e) => {
-        if (
-          e.target.closest("button")
-        ) {
-          limpiarReservaDestacada();
-        }
-      }}
-    >
+    <section className="reservas-page">
       {/* CABECERA */}
 
       <div className="section-header">
@@ -1211,8 +1229,7 @@ const cancelarReserva = async (
                 lang="es-AR"
                 name="fechaIngreso"
                 value={
-                  formularioEdicion
-                    .fechaIngreso
+                  formularioEdicion.fechaIngreso
                 }
                 onChange={
                   manejarCambioEdicion
@@ -1230,8 +1247,7 @@ const cancelarReserva = async (
                 lang="es-AR"
                 name="fechaEgreso"
                 value={
-                  formularioEdicion
-                    .fechaEgreso
+                  formularioEdicion.fechaEgreso
                 }
                 onChange={
                   manejarCambioEdicion
@@ -2265,21 +2281,10 @@ const cancelarReserva = async (
             {reservas.map(
               (reserva) => (
                 <tr
-                key={
-                  reserva.idReserva
-                }
-                id={`reserva-${reserva.idReserva}`}
-                className={
-                  Number(
+                  key={
                     reserva.idReserva
-                  ) ===
-                  Number(
-                    idReservaObjetivo
-                  )
-                    ? "reserva-destacada"
-                    : ""
-                }
-              >
+                  }
+                >
                   <td>
                     {
                       reserva.huesped
@@ -2327,6 +2332,25 @@ const cancelarReserva = async (
 
                   <td>
                     <div className="table-actions">
+                      {/* DETALLE */}
+
+                      {tieneAccion(
+                        reserva,
+                        "VER"
+                      ) && (
+                        <button
+                          type="button"
+                          className="detail-button"
+                          onClick={() =>
+                            abrirDetalleReserva(
+                              reserva
+                            )
+                          }
+                        >
+                          Ver detalle
+                        </button>
+                      )}
+
                       {/* MANUAL */}
 
                       {tieneAccion(
@@ -2469,20 +2493,6 @@ const cancelarReserva = async (
                         </button>
                       )}
 
-                      {/* SIN ACCIÓN */}
-
-                      {reserva
-                        .accionesDisponibles
-                        ?.length ===
-                        1 &&
-                        reserva
-                          .accionesDisponibles[0] ===
-                          "VER" && (
-                          <span className="disabled-text">
-                            Sin acción
-                          </span>
-                        )}
-                        
                     </div>
                   </td>
                 </tr>
@@ -2491,6 +2501,262 @@ const cancelarReserva = async (
           </tbody>
         </table>
       </div>
+
+      {/* =====================================================
+          DETALLE DE RESERVA
+      ====================================================== */}
+
+      {reservaDetalle &&
+        createPortal(
+          <div
+            className="reservation-detail-overlay"
+            onMouseDown={(e) => {
+              if (
+                e.target ===
+                e.currentTarget
+              ) {
+                cerrarDetalleReserva();
+              }
+            }}
+          >
+            <article
+              className="reservation-detail-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reservation-detail-title"
+            >
+              <header className="reservation-detail-header">
+                <div>
+                  <span className="reservation-detail-kicker">
+                    RESERVA #{reservaDetalle.idReserva}
+                  </span>
+
+                  <h3 id="reservation-detail-title">
+                    {reservaDetalle.huesped}
+                  </h3>
+
+                  <p>
+                    {reservaDetalle.propiedad}
+                    {" · "}
+                    {reservaDetalle.canal}
+                  </p>
+                </div>
+
+                <div className="reservation-detail-header-actions">
+                  <span
+                    className={`estado ${String(
+                      reservaDetalle.estado
+                    )
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
+                    {reservaDetalle.estado}
+                  </span>
+
+                  <button
+                    type="button"
+                    className="reservation-detail-close"
+                    onClick={cerrarDetalleReserva}
+                    aria-label="Cerrar detalle"
+                  >
+                    ×
+                  </button>
+                </div>
+              </header>
+
+              <div className="reservation-detail-period">
+                <div>
+                  <span>Ingreso</span>
+                  <strong>
+                    {formatearFecha(
+                      reservaDetalle.fechaIngreso
+                    )}
+                  </strong>
+                </div>
+
+                <div className="reservation-detail-period-arrow">
+                  →
+                </div>
+
+                <div>
+                  <span>Egreso</span>
+                  <strong>
+                    {formatearFecha(
+                      reservaDetalle.fechaEgreso
+                    )}
+                  </strong>
+                </div>
+
+                <div className="reservation-detail-period-summary">
+                  <strong>
+                    {calcularNoches(
+                      reservaDetalle.fechaIngreso,
+                      reservaDetalle.fechaEgreso
+                    )}
+                  </strong>
+                  <span>noches</span>
+                </div>
+              </div>
+
+              <div className="reservation-detail-grid">
+                <section className="reservation-detail-card">
+                  <div className="reservation-detail-card-title">
+                    <span className="reservation-detail-icon">⌂</span>
+                    <div>
+                      <h4>Estadía</h4>
+                      <p>
+                        Información principal de la reserva.
+                      </p>
+                    </div>
+                  </div>
+
+                  <dl className="reservation-detail-list">
+                    <div>
+                      <dt>Propiedad</dt>
+                      <dd>{reservaDetalle.propiedad}</dd>
+                    </div>
+                    <div>
+                      <dt>Huésped</dt>
+                      <dd>{reservaDetalle.huesped}</dd>
+                    </div>
+                    <div>
+                      <dt>Huéspedes</dt>
+                      <dd>{reservaDetalle.cantidadHuespedes}</dd>
+                    </div>
+                    <div>
+                      <dt>Estado</dt>
+                      <dd>{reservaDetalle.estado}</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section className="reservation-detail-card">
+                  <div className="reservation-detail-card-title">
+                    <span className="reservation-detail-icon">$</span>
+                    <div>
+                      <h4>Información económica</h4>
+                      <p>
+                        Resumen económico de la estadía.
+                      </p>
+                    </div>
+                  </div>
+
+                  <dl className="reservation-detail-list">
+                    <div>
+                      <dt>Monto estimado</dt>
+                      <dd className="reservation-detail-money">
+                        {formatearMonto(
+                          reservaDetalle.montoEstimado
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Promedio por noche</dt>
+                      <dd>
+                        {calcularNoches(
+                          reservaDetalle.fechaIngreso,
+                          reservaDetalle.fechaEgreso
+                        ) > 0
+                          ? formatearMonto(
+                              Number(
+                                reservaDetalle.montoEstimado
+                              ) /
+                                calcularNoches(
+                                  reservaDetalle.fechaIngreso,
+                                  reservaDetalle.fechaEgreso
+                                )
+                            )
+                          : "-"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Moneda</dt>
+                      <dd>ARS</dd>
+                    </div>
+                    <div>
+                      <dt>Tipo de gestión</dt>
+                      <dd>{reservaDetalle.tipoGestion || "-"}</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section className="reservation-detail-card reservation-detail-card--wide">
+                  <div className="reservation-detail-card-title">
+                    <span className="reservation-detail-icon">↗</span>
+                    <div>
+                      <h4>Canal e integración</h4>
+                      <p>
+                        Identificadores y estado de sincronización.
+                      </p>
+                    </div>
+                  </div>
+
+                  <dl className="reservation-detail-list reservation-detail-list--integration">
+                    <div>
+                      <dt>Canal</dt>
+                      <dd>{reservaDetalle.canal}</dd>
+                    </div>
+                    <div>
+                      <dt>ID externo</dt>
+                      <dd>
+                        {reservaDetalle.idExterno || "Reserva manual"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Sincronización</dt>
+                      <dd>
+                        {reservaDetalle.estadoSincronizacion || "-"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>ID HostFlow</dt>
+                      <dd>#{reservaDetalle.idReserva}</dd>
+                    </div>
+                  </dl>
+                </section>
+              </div>
+
+              <footer className="reservation-detail-footer">
+                <div className="reservation-detail-footer-note">
+                  <strong>Historial de estadía</strong>
+                  <span>
+                    Este detalle será la base para incorporar timeline,
+                    mensajes e incidencias de la reserva.
+                  </span>
+                </div>
+
+                <div className="reservation-detail-footer-actions">
+                  {tieneAccion(
+                    reservaDetalle,
+                    "ABRIR_EN_CANAL"
+                  ) && (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        abrirEnCanal(
+                          reservaDetalle
+                        )
+                      }
+                    >
+                      {reservaDetalle.canal} ↗
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={cerrarDetalleReserva}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </footer>
+            </article>
+          </div>,
+          document.body
+        )}
+
     </section>
   );
 }

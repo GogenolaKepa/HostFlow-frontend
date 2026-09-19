@@ -1193,14 +1193,12 @@ td {
   border-top: 1px solid #e5e7eb;
 }
 
-/* Encabezado de galería */
-
 .property-gallery-section .property-channels-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .property-gallery-section .property-channels-header h4 {
@@ -1216,7 +1214,136 @@ td {
 }
 
 /* =========================================================
-   GRID
+   FORMULARIO DE IMÁGENES
+   ========================================================= */
+
+.property-gallery-section .form-card {
+  margin-top: 16px;
+  margin-bottom: 18px;
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+}
+
+/* =========================================================
+   SELECTOR DE ARCHIVOS
+   ========================================================= */
+
+.property-upload-area {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  margin-bottom: 0 !important;
+
+  border: 1px dashed #b8c3d4;
+  border-radius: 10px;
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.property-upload-area:hover {
+  border-color: #2f66f6;
+  background: #f8faff;
+  box-shadow: 0 0 0 3px rgba(47, 102, 246, 0.06);
+}
+
+.property-upload-area.disabled {
+  opacity: 0.65;
+  cursor: default;
+  pointer-events: none;
+}
+
+.property-upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.property-upload-content {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.property-upload-title {
+  min-width: 0;
+
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.property-upload-action {
+  flex-shrink: 0;
+
+  padding: 5px 8px;
+
+  border-radius: 7px;
+  background: #eef3ff;
+  color: #2f66f6;
+
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.property-upload-hint {
+  display: block;
+  margin-top: 6px;
+
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.property-upload-selected {
+  margin-top: 9px;
+  padding: 8px 10px;
+
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.property-upload-selected strong {
+  display: block;
+  margin-bottom: 3px;
+
+  color: #172033;
+  font-size: 11px;
+}
+
+.property-upload-files {
+  display: block;
+
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.35;
+
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   GRID COMPACTA
    ========================================================= */
 
 .property-gallery-grid {
@@ -1224,13 +1351,12 @@ td {
 
   grid-template-columns:
     repeat(
-      auto-fill,
-      minmax(190px, 1fr)
+      8,
+      minmax(0, 1fr)
     );
 
-  gap: 14px;
-
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 /* =========================================================
@@ -1239,21 +1365,30 @@ td {
 
 .property-gallery-card {
   min-width: 0;
-
   overflow: hidden;
 
   background: #ffffff;
-
   border: 1px solid #e2e8f0;
-
-  border-radius: 14px;
+  border-radius: 10px;
 
   box-shadow:
-    0 2px 8px
+    0 2px 7px
     rgba(15, 23, 42, 0.05);
 
   display: flex;
   flex-direction: column;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.property-gallery-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 14px
+    rgba(15, 23, 42, 0.08);
 }
 
 /* =========================================================
@@ -1264,12 +1399,18 @@ td {
   position: relative;
 
   width: 100%;
-
-  height: 130px;
+  height: 82px;
 
   overflow: hidden;
-
   background: #f1f5f9;
+
+  cursor: zoom-in;
+  outline: none;
+}
+
+.property-gallery-image:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px #2f66f6;
 }
 
 .property-gallery-image img {
@@ -1277,7 +1418,6 @@ td {
   height: 100%;
 
   display: block;
-
   object-fit: cover;
 
   transition:
@@ -1296,11 +1436,10 @@ td {
 .property-gallery-main-badge {
   position: absolute;
 
-  top: 10px;
-  left: 10px;
+  top: 6px;
+  left: 6px;
 
-  padding:
-    5px 9px;
+  padding: 3px 6px;
 
   border-radius: 999px;
 
@@ -1308,34 +1447,33 @@ td {
     15,
     23,
     42,
-    0.88
+    0.9
   );
 
   color: #ffffff;
 
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
 
   box-shadow:
-    0 2px 6px
-    rgba(0, 0, 0, 0.18);
+    0 2px 5px
+    rgba(0, 0, 0, 0.16);
 }
 
 /* =========================================================
-   INFORMACIÓN DE LA FOTO
+   INFORMACIÓN
    ========================================================= */
 
 .property-gallery-info {
+  min-height: 52px;
+
   padding:
-    13px 14px 10px;
+    8px 9px 6px;
 
   display: flex;
-
   flex-direction: column;
-
-  gap: 7px;
-
-  min-height: 92px;
+  gap: 4px;
 }
 
 .property-gallery-info strong {
@@ -1343,14 +1481,11 @@ td {
 
   color: #172033;
 
-  font-size: 14px;
-
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.25;
 
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
 }
 
@@ -1359,9 +1494,12 @@ td {
 
   color: #64748b;
 
-  font-size: 13px;
+  font-size: 10px;
+  line-height: 1.25;
 
-  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* =========================================================
@@ -1369,60 +1507,194 @@ td {
    ========================================================= */
 
 .property-gallery-actions {
-  display: flex;
+  display: grid;
 
-  gap: 8px;
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 5px;
 
   padding:
-    0 14px 14px;
+    0 8px 8px;
 
   margin-top: auto;
 }
 
 .property-gallery-actions button {
-  flex: 1;
-
+  width: 100%;
   min-width: 0;
+  min-height: 31px;
 
-  padding:
-    9px 10px;
+  padding: 6px 3px;
 
-  font-size: 12px;
+  font-size: 10px;
+  line-height: 1.05;
+
+  border-radius: 7px;
 }
 
 /* =========================================================
-   FORMULARIO AGREGAR IMAGEN
+   VISTA PREVIA DE IMAGEN
    ========================================================= */
 
-.property-gallery-section
-.form-card {
-  margin-top: 16px;
-  margin-bottom: 18px;
+.property-image-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
 
-  box-shadow: none;
+  width: 100vw;
+  height: 100dvh;
+  box-sizing: border-box;
 
-  border: 1px solid #e2e8f0;
+  padding: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(10, 18, 32, 0.78);
+  backdrop-filter: blur(3px);
+}
+
+.property-image-preview-modal {
+  position: relative;
+
+  width: min(980px, 92vw);
+  max-height: 88vh;
+
+  overflow: hidden;
+
+  background: #ffffff;
+  border-radius: 16px;
+
+  box-shadow:
+    0 24px 70px
+    rgba(0, 0, 0, 0.34);
+}
+
+.property-image-preview-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: rgba(15, 23, 42, 0.82);
+  color: #ffffff;
+
+  font-size: 25px;
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.property-image-preview-close:hover {
+  background: #0f172a;
+}
+
+.property-image-preview-media {
+  width: 100%;
+  height: min(68vh, 700px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #0f172a;
+}
+
+.property-image-preview-media img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+  object-fit: contain;
+}
+
+.property-image-preview-info {
+  min-height: 64px;
+  padding: 12px 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  background: #ffffff;
+}
+
+.property-image-preview-info > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.property-image-preview-info strong {
+  color: #172033;
+  font-size: 13px;
+  line-height: 1.3;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.property-image-preview-info span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.property-image-preview-main {
+  flex-shrink: 0;
+
+  padding: 5px 9px;
+  border-radius: 999px;
+
+  background: #e8eefc;
+  color: #1d4ed8 !important;
+
+  font-weight: 800;
 }
 
 /* =========================================================
    RESPONSIVE
    ========================================================= */
 
-@media (
-  max-width: 900px
-) {
+@media (max-width: 1350px) {
   .property-gallery-grid {
     grid-template-columns:
       repeat(
-        2,
+        6,
         minmax(0, 1fr)
       );
   }
 }
 
-@media (
-  max-width: 650px
-) {
+@media (max-width: 1000px) {
+  .property-gallery-grid {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+@media (max-width: 700px) {
   .property-gallery-section
   .property-channels-header {
     align-items: stretch;
@@ -1431,14 +1703,1179 @@ td {
 
   .property-gallery-grid {
     grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .property-gallery-image {
+    height: 105px;
+  }
+
+  .property-upload-area {
+    min-height: 44px;
+  }
+
+  .property-image-preview-backdrop {
+    padding: 12px;
+  }
+
+  .property-image-preview-modal {
+    width: 96vw;
+    max-height: 90vh;
+  }
+
+  .property-image-preview-media {
+    height: 62vh;
+  }
+}
+
+@media (max-width: 420px) {
+  .property-gallery-grid {
+    grid-template-columns:
       1fr;
   }
 
   .property-gallery-image {
-    height: 170px;
+    height: 165px;
   }
 
   .property-gallery-actions {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+
+/* =========================================================
+   FOTOS ELIMINADAS / RESTAURACIÓN
+   ========================================================= */
+
+.property-gallery-archive {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.property-gallery-archive-toggle {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  background: #f8fafc;
+  color: #475569;
+
+  cursor: pointer;
+  text-align: left;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.property-gallery-archive-toggle:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.property-gallery-archive-toggle strong {
+  min-width: 22px;
+  height: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+
+  font-size: 11px;
+}
+
+.property-gallery-archive-toggle span:last-child {
+  margin-left: auto;
+  color: #2f66f6;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.property-gallery-grid-archived {
+  margin-top: 12px;
+}
+
+.property-gallery-card-archived {
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.property-gallery-card-archived
+.property-gallery-image img {
+  filter: grayscale(0.55);
+  opacity: 0.72;
+}
+
+.property-gallery-card-archived:hover
+.property-gallery-image img {
+  filter: grayscale(0.25);
+  opacity: 0.9;
+}
+
+.property-gallery-archived-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+
+  padding: 4px 7px;
+
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.86);
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.property-gallery-card-archived
+.property-gallery-actions button {
+  width: 100%;
+}
+
+/* =========================================================
+   CALENDARIO
+   ========================================================= */
+
+.calendar-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.calendar-header {
+  margin-bottom: 18px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(135deg, #ffffff, #eef4ff);
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.calendar-header h1 {
+  margin: 3px 0 6px;
+  color: #102a56;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.calendar-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.calendar-eyebrow {
+  display: inline-block;
+  color: #2f66f6;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.calendar-today-button {
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: #2f66f6;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.calendar-today-button:hover {
+  background: #2454d6;
+  transform: translateY(-1px);
+}
+
+.calendar-toolbar {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
+}
+
+.calendar-month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbe4f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #1d4ed8;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.calendar-nav-button:hover {
+  background: #eef4ff;
+  border-color: #bfd0f5;
+}
+
+.calendar-current-month {
+  min-width: 170px;
+  text-align: center;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.calendar-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendar-filter label {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.calendar-filter select {
+  min-width: 230px;
+  height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  outline: none;
+}
+
+.calendar-filter select:focus {
+  border-color: #2f66f6;
+  box-shadow: 0 0 0 3px rgba(47, 102, 246, 0.08);
+}
+
+.calendar-message {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.calendar-message--error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #dc2626;
+}
+
+.calendar-loading-card,
+.calendar-empty-state {
+  padding: 34px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  color: #64748b;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.calendar-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.calendar-summary-card {
+  min-width: 0;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.calendar-summary-card span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.calendar-summary-card strong {
+  color: #2563eb;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.calendar-summary-card .calendar-summary-month {
+  color: #172033;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.calendar-legend {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.calendar-legend-item {
+  padding: 6px 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.calendar-legend-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 50%;
+}
+
+.calendar-legend-dot--disponible { background: #22c55e; }
+.calendar-legend-dot--reservada { background: #3b82f6; }
+.calendar-legend-dot--ocupada { background: #8b5cf6; }
+.calendar-legend-dot--no-disponible { background: #94a3b8; }
+.calendar-legend-dot--conflicto { background: #ef4444; }
+
+.calendar-board-card {
+  width: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.calendar-board-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.calendar-board-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.calendar-board-scroll::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.calendar-board-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 2px solid #f8fafc;
+  border-radius: 999px;
+}
+
+.calendar-board {
+  width: max-content;
+  min-width: 100%;
+}
+
+.calendar-board-header,
+.calendar-property-row {
+  display: grid;
+  grid-template-columns: 220px repeat(var(--calendar-days), 52px);
+}
+
+.calendar-board-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.calendar-property-heading {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  min-height: 62px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  color: #475569;
+  border-right: 1px solid #e5e7eb;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.calendar-day-heading {
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-right: 1px solid #eef2f7;
+  color: #64748b;
+}
+
+.calendar-day-heading span {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.calendar-day-heading strong {
+  color: #172033;
+  font-size: 13px;
+}
+
+.calendar-day-heading--today {
+  background: #eef4ff;
+}
+
+.calendar-day-heading--today strong {
+  color: #2563eb;
+}
+
+.calendar-property-row {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.calendar-property-row:last-child {
+  border-bottom: none;
+}
+
+.calendar-property-info {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-height: 66px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.calendar-property-info strong {
+  color: #172033;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.calendar-property-info span {
+  color: #64748b;
+  font-size: 9px;
+}
+
+.calendar-property-info small {
+  width: fit-content;
+  margin-top: 2px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.calendar-cell {
+  position: relative;
+  min-width: 52px;
+  min-height: 66px;
+  padding: 5px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-right: 1px solid #eef2f7;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.calendar-cell:hover {
+  filter: brightness(0.98);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
+}
+
+.calendar-cell:active {
+  transform: scale(0.98);
+}
+
+.calendar-cell--disponible {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.calendar-cell--reservada {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.calendar-cell--ocupada {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.calendar-cell--no-disponible {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.calendar-cell--conflicto {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.calendar-cell--today {
+  box-shadow: inset 0 0 0 2px #60a5fa;
+}
+
+.calendar-cell--selected {
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px #2563eb;
+}
+
+.calendar-cell-status {
+  max-width: 46px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.calendar-cell-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #172033;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.calendar-detail-card {
+  margin-top: 18px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.calendar-detail-header {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.calendar-detail-header h2 {
+  margin: 3px 0 5px;
+  color: #172033;
+  font-size: 20px;
+}
+
+.calendar-detail-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.calendar-detail-close {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.calendar-detail-close:hover {
+  background: #e2e8f0;
+}
+
+.calendar-detail-empty {
+  padding: 22px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+.calendar-reservations-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.calendar-reservation-card {
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.calendar-reservation-card--conflict {
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+
+.calendar-reservation-main {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendar-reservation-main > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-reservation-main strong {
+  color: #172033;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-reservation-main span {
+  color: #64748b;
+  font-size: 9px;
+}
+
+.calendar-channel-badge {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e8eefc;
+  color: #1d4ed8 !important;
+  font-size: 9px !important;
+  font-weight: 800;
+}
+
+.calendar-reservation-data {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-reservation-data > div {
+  min-width: 0;
+  padding: 8px 9px;
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-reservation-data span {
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.calendar-reservation-data strong {
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.calendar-conflict-warning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.calendar-view-reservation {
+  width: 100%;
+  margin-top: 11px;
+  min-height: 36px;
+  border: none;
+  border-radius: 9px;
+  background: #2f66f6;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.calendar-view-reservation:hover {
+  background: #2454d6;
+}
+
+@media (max-width: 1200px) {
+  .calendar-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .calendar-reservations-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 850px) {
+  .calendar-header {
+    align-items: stretch;
     flex-direction: column;
   }
+
+  .calendar-today-button {
+    width: 100%;
+  }
+
+  .calendar-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-month-navigation {
+    justify-content: center;
+  }
+
+  .calendar-filter {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .calendar-filter select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-header {
+    padding: 20px;
+  }
+
+  .calendar-header h1 {
+    font-size: 25px;
+  }
+
+  .calendar-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-summary-card {
+    padding: 14px;
+  }
+
+  .calendar-board-header,
+  .calendar-property-row {
+    grid-template-columns: 170px repeat(var(--calendar-days), 48px);
+  }
+
+  .calendar-property-heading {
+    padding: 0 12px;
+  }
+
+  .calendar-property-info {
+    padding: 8px 10px;
+  }
+
+  .calendar-cell {
+    min-width: 48px;
+  }
+
+  .calendar-detail-card {
+    padding: 16px;
+  }
+
+  .calendar-reservation-data {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   AJUSTE CALENDARIO - VISTA COMPACTA SIN SCROLL DE PÁGINA
+   ========================================================= */
+
+/*
+ * Evita que el contenido ancho del calendario obligue
+ * a todo el dashboard a crecer horizontalmente.
+ */
+.main {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.calendar-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.calendar-header,
+.calendar-toolbar,
+.calendar-summary-grid,
+.calendar-board-card,
+.calendar-detail-card {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/*
+ * La única zona que puede desplazarse horizontalmente
+ * es la grilla del calendario.
+ */
+.calendar-board-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+/*
+ * Vista compacta:
+ * 200 px para la propiedad + 40 px por día.
+ *
+ * En una pantalla de escritorio normal entra casi todo
+ * el mes sin necesidad de desplazarse.
+ */
+.calendar-board-header,
+.calendar-property-row {
+  grid-template-columns:
+    200px
+    repeat(
+      var(--calendar-days),
+      40px
+    );
+}
+
+.calendar-property-heading {
+  min-height: 58px;
+  padding: 0 14px;
+}
+
+.calendar-property-info {
+  min-height: 62px;
+  padding: 8px 11px;
+}
+
+.calendar-property-info strong {
+  font-size: 11px;
+}
+
+.calendar-property-info span {
+  font-size: 8px;
+}
+
+.calendar-day-heading {
+  min-height: 58px;
+}
+
+.calendar-day-heading span {
+  font-size: 8px;
+}
+
+.calendar-day-heading strong {
+  font-size: 12px;
+}
+
+.calendar-cell {
+  min-width: 40px;
+  min-height: 62px;
+  padding: 4px 2px;
+}
+
+.calendar-cell-status {
+  max-width: 36px;
+  font-size: 7px;
+}
+
+/*
+ * Pantallas medianas:
+ * mantenemos el calendario compacto y, si no entra,
+ * el scroll queda solo dentro de la tarjeta.
+ */
+@media (max-width: 1450px) {
+  .calendar-board-header,
+  .calendar-property-row {
+    grid-template-columns:
+      185px
+      repeat(
+        var(--calendar-days),
+        38px
+      );
+  }
+
+  .calendar-cell {
+    min-width: 38px;
+  }
+
+  .calendar-cell-status {
+    max-width: 34px;
+  }
+}
+
+/*
+ * En móvil sí conviene dar un poco más de ancho a cada
+ * día y permitir desplazamiento horizontal interno.
+ */
+@media (max-width: 700px) {
+  .calendar-board-header,
+  .calendar-property-row {
+    grid-template-columns:
+      165px
+      repeat(
+        var(--calendar-days),
+        44px
+      );
+  }
+
+  .calendar-cell {
+    min-width: 44px;
+  }
+
+  .calendar-cell-status {
+    max-width: 40px;
+    font-size: 8px;
+  }
+}
+
+/* =========================================================
+   AJUSTE CALENDARIO - ANCHO ELÁSTICO
+   ========================================================= */
+
+/*
+ * En escritorio el calendario ocupa todo el ancho disponible.
+ * Los días dejan de tener un ancho fijo: se reparten el espacio
+ * restante de forma pareja.
+ *
+ * Solo en pantallas realmente chicas aparece scroll interno.
+ */
+.calendar-board {
+  width: 100%;
+  min-width: 1120px;
+}
+
+.calendar-board-header,
+.calendar-property-row {
+  width: 100%;
+
+  grid-template-columns:
+    190px
+    repeat(
+      var(--calendar-days),
+      minmax(0, 1fr)
+    );
+}
+
+.calendar-property-heading {
+  padding-left: 13px;
+  padding-right: 13px;
+}
+
+.calendar-cell {
+  min-width: 0;
+}
+
+.calendar-cell-status {
+  width: 100%;
+  max-width: none;
+  padding: 0 2px;
+}
+
+/*
+ * En monitores amplios aprovechamos el espacio extra sin
+ * agrandar demasiado la columna de propiedad.
+ */
+@media (min-width: 1500px) {
+  .calendar-board-header,
+  .calendar-property-row {
+    grid-template-columns:
+      200px
+      repeat(
+        var(--calendar-days),
+        minmax(0, 1fr)
+      );
+  }
+}
+
+/*
+ * En pantallas medianas permitimos un desplazamiento interno
+ * mínimo antes de comprimir demasiado los textos.
+ */
+@media (max-width: 1200px) {
+  .calendar-board {
+    min-width: 1080px;
+  }
+
+  .calendar-board-header,
+  .calendar-property-row {
+    grid-template-columns:
+      180px
+      repeat(
+        var(--calendar-days),
+        minmax(30px, 1fr)
+      );
+  }
+}
+
+/*
+ * En móvil priorizamos legibilidad y el scroll queda confinado
+ * únicamente dentro de la tarjeta del calendario.
+ */
+@media (max-width: 700px) {
+  .calendar-board {
+    min-width: 1500px;
+  }
+
+  .calendar-board-header,
+  .calendar-property-row {
+    grid-template-columns:
+      165px
+      repeat(
+        var(--calendar-days),
+        44px
+      );
+  }
+}
+
+/* =========================================================
+   CALENDARIO - RESERVAS CANCELADAS / NO SHOW
+   ========================================================= */
+
+/*
+ * Si un día está libre pero tuvo reservas canceladas o no show,
+ * mostramos solamente un punto gris discreto.
+ *
+ * No usamos el contador negro porque podría hacer pensar que
+ * el día sigue ocupado.
+ */
+.calendar-cell-history-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #94a3b8;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(255, 255, 255, 0.78);
+}
+
+/*
+ * En el detalle mantenemos esas reservas visibles para
+ * trazabilidad, pero con un tratamiento visual secundario.
+ */
+.calendar-reservation-card--inactive {
+  background: #f8fafc;
+
+  border-style: dashed;
+  border-color: #cbd5e1;
+
+  opacity: 0.82;
+}
+
+.calendar-reservation-card--inactive
+.calendar-channel-badge {
+  background: #e2e8f0;
+  color: #475569 !important;
+}
+
+.calendar-nonblocking-note {
+  width: fit-content;
+  margin: 0 0 10px;
+  padding: 4px 7px;
+
+  border-radius: 999px;
+
+  background: #e2e8f0;
+  color: #475569;
+
+  font-size: 9px;
+  font-weight: 800;
 }

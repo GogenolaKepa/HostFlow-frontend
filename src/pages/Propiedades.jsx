@@ -3,6 +3,10 @@ import {
   useState,
 } from "react";
 
+import {
+  createPortal,
+} from "react-dom";
+
 import api from "../services/api";
 
 function Propiedades() {
@@ -65,6 +69,16 @@ function Propiedades() {
   ] = useState([]);
 
   const [
+    imagenesEliminadas,
+    setImagenesEliminadas,
+  ] = useState([]);
+
+  const [
+    mostrarImagenesEliminadas,
+    setMostrarImagenesEliminadas,
+  ] = useState(false);
+
+  const [
     cargandoImagenes,
     setCargandoImagenes,
   ] = useState(false);
@@ -77,6 +91,23 @@ function Propiedades() {
   const [
     imagenProcesando,
     setImagenProcesando,
+  ] = useState(null);
+
+  const [
+    metodoAgregarImagen,
+    setMetodoAgregarImagen,
+  ] = useState(
+    "dispositivo"
+  );
+
+  const [
+    archivosImagen,
+    setArchivosImagen,
+  ] = useState([]);
+
+  const [
+    imagenPrevisualizando,
+    setImagenPrevisualizando,
   ] = useState(null);
 
   const formularioImagenInicial = {
@@ -121,6 +152,39 @@ function Propiedades() {
     obtenerPropiedades();
   }, []);
 
+  useEffect(() => {
+    if (!imagenPrevisualizando) {
+      return undefined;
+    }
+
+    const cerrarConEscape = (e) => {
+      if (e.key === "Escape") {
+        setImagenPrevisualizando(null);
+      }
+    };
+
+    const overflowAnterior =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    window.addEventListener(
+      "keydown",
+      cerrarConEscape
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        cerrarConEscape
+      );
+
+      document.body.style.overflow =
+        overflowAnterior;
+    };
+  }, [imagenPrevisualizando]);
+
   // =========================================================
   // OBTENER PROPIEDADES
   // =========================================================
@@ -160,14 +224,35 @@ function Propiedades() {
           true
         );
 
-        const response =
-          await api.get(
-            `/propiedades/${idPropiedad}/imagenes`
-          );
+        const [
+          activasResponse,
+          todasResponse,
+        ] =
+          await Promise.all([
+            api.get(
+              `/propiedades/${idPropiedad}/imagenes`
+            ),
+
+            api.get(
+              `/propiedades/${idPropiedad}/imagenes/todas`
+            ),
+          ]);
 
         setImagenes(
-          response.data.imagenes ||
-            []
+          activasResponse.data
+            .imagenes || []
+        );
+
+        const todas =
+          todasResponse.data
+            .imagenes || [];
+
+        setImagenesEliminadas(
+          todas.filter(
+            (imagen) =>
+              imagen.estado !==
+              "Activa"
+          )
         );
       } catch (error) {
         setError(
@@ -193,6 +278,7 @@ function Propiedades() {
       const [
         detalleResponse,
         imagenesResponse,
+        todasImagenesResponse,
       ] =
         await Promise.all([
           api.get(
@@ -201,6 +287,10 @@ function Propiedades() {
 
           api.get(
             `/propiedades/${idPropiedad}/imagenes`
+          ),
+
+          api.get(
+            `/propiedades/${idPropiedad}/imagenes/todas`
           ),
         ]);
 
@@ -212,6 +302,18 @@ function Propiedades() {
       setImagenes(
         imagenesResponse.data
           .imagenes || []
+      );
+
+      const todas =
+        todasImagenesResponse.data
+          .imagenes || [];
+
+      setImagenesEliminadas(
+        todas.filter(
+          (imagen) =>
+            imagen.estado !==
+            "Activa"
+        )
       );
 
       /*
@@ -264,6 +366,16 @@ function Propiedades() {
           formularioImagenInicial
         );
 
+        setMetodoAgregarImagen(
+          "dispositivo"
+        );
+
+        setArchivosImagen([]);
+
+        setMostrarImagenesEliminadas(
+          false
+        );
+
         await obtenerImagenes(
           idPropiedad
         );
@@ -293,6 +405,12 @@ function Propiedades() {
 
       setImagenes([]);
 
+      setImagenesEliminadas([]);
+
+      setMostrarImagenesEliminadas(
+        false
+      );
+
       setMostrarFormularioImagen(
         false
       );
@@ -300,6 +418,12 @@ function Propiedades() {
       setFormularioImagen(
         formularioImagenInicial
       );
+
+      setMetodoAgregarImagen(
+        "dispositivo"
+      );
+
+      setArchivosImagen([]);
 
       setError("");
       setMensaje("");
@@ -390,6 +514,12 @@ function Propiedades() {
       setMostrarFormularioImagen(
         false
       );
+
+      setMetodoAgregarImagen(
+        "dispositivo"
+      );
+
+      setArchivosImagen([]);
 
       setIdPropiedadEditando(
         propiedad.idPropiedad
@@ -559,6 +689,12 @@ function Propiedades() {
         formularioImagenInicial
       );
 
+      setMetodoAgregarImagen(
+        "dispositivo"
+      );
+
+      setArchivosImagen([]);
+
       setMostrarFormularioImagen(
         true
       );
@@ -570,13 +706,124 @@ function Propiedades() {
         formularioImagenInicial
       );
 
+      setMetodoAgregarImagen(
+        "dispositivo"
+      );
+
+      setArchivosImagen([]);
+
       setMostrarFormularioImagen(
         false
       );
     };
 
+  const cambiarMetodoAgregarImagen =
+    (
+      metodo
+    ) => {
+      setError("");
+      setMensaje("");
+
+      setMetodoAgregarImagen(
+        metodo
+      );
+
+      setFormularioImagen(
+        formularioImagenInicial
+      );
+
+      setArchivosImagen([]);
+    };
+
+  const manejarSeleccionArchivosImagen =
+    (
+      e
+    ) => {
+      const archivos =
+        Array.from(
+          e.target.files ||
+            []
+        );
+
+      if (
+        archivos.length >
+        20
+      ) {
+        setArchivosImagen([]);
+
+        e.target.value =
+          "";
+
+        setError(
+          "Podés seleccionar hasta 20 imágenes por vez."
+        );
+
+        return;
+      }
+
+      const tiposPermitidos = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+      ];
+
+      const archivoNoPermitido =
+        archivos.find(
+          (archivo) =>
+            !tiposPermitidos.includes(
+              archivo.type
+            )
+        );
+
+      if (
+        archivoNoPermitido
+      ) {
+        setArchivosImagen([]);
+
+        e.target.value =
+          "";
+
+        setError(
+          `El archivo "${archivoNoPermitido.name}" no es válido. Solo se permiten JPG, PNG o WEBP.`
+        );
+
+        return;
+      }
+
+      const tamanioMaximo =
+        8 * 1024 * 1024;
+
+      const archivoMuyGrande =
+        archivos.find(
+          (archivo) =>
+            archivo.size >
+            tamanioMaximo
+        );
+
+      if (
+        archivoMuyGrande
+      ) {
+        setArchivosImagen([]);
+
+        e.target.value =
+          "";
+
+        setError(
+          `El archivo "${archivoMuyGrande.name}" supera el máximo de 8 MB.`
+        );
+
+        return;
+      }
+
+      setError("");
+
+      setArchivosImagen(
+        archivos
+      );
+    };
+
   // =========================================================
-  // AGREGAR IMAGEN
+  // AGREGAR IMAGEN MEDIANTE URL
   // =========================================================
 
   const agregarImagen =
@@ -640,6 +887,105 @@ function Propiedades() {
           error.response?.data
             ?.mensaje ||
             "No se pudo agregar la imagen."
+        );
+      } finally {
+        setImagenProcesando(
+          null
+        );
+      }
+    };
+
+  // =========================================================
+  // SUBIR IMÁGENES DESDE DISPOSITIVO
+  // =========================================================
+
+  const subirImagenesDesdeDispositivo =
+    async (
+      e
+    ) => {
+      e.preventDefault();
+
+      if (
+        !propiedadSeleccionada
+      ) {
+        return;
+      }
+
+      if (
+        archivosImagen.length ===
+        0
+      ) {
+        setError(
+          "Seleccioná al menos una imagen para subir."
+        );
+
+        return;
+      }
+
+      try {
+        setError("");
+        setMensaje("");
+
+        setImagenProcesando(
+          "subiendo"
+        );
+
+        const datos =
+          new FormData();
+
+        archivosImagen.forEach(
+          (
+            archivo
+          ) => {
+            datos.append(
+              "imagenes",
+              archivo
+            );
+          }
+        );
+
+        const descripcion =
+          formularioImagen
+            .descripcion
+            .trim();
+
+        if (descripcion) {
+          datos.append(
+            "descripcion",
+            descripcion
+          );
+        }
+
+        const response =
+          await api.post(
+            `/propiedades/${propiedadSeleccionada.idPropiedad}/imagenes/upload`,
+            datos
+          );
+
+        setMensaje(
+          response.data.mensaje ||
+            "Imágenes subidas correctamente."
+        );
+
+        setFormularioImagen(
+          formularioImagenInicial
+        );
+
+        setArchivosImagen([]);
+
+        setMostrarFormularioImagen(
+          false
+        );
+
+        await recargarDetallePropiedad(
+          propiedadSeleccionada
+            .idPropiedad
+        );
+      } catch (error) {
+        setError(
+          error.response?.data
+            ?.mensaje ||
+            "No se pudieron subir las imágenes seleccionadas."
         );
       } finally {
         setImagenProcesando(
@@ -748,6 +1094,57 @@ function Propiedades() {
           error.response?.data
             ?.mensaje ||
             "No se pudo eliminar la imagen."
+        );
+      } finally {
+        setImagenProcesando(
+          null
+        );
+      }
+    };
+
+  // =========================================================
+  // RESTAURAR IMAGEN
+  // =========================================================
+
+  const restaurarImagen =
+    async (
+      imagen
+    ) => {
+      if (
+        !propiedadSeleccionada ||
+        imagen.estado !==
+          "Eliminada"
+      ) {
+        return;
+      }
+
+      try {
+        setError("");
+        setMensaje("");
+
+        setImagenProcesando(
+          imagen.idPropiedadImagen
+        );
+
+        const response =
+          await api.patch(
+            `/propiedades/${propiedadSeleccionada.idPropiedad}/imagenes/${imagen.idPropiedadImagen}/restaurar`
+          );
+
+        setMensaje(
+          response.data.mensaje ||
+            "Imagen restaurada correctamente."
+        );
+
+        await recargarDetallePropiedad(
+          propiedadSeleccionada
+            .idPropiedad
+        );
+      } catch (error) {
+        setError(
+          error.response?.data
+            ?.mensaje ||
+            "No se pudo restaurar la imagen."
         );
       } finally {
         setImagenProcesando(
@@ -1366,87 +1763,309 @@ function Propiedades() {
           </div>
 
           {mostrarFormularioImagen && (
-            <form
-              className="form-card"
-              onSubmit={
-                agregarImagen
-              }
-            >
+            <div className="form-card">
               <h3>
-                Agregar imagen
+                Agregar imágenes
               </h3>
 
-              <div className="form-grid">
-                <div>
-                  <label>
-                    URL de la imagen
-                  </label>
-
-                  <input
-                    type="url"
-                    name="urlImagen"
-                    value={
-                      formularioImagen
-                        .urlImagen
-                    }
-                    onChange={
-                      manejarCambioImagen
-                    }
-                    placeholder="https://..."
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label>
-                    Descripción
-                  </label>
-
-                  <input
-                    type="text"
-                    name="descripcion"
-                    value={
-                      formularioImagen
-                        .descripcion
-                    }
-                    onChange={
-                      manejarCambioImagen
-                    }
-                    placeholder="Ej: Living principal"
-                  />
-                </div>
-              </div>
-
-              <div className="form-actions">
+              <div
+                className="form-actions"
+                style={{
+                  marginTop: 0,
+                  marginBottom: "18px",
+                }}
+              >
                 <button
-                  type="submit"
-                  className="primary-button"
+                  type="button"
+                  className={
+                    metodoAgregarImagen ===
+                    "dispositivo"
+                      ? "primary-button"
+                      : "secondary-button"
+                  }
+                  onClick={() =>
+                    cambiarMetodoAgregarImagen(
+                      "dispositivo"
+                    )
+                  }
                   disabled={
-                    imagenProcesando ===
-                    "nueva"
+                    imagenProcesando !==
+                    null
                   }
                 >
-                  {imagenProcesando ===
-                  "nueva"
-                    ? "Agregando..."
-                    : "Agregar imagen"}
+                  Desde dispositivo
                 </button>
 
                 <button
                   type="button"
-                  className="secondary-button"
-                  onClick={
-                    cancelarFormularioImagen
+                  className={
+                    metodoAgregarImagen ===
+                    "url"
+                      ? "primary-button"
+                      : "secondary-button"
+                  }
+                  onClick={() =>
+                    cambiarMetodoAgregarImagen(
+                      "url"
+                    )
                   }
                   disabled={
-                    imagenProcesando ===
-                    "nueva"
+                    imagenProcesando !==
+                    null
                   }
                 >
-                  Cancelar
+                  Por URL
                 </button>
               </div>
-            </form>
+
+              {metodoAgregarImagen ===
+                "dispositivo" && (
+                <form
+                  onSubmit={
+                    subirImagenesDesdeDispositivo
+                  }
+                >
+                  <div className="form-grid">
+                    <div>
+                      <label>
+                        Seleccionar imágenes
+                      </label>
+
+                      <label
+                        htmlFor="property-image-upload"
+                        className={`property-upload-area ${
+                          imagenProcesando ===
+                          "subiendo"
+                            ? "disabled"
+                            : ""
+                        }`}
+                      >
+                        <input
+                          id="property-image-upload"
+                          className="property-upload-input"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          onChange={
+                            manejarSeleccionArchivosImagen
+                          }
+                          disabled={
+                            imagenProcesando ===
+                            "subiendo"
+                          }
+                        />
+
+                        <span className="property-upload-content">
+                          <strong className="property-upload-title">
+                            {archivosImagen.length >
+                            0
+                              ? archivosImagen.length ===
+                                1
+                                ? "1 imagen seleccionada"
+                                : `${archivosImagen.length} imágenes seleccionadas`
+                              : "Elegir imágenes del dispositivo"}
+                          </strong>
+
+                          <span className="property-upload-action">
+                            {archivosImagen.length >
+                            0
+                              ? "Cambiar"
+                              : "Seleccionar"}
+                          </span>
+                        </span>
+                      </label>
+
+                      <span className="property-upload-hint">
+                        JPG, PNG o WEBP · hasta 20 imágenes · máximo 8 MB por archivo.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label>
+                        Descripción
+                        opcional
+                      </label>
+
+                      <input
+                        type="text"
+                        name="descripcion"
+                        value={
+                          formularioImagen
+                            .descripcion
+                        }
+                        onChange={
+                          manejarCambioImagen
+                        }
+                        placeholder="Se aplicará a todas las imágenes seleccionadas"
+                        disabled={
+                          imagenProcesando ===
+                          "subiendo"
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {archivosImagen.length >
+                    0 && (
+                    <div className="property-upload-selected">
+                      <strong>
+                        {archivosImagen.length ===
+                        1
+                          ? "1 imagen lista para subir"
+                          : `${archivosImagen.length} imágenes listas para subir`}
+                      </strong>
+
+                      <span className="property-upload-files">
+                        {archivosImagen
+                          .slice(
+                            0,
+                            4
+                          )
+                          .map(
+                            (
+                              archivo
+                            ) =>
+                              archivo.name
+                          )
+                          .join(
+                            ", "
+                          )}
+                        {archivosImagen.length >
+                        4
+                          ? ` y ${
+                              archivosImagen.length -
+                              4
+                            } más`
+                          : ""}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="form-actions">
+                    <button
+                      type="submit"
+                      className="primary-button"
+                      disabled={
+                        imagenProcesando ===
+                          "subiendo" ||
+                        archivosImagen.length ===
+                          0
+                      }
+                    >
+                      {imagenProcesando ===
+                      "subiendo"
+                        ? "Subiendo..."
+                        : archivosImagen.length >
+                          1
+                        ? `Subir ${archivosImagen.length} imágenes`
+                        : "Subir imagen"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={
+                        cancelarFormularioImagen
+                      }
+                      disabled={
+                        imagenProcesando ===
+                        "subiendo"
+                      }
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {metodoAgregarImagen ===
+                "url" && (
+                <form
+                  onSubmit={
+                    agregarImagen
+                  }
+                >
+                  <div className="form-grid">
+                    <div>
+                      <label>
+                        URL de la imagen
+                      </label>
+
+                      <input
+                        type="url"
+                        name="urlImagen"
+                        value={
+                          formularioImagen
+                            .urlImagen
+                        }
+                        onChange={
+                          manejarCambioImagen
+                        }
+                        placeholder="https://..."
+                        required
+                        disabled={
+                          imagenProcesando ===
+                          "nueva"
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label>
+                        Descripción
+                      </label>
+
+                      <input
+                        type="text"
+                        name="descripcion"
+                        value={
+                          formularioImagen
+                            .descripcion
+                        }
+                        onChange={
+                          manejarCambioImagen
+                        }
+                        placeholder="Ej: Living principal"
+                        disabled={
+                          imagenProcesando ===
+                          "nueva"
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-actions">
+                    <button
+                      type="submit"
+                      className="primary-button"
+                      disabled={
+                        imagenProcesando ===
+                        "nueva"
+                      }
+                    >
+                      {imagenProcesando ===
+                      "nueva"
+                        ? "Agregando..."
+                        : "Agregar imagen"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={
+                        cancelarFormularioImagen
+                      }
+                      disabled={
+                        imagenProcesando ===
+                        "nueva"
+                      }
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
 
           {cargandoImagenes && (
@@ -1485,7 +2104,33 @@ function Propiedades() {
                         imagen.idPropiedadImagen
                       }
                     >
-                      <div className="property-gallery-image">
+                      <div
+                        className="property-gallery-image"
+                        role="button"
+                        tabIndex="0"
+                        title="Abrir vista previa"
+                        aria-label={`Abrir vista previa de ${
+                          imagen.descripcion ||
+                          `imagen de ${propiedad.nombre}`
+                        }`}
+                        onClick={() =>
+                          setImagenPrevisualizando(
+                            imagen
+                          )
+                        }
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" ||
+                            e.key === " "
+                          ) {
+                            e.preventDefault();
+
+                            setImagenPrevisualizando(
+                              imagen
+                            );
+                          }
+                        }}
+                      >
                         <img
                           src={
                             imagen.urlImagen
@@ -1510,15 +2155,12 @@ function Propiedades() {
                             "Sin descripción"}
                         </strong>
 
-                        <span>
+                        <span className="property-gallery-meta">
                           Origen:{" "}
                           {
                             imagen.origen
-                          }
-                        </span>
-
-                        <span>
-                          Orden:{" "}
+                          }{" "}
+                          · Orden{" "}
                           {
                             imagen.orden
                           }
@@ -1540,7 +2182,7 @@ function Propiedades() {
                               imagen.idPropiedadImagen
                             }
                           >
-                            Usar como portada
+                            Portada
                           </button>
                         )}
 
@@ -1550,7 +2192,7 @@ function Propiedades() {
                             className="secondary-button"
                             disabled
                           >
-                            Portada actual
+                            Principal
                           </button>
                         )}
 
@@ -1578,6 +2220,210 @@ function Propiedades() {
                 )}
               </div>
             )}
+
+          {!cargandoImagenes &&
+            imagenesEliminadas.length >
+              0 && (
+              <div className="property-gallery-archive">
+                <button
+                  type="button"
+                  className="property-gallery-archive-toggle"
+                  onClick={() =>
+                    setMostrarImagenesEliminadas(
+                      (anterior) =>
+                        !anterior
+                    )
+                  }
+                >
+                  <span>
+                    Fotos eliminadas
+                  </span>
+
+                  <strong>
+                    {imagenesEliminadas.length}
+                  </strong>
+
+                  <span>
+                    {mostrarImagenesEliminadas
+                      ? "Ocultar"
+                      : "Ver"}
+                  </span>
+                </button>
+
+                {mostrarImagenesEliminadas && (
+                  <div className="property-gallery-grid property-gallery-grid-archived">
+                    {imagenesEliminadas.map(
+                      (imagen) => (
+                        <div
+                          className="property-gallery-card property-gallery-card-archived"
+                          key={
+                            imagen.idPropiedadImagen
+                          }
+                        >
+                          <div
+                            className="property-gallery-image"
+                            role="button"
+                            tabIndex="0"
+                            title="Abrir vista previa"
+                            onClick={() =>
+                              setImagenPrevisualizando(
+                                imagen
+                              )
+                            }
+                            onKeyDown={(e) => {
+                              if (
+                                e.key === "Enter" ||
+                                e.key === " "
+                              ) {
+                                e.preventDefault();
+
+                                setImagenPrevisualizando(
+                                  imagen
+                                );
+                              }
+                            }}
+                          >
+                            <img
+                              src={
+                                imagen.urlImagen
+                              }
+                              alt={
+                                imagen.descripcion ||
+                                `Imagen eliminada de ${propiedad.nombre}`
+                              }
+                              loading="lazy"
+                            />
+
+                            <span className="property-gallery-archived-badge">
+                              {imagen.estado ===
+                              "PendienteEliminacion"
+                                ? "Pendiente"
+                                : "Eliminada"}
+                            </span>
+                          </div>
+
+                          <div className="property-gallery-info">
+                            <strong>
+                              {imagen.descripcion ||
+                                "Sin descripción"}
+                            </strong>
+
+                            <span className="property-gallery-meta">
+                              Origen: {imagen.origen} · Orden {imagen.orden}
+                            </span>
+                          </div>
+
+                          <div className="property-gallery-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() =>
+                                restaurarImagen(
+                                  imagen
+                                )
+                              }
+                              disabled={
+                                imagen.estado !==
+                                  "Eliminada" ||
+                                imagenProcesando ===
+                                  imagen.idPropiedadImagen
+                              }
+                            >
+                              {imagenProcesando ===
+                              imagen.idPropiedadImagen
+                                ? "Restaurando..."
+                                : imagen.estado ===
+                                  "PendienteEliminacion"
+                                ? "Pendiente"
+                                : "Restaurar"}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+          {imagenPrevisualizando &&
+            createPortal(
+            <div
+              className="property-image-preview-backdrop"
+              onClick={() =>
+                setImagenPrevisualizando(
+                  null
+                )
+              }
+              role="presentation"
+            >
+              <div
+                className="property-image-preview-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Vista previa de imagen"
+                onClick={(e) =>
+                  e.stopPropagation()
+                }
+              >
+                <button
+                  type="button"
+                  className="property-image-preview-close"
+                  onClick={() =>
+                    setImagenPrevisualizando(
+                      null
+                    )
+                  }
+                  aria-label="Cerrar vista previa"
+                  title="Cerrar"
+                >
+                  ×
+                </button>
+
+                <div className="property-image-preview-media">
+                  <img
+                    src={
+                      imagenPrevisualizando
+                        .urlImagen
+                    }
+                    alt={
+                      imagenPrevisualizando
+                        .descripcion ||
+                      `Imagen de ${propiedad.nombre}`
+                    }
+                  />
+                </div>
+
+                <div className="property-image-preview-info">
+                  <div>
+                    <strong>
+                      {imagenPrevisualizando
+                        .descripcion ||
+                        "Sin descripción"}
+                    </strong>
+
+                    <span>
+                      Origen: {
+                        imagenPrevisualizando
+                          .origen
+                      } · Orden {
+                        imagenPrevisualizando
+                          .orden
+                      }
+                    </span>
+                  </div>
+
+                  {imagenPrevisualizando
+                    .esPrincipal && (
+                    <span className="property-image-preview-main">
+                      ★ Principal
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
         </div>
       );
     };
@@ -1592,8 +2438,8 @@ function Propiedades() {
         propiedadSeleccionada;
 
       return (
-        <div className="property-card">
-          <div className="property-image">
+            <div className="property-card property-detail-card">
+            <div className="property-image">
             {renderizarImagenPropiedad(
               propiedad,
               true

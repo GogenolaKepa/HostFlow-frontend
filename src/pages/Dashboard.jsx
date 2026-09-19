@@ -3,6 +3,7 @@ import api from "../services/api";
 import Reservas from "./Reservas";
 import Propiedades from "./Propiedades";
 import Huespedes from "./Huespedes";
+import Calendario from "./Calendario";
 
 function Dashboard({ usuario, onLogout }) {
   const [datos, setDatos] = useState(null);
@@ -31,16 +32,28 @@ function Dashboard({ usuario, onLogout }) {
     setSeccionActiva(seccion);
   };
 
-  const verReservaDesdeHuesped = (
+  // =========================================================
+  // IR A UNA RESERVA DESDE OTRO MÓDULO
+  // =========================================================
+  //
+  // Este método se reutiliza desde:
+  //
+  // - Huéspedes
+  // - Calendario
+  //
+  // Reservas ya sabe leer hostflowReservaObjetivo y
+  // posicionarse sobre la reserva correspondiente.
+  //
+  // =========================================================
+
+  const verReserva = (
     idReserva
   ) => {
-    // Guardamos qué reserva debe mostrar Reservas.
     window.sessionStorage.setItem(
       "hostflowReservaObjetivo",
       String(idReserva)
     );
 
-    // Cambiamos automáticamente a la pantalla de Reservas.
     setSeccionActiva("reservas");
   };
 
@@ -118,7 +131,21 @@ function Dashboard({ usuario, onLogout }) {
             Huéspedes
           </p>
 
-          <p>Calendario</p>
+          <p
+            className={
+              seccionActiva === "calendario"
+                ? "active"
+                : ""
+            }
+            onClick={() =>
+              cambiarSeccion(
+                "calendario"
+              )
+            }
+          >
+            Calendario
+          </p>
+
           <p>Reportes</p>
           <p>Alertas</p>
         </nav>
@@ -139,7 +166,14 @@ function Dashboard({ usuario, onLogout }) {
           "huespedes" ? (
           <Huespedes
             onVerReserva={
-              verReservaDesdeHuesped
+              verReserva
+            }
+          />
+        ) : seccionActiva ===
+          "calendario" ? (
+          <Calendario
+            onVerReserva={
+              verReserva
             }
           />
         ) : (

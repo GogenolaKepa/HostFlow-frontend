@@ -2,6 +2,28 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
 
+const FILTROS_INICIALES_RESERVAS = {
+  busqueda: "",
+  estado: "",
+  canal: "",
+  propiedad: "",
+  fechaDesde: "",
+  fechaHasta: "",
+};
+
+const INCIDENCIA_INICIAL = {
+  tipo: "Check-in",
+  titulo: "",
+  descripcion: "",
+  severidad: "Baja",
+};
+
+const OBSERVACION_INICIAL = {
+  categoria: "General",
+  observacion: "",
+  fijada: false,
+};
+
 function Reservas() {
   const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -9,11 +31,152 @@ function Reservas() {
   const [mensaje, setMensaje] = useState("");
 
   // =========================================================
+  // FILTROS DE RESERVAS
+  // =========================================================
+
+  const [filtros, setFiltros] = useState({
+    ...FILTROS_INICIALES_RESERVAS,
+  });
+
+  const [mostrarFiltros, setMostrarFiltros] =
+    useState(false);
+
+  // =========================================================
+  // NAVEGACIÓN DESDE OTROS MÓDULOS
+  // =========================================================
+
+  const [reservaDestacada, setReservaDestacada] =
+    useState(null);
+
+  // =========================================================
   // DETALLE DE RESERVA
   // =========================================================
 
   const [reservaDetalle, setReservaDetalle] =
     useState(null);
+
+  const [eventosDetalle, setEventosDetalle] =
+    useState([]);
+
+  const [
+    cargandoEventosDetalle,
+    setCargandoEventosDetalle,
+  ] = useState(false);
+
+  const [
+    errorEventosDetalle,
+    setErrorEventosDetalle,
+  ] = useState("");
+
+  const [mensajesDetalle, setMensajesDetalle] =
+    useState([]);
+
+  const [
+    cargandoMensajesDetalle,
+    setCargandoMensajesDetalle,
+  ] = useState(false);
+
+  const [
+    errorMensajesDetalle,
+    setErrorMensajesDetalle,
+  ] = useState("");
+
+  const [
+    nuevoMensajeDetalle,
+    setNuevoMensajeDetalle,
+  ] = useState("");
+
+  const [
+    enviandoMensajeDetalle,
+    setEnviandoMensajeDetalle,
+  ] = useState(false);
+
+  const [incidenciasDetalle, setIncidenciasDetalle] =
+    useState([]);
+
+  const [
+    cargandoIncidenciasDetalle,
+    setCargandoIncidenciasDetalle,
+  ] = useState(false);
+
+  const [
+    errorIncidenciasDetalle,
+    setErrorIncidenciasDetalle,
+  ] = useState("");
+
+  const [
+    mostrarFormularioIncidencia,
+    setMostrarFormularioIncidencia,
+  ] = useState(false);
+
+  const [
+    formularioIncidencia,
+    setFormularioIncidencia,
+  ] = useState({
+    ...INCIDENCIA_INICIAL,
+  });
+
+  const [
+    registrandoIncidencia,
+    setRegistrandoIncidencia,
+  ] = useState(false);
+
+  const [
+    incidenciaResolviendo,
+    setIncidenciaResolviendo,
+  ] = useState(null);
+
+  const [
+    resolucionIncidencia,
+    setResolucionIncidencia,
+  ] = useState("");
+
+  const [
+    idIncidenciaProcesando,
+    setIdIncidenciaProcesando,
+  ] = useState(null);
+
+  const [
+    observacionesDetalle,
+    setObservacionesDetalle,
+  ] = useState([]);
+
+  const [
+    cargandoObservacionesDetalle,
+    setCargandoObservacionesDetalle,
+  ] = useState(false);
+
+  const [
+    errorObservacionesDetalle,
+    setErrorObservacionesDetalle,
+  ] = useState("");
+
+  const [
+    mostrarFormularioObservacion,
+    setMostrarFormularioObservacion,
+  ] = useState(false);
+
+  const [
+    formularioObservacion,
+    setFormularioObservacion,
+  ] = useState({
+    ...OBSERVACION_INICIAL,
+  });
+
+  const [
+    observacionEditando,
+    setObservacionEditando,
+  ] = useState(null);
+
+  const [
+    guardandoObservacion,
+    setGuardandoObservacion,
+  ] = useState(false);
+
+  const [
+    idObservacionProcesando,
+    setIdObservacionProcesando,
+  ] = useState(null);
 
   // =========================================================
   // RESERVA MANUAL
@@ -97,6 +260,93 @@ function Reservas() {
   useEffect(() => {
     obtenerReservas();
   }, []);
+
+  // =========================================================
+  // UBICAR Y DESTACAR RESERVA RECIBIDA DESDE OTRO MÓDULO
+  // =========================================================
+  //
+  // Dashboard / Huéspedes / Calendario guardan el ID de la
+  // reserva en sessionStorage antes de abrir esta sección.
+  // Cuando la lista termina de cargarse, buscamos esa fila,
+  // hacemos scroll suave hasta ella y la destacamos unos
+  // segundos. Después limpiamos el objetivo para que no vuelva
+  // a resaltarse si el usuario entra normalmente a Reservas.
+  //
+  // =========================================================
+
+  useEffect(() => {
+    if (cargando || reservas.length === 0) {
+      return undefined;
+    }
+
+    const reservaObjetivo =
+      window.sessionStorage.getItem(
+        "hostflowReservaObjetivo"
+      );
+
+    if (!reservaObjetivo) {
+      return undefined;
+    }
+
+    const idReservaObjetivo =
+      Number(reservaObjetivo);
+
+    const existeReserva = reservas.some(
+      (reserva) =>
+        Number(reserva.idReserva) ===
+        idReservaObjetivo
+    );
+
+    if (!existeReserva) {
+      window.sessionStorage.removeItem(
+        "hostflowReservaObjetivo"
+      );
+
+      return undefined;
+    }
+
+    setFiltros({
+      ...FILTROS_INICIALES_RESERVAS,
+    });
+
+    setReservaDestacada(
+      idReservaObjetivo
+    );
+
+    const temporizadorScroll =
+      window.setTimeout(() => {
+        const fila =
+          document.getElementById(
+            `reserva-${idReservaObjetivo}`
+          );
+
+        if (fila) {
+          fila.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }, 120);
+
+    const temporizadorLimpieza =
+      window.setTimeout(() => {
+        setReservaDestacada(null);
+
+        window.sessionStorage.removeItem(
+          "hostflowReservaObjetivo"
+        );
+      }, 3500);
+
+    return () => {
+      window.clearTimeout(
+        temporizadorScroll
+      );
+
+      window.clearTimeout(
+        temporizadorLimpieza
+      );
+    };
+  }, [cargando, reservas]);
 
   useEffect(() => {
     if (!reservaDetalle) {
@@ -884,7 +1134,7 @@ function Reservas() {
     );
   };
 
-  const abrirDetalleReserva = (
+  const abrirDetalleReserva = async (
     reserva
   ) => {
     setMostrarFormulario(false);
@@ -896,13 +1146,1034 @@ function Reservas() {
       reserva
     );
 
+    setEventosDetalle([]);
+    setErrorEventosDetalle("");
+    setCargandoEventosDetalle(true);
+
+    setMensajesDetalle([]);
+    setErrorMensajesDetalle("");
+    setCargandoMensajesDetalle(true);
+    setNuevoMensajeDetalle("");
+    setEnviandoMensajeDetalle(false);
+
+    setIncidenciasDetalle([]);
+    setErrorIncidenciasDetalle("");
+    setCargandoIncidenciasDetalle(true);
+    setMostrarFormularioIncidencia(false);
+    setFormularioIncidencia({
+      ...INCIDENCIA_INICIAL,
+    });
+    setRegistrandoIncidencia(false);
+    setIncidenciaResolviendo(null);
+    setResolucionIncidencia("");
+    setIdIncidenciaProcesando(null);
+
+    setObservacionesDetalle([]);
+    setErrorObservacionesDetalle("");
+    setCargandoObservacionesDetalle(true);
+    setMostrarFormularioObservacion(false);
+    setFormularioObservacion({
+      ...OBSERVACION_INICIAL,
+    });
+    setObservacionEditando(null);
+    setGuardandoObservacion(false);
+    setIdObservacionProcesando(null);
+
     setError("");
     setMensaje("");
+
+    const [
+      resultadoEventos,
+      resultadoMensajes,
+      resultadoIncidencias,
+      resultadoObservaciones,
+    ] = await Promise.allSettled([
+      api.get(
+        `/reservas/${reserva.idReserva}/eventos`
+      ),
+      api.get(
+        `/reservas/${reserva.idReserva}/mensajes`
+      ),
+      api.get(
+        `/reservas/${reserva.idReserva}/incidencias`
+      ),
+      api.get(
+        `/reservas/${reserva.idReserva}/observaciones`
+      ),
+    ]);
+
+    if (
+      resultadoEventos.status ===
+      "fulfilled"
+    ) {
+      setEventosDetalle(
+        resultadoEventos.value.data
+          .eventos || []
+      );
+    } else {
+      setErrorEventosDetalle(
+        resultadoEventos.reason
+          ?.response?.data?.mensaje ||
+          "No se pudo cargar el historial de la reserva."
+      );
+    }
+
+    if (
+      resultadoMensajes.status ===
+      "fulfilled"
+    ) {
+      setMensajesDetalle(
+        resultadoMensajes.value.data
+          .mensajes || []
+      );
+    } else {
+      setErrorMensajesDetalle(
+        resultadoMensajes.reason
+          ?.response?.data?.mensaje ||
+          "No se pudieron cargar los mensajes de la reserva."
+      );
+    }
+
+    if (
+      resultadoIncidencias.status ===
+      "fulfilled"
+    ) {
+      setIncidenciasDetalle(
+        resultadoIncidencias.value.data
+          .incidencias || []
+      );
+    } else {
+      setErrorIncidenciasDetalle(
+        resultadoIncidencias.reason
+          ?.response?.data?.mensaje ||
+          "No se pudieron cargar las incidencias de la reserva."
+      );
+    }
+
+    if (
+      resultadoObservaciones.status ===
+      "fulfilled"
+    ) {
+      setObservacionesDetalle(
+        resultadoObservaciones.value.data
+          .observaciones || []
+      );
+    } else {
+      setErrorObservacionesDetalle(
+        resultadoObservaciones.reason
+          ?.response?.data?.mensaje ||
+          "No se pudieron cargar las observaciones de la reserva."
+      );
+    }
+
+    setCargandoEventosDetalle(false);
+    setCargandoMensajesDetalle(false);
+    setCargandoIncidenciasDetalle(false);
+    setCargandoObservacionesDetalle(false);
   };
 
   const cerrarDetalleReserva = () => {
     setReservaDetalle(null);
+
+    setEventosDetalle([]);
+    setErrorEventosDetalle("");
+    setCargandoEventosDetalle(false);
+
+    setMensajesDetalle([]);
+    setErrorMensajesDetalle("");
+    setCargandoMensajesDetalle(false);
+    setNuevoMensajeDetalle("");
+    setEnviandoMensajeDetalle(false);
+
+    setIncidenciasDetalle([]);
+    setErrorIncidenciasDetalle("");
+    setCargandoIncidenciasDetalle(false);
+    setMostrarFormularioIncidencia(false);
+    setFormularioIncidencia({
+      ...INCIDENCIA_INICIAL,
+    });
+    setRegistrandoIncidencia(false);
+    setIncidenciaResolviendo(null);
+    setResolucionIncidencia("");
+    setIdIncidenciaProcesando(null);
+
+    setObservacionesDetalle([]);
+    setErrorObservacionesDetalle("");
+    setCargandoObservacionesDetalle(false);
+    setMostrarFormularioObservacion(false);
+    setFormularioObservacion({
+      ...OBSERVACION_INICIAL,
+    });
+    setObservacionEditando(null);
+    setGuardandoObservacion(false);
+    setIdObservacionProcesando(null);
   };
+
+  const enviarMensajeDetalle = async (
+    e
+  ) => {
+    e.preventDefault();
+
+    if (
+      !reservaDetalle ||
+      enviandoMensajeDetalle
+    ) {
+      return;
+    }
+
+    const texto =
+      nuevoMensajeDetalle.trim();
+
+    if (!texto) {
+      setErrorMensajesDetalle(
+        "Escribí un mensaje antes de enviarlo."
+      );
+
+      return;
+    }
+
+    try {
+      setEnviandoMensajeDetalle(true);
+      setErrorMensajesDetalle("");
+
+      const response =
+        await api.post(
+          `/reservas/${reservaDetalle.idReserva}/mensajes`,
+          {
+            mensaje:
+              texto,
+          }
+        );
+
+      if (
+        response.data
+          .mensajeReserva
+      ) {
+        setMensajesDetalle(
+          (
+            mensajesAnteriores
+          ) => [
+            ...mensajesAnteriores,
+            response.data
+              .mensajeReserva,
+          ]
+        );
+      }
+
+      setNuevoMensajeDetalle("");
+    } catch (error) {
+      setErrorMensajesDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo registrar el mensaje."
+      );
+    } finally {
+      setEnviandoMensajeDetalle(false);
+    }
+  };
+
+  const recargarEventosDetalle = async (
+    idReserva
+  ) => {
+    try {
+      const response =
+        await api.get(
+          `/reservas/${idReserva}/eventos`
+        );
+
+      setEventosDetalle(
+        response.data.eventos || []
+      );
+
+      setErrorEventosDetalle("");
+    } catch (error) {
+      setErrorEventosDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo actualizar el historial de la reserva."
+      );
+    }
+  };
+
+  const registrarIncidenciaDetalle = async (
+    e
+  ) => {
+    e.preventDefault();
+
+    if (
+      !reservaDetalle ||
+      registrandoIncidencia
+    ) {
+      return;
+    }
+
+    const titulo =
+      formularioIncidencia.titulo.trim();
+
+    const descripcion =
+      formularioIncidencia.descripcion.trim();
+
+    if (!titulo) {
+      setErrorIncidenciasDetalle(
+        "Ingresá un título para la incidencia."
+      );
+
+      return;
+    }
+
+    if (!descripcion) {
+      setErrorIncidenciasDetalle(
+        "Ingresá una descripción para la incidencia."
+      );
+
+      return;
+    }
+
+    try {
+      setRegistrandoIncidencia(true);
+      setErrorIncidenciasDetalle("");
+
+      const response =
+        await api.post(
+          `/reservas/${reservaDetalle.idReserva}/incidencias`,
+          {
+            tipo:
+              formularioIncidencia.tipo,
+
+            titulo,
+
+            descripcion,
+
+            severidad:
+              formularioIncidencia.severidad,
+          }
+        );
+
+      if (
+        response.data.incidencia
+      ) {
+        setIncidenciasDetalle(
+          (
+            incidenciasAnteriores
+          ) => [
+            response.data.incidencia,
+            ...incidenciasAnteriores,
+          ]
+        );
+      }
+
+      setFormularioIncidencia({
+        ...INCIDENCIA_INICIAL,
+      });
+
+      setMostrarFormularioIncidencia(false);
+
+      await recargarEventosDetalle(
+        reservaDetalle.idReserva
+      );
+    } catch (error) {
+      setErrorIncidenciasDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo registrar la incidencia."
+      );
+    } finally {
+      setRegistrandoIncidencia(false);
+    }
+  };
+
+  const pasarIncidenciaASeguimiento = async (
+    incidencia
+  ) => {
+    if (
+      !reservaDetalle ||
+      idIncidenciaProcesando
+    ) {
+      return;
+    }
+
+    try {
+      setIdIncidenciaProcesando(
+        incidencia.idIncidenciaReserva
+      );
+
+      setErrorIncidenciasDetalle("");
+
+      const response =
+        await api.patch(
+          `/reservas/${reservaDetalle.idReserva}/incidencias/${incidencia.idIncidenciaReserva}`,
+          {
+            estado:
+              "En seguimiento",
+          }
+        );
+
+      if (
+        response.data.incidencia
+      ) {
+        setIncidenciasDetalle(
+          (
+            incidenciasAnteriores
+          ) =>
+            incidenciasAnteriores.map(
+              (item) =>
+                item.idIncidenciaReserva ===
+                incidencia.idIncidenciaReserva
+                  ? response.data
+                      .incidencia
+                  : item
+            )
+        );
+      }
+
+      await recargarEventosDetalle(
+        reservaDetalle.idReserva
+      );
+    } catch (error) {
+      setErrorIncidenciasDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo actualizar la incidencia."
+      );
+    } finally {
+      setIdIncidenciaProcesando(null);
+    }
+  };
+
+  const iniciarResolucionIncidencia = (
+    incidencia
+  ) => {
+    setIncidenciaResolviendo(
+      incidencia.idIncidenciaReserva
+    );
+
+    setResolucionIncidencia("");
+
+    setErrorIncidenciasDetalle("");
+  };
+
+  const cancelarResolucionIncidencia = () => {
+    setIncidenciaResolviendo(null);
+    setResolucionIncidencia("");
+  };
+
+  const resolverIncidenciaDetalle = async (
+    e,
+    incidencia
+  ) => {
+    e.preventDefault();
+
+    if (
+      !reservaDetalle ||
+      idIncidenciaProcesando
+    ) {
+      return;
+    }
+
+    const resolucion =
+      resolucionIncidencia.trim();
+
+    if (!resolucion) {
+      setErrorIncidenciasDetalle(
+        "Indicá cómo se resolvió la incidencia."
+      );
+
+      return;
+    }
+
+    try {
+      setIdIncidenciaProcesando(
+        incidencia.idIncidenciaReserva
+      );
+
+      setErrorIncidenciasDetalle("");
+
+      const response =
+        await api.post(
+          `/reservas/${reservaDetalle.idReserva}/incidencias/${incidencia.idIncidenciaReserva}/resolver`,
+          {
+            resolucion,
+          }
+        );
+
+      if (
+        response.data.incidencia
+      ) {
+        setIncidenciasDetalle(
+          (
+            incidenciasAnteriores
+          ) =>
+            incidenciasAnteriores.map(
+              (item) =>
+                item.idIncidenciaReserva ===
+                incidencia.idIncidenciaReserva
+                  ? response.data
+                      .incidencia
+                  : item
+            )
+        );
+      }
+
+      setIncidenciaResolviendo(null);
+      setResolucionIncidencia("");
+
+      await recargarEventosDetalle(
+        reservaDetalle.idReserva
+      );
+    } catch (error) {
+      setErrorIncidenciasDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo resolver la incidencia."
+      );
+    } finally {
+      setIdIncidenciaProcesando(null);
+    }
+  };
+
+  const obtenerClaseSeveridadIncidencia = (
+    severidad
+  ) =>
+    String(severidad || "")
+      .trim()
+      .toLowerCase();
+
+  const ordenarObservaciones = (
+    observaciones
+  ) =>
+    [...observaciones].sort(
+      (a, b) => {
+        if (
+          Boolean(a.fijada) !==
+          Boolean(b.fijada)
+        ) {
+          return a.fijada
+            ? -1
+            : 1;
+        }
+
+        return (
+          new Date(
+            b.fechaCreacion
+          ).getTime() -
+          new Date(
+            a.fechaCreacion
+          ).getTime()
+        );
+      }
+    );
+
+  const abrirNuevaObservacion = () => {
+    setObservacionEditando(null);
+
+    setFormularioObservacion({
+      ...OBSERVACION_INICIAL,
+    });
+
+    setMostrarFormularioObservacion(true);
+
+    setErrorObservacionesDetalle("");
+  };
+
+  const editarObservacionDetalle = (
+    observacion
+  ) => {
+    setObservacionEditando(
+      observacion
+    );
+
+    setFormularioObservacion({
+      categoria:
+        observacion.categoria,
+
+      observacion:
+        observacion.observacion,
+
+      fijada:
+        Boolean(
+          observacion.fijada
+        ),
+    });
+
+    setMostrarFormularioObservacion(true);
+
+    setErrorObservacionesDetalle("");
+  };
+
+  const cancelarFormularioObservacion = () => {
+    setMostrarFormularioObservacion(false);
+    setObservacionEditando(null);
+
+    setFormularioObservacion({
+      ...OBSERVACION_INICIAL,
+    });
+
+    setErrorObservacionesDetalle("");
+  };
+
+  const guardarObservacionDetalle = async (
+    e
+  ) => {
+    e.preventDefault();
+
+    if (
+      !reservaDetalle ||
+      guardandoObservacion
+    ) {
+      return;
+    }
+
+    const texto =
+      formularioObservacion.observacion.trim();
+
+    if (!texto) {
+      setErrorObservacionesDetalle(
+        "Escribí una observación antes de guardarla."
+      );
+
+      return;
+    }
+
+    try {
+      setGuardandoObservacion(true);
+      setErrorObservacionesDetalle("");
+
+      let response;
+
+      if (observacionEditando) {
+        response =
+          await api.patch(
+            `/reservas/${reservaDetalle.idReserva}/observaciones/${observacionEditando.idObservacionReserva}`,
+            {
+              categoria:
+                formularioObservacion.categoria,
+
+              observacion:
+                texto,
+
+              fijada:
+                formularioObservacion.fijada,
+            }
+          );
+      } else {
+        response =
+          await api.post(
+            `/reservas/${reservaDetalle.idReserva}/observaciones`,
+            {
+              categoria:
+                formularioObservacion.categoria,
+
+              observacion:
+                texto,
+
+              fijada:
+                formularioObservacion.fijada,
+            }
+          );
+      }
+
+      const observacionGuardada =
+        response.data.observacion;
+
+      if (observacionGuardada) {
+        setObservacionesDetalle(
+          (
+            observacionesAnteriores
+          ) => {
+            const nuevas =
+              observacionEditando
+                ? observacionesAnteriores.map(
+                    (item) =>
+                      item.idObservacionReserva ===
+                      observacionGuardada.idObservacionReserva
+                        ? observacionGuardada
+                        : item
+                  )
+                : [
+                    observacionGuardada,
+                    ...observacionesAnteriores,
+                  ];
+
+            return ordenarObservaciones(
+              nuevas
+            );
+          }
+        );
+      }
+
+      cancelarFormularioObservacion();
+    } catch (error) {
+      setErrorObservacionesDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo guardar la observación."
+      );
+    } finally {
+      setGuardandoObservacion(false);
+    }
+  };
+
+  const cambiarFijadaObservacionDetalle = async (
+    observacion
+  ) => {
+    if (
+      !reservaDetalle ||
+      idObservacionProcesando
+    ) {
+      return;
+    }
+
+    try {
+      setIdObservacionProcesando(
+        observacion.idObservacionReserva
+      );
+
+      setErrorObservacionesDetalle("");
+
+      const response =
+        await api.patch(
+          `/reservas/${reservaDetalle.idReserva}/observaciones/${observacion.idObservacionReserva}/fijar`,
+          {
+            fijada:
+              !observacion.fijada,
+          }
+        );
+
+      if (
+        response.data.observacion
+      ) {
+        setObservacionesDetalle(
+          (
+            observacionesAnteriores
+          ) =>
+            ordenarObservaciones(
+              observacionesAnteriores.map(
+                (item) =>
+                  item.idObservacionReserva ===
+                  observacion.idObservacionReserva
+                    ? response.data
+                        .observacion
+                    : item
+              )
+            )
+        );
+      }
+    } catch (error) {
+      setErrorObservacionesDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo cambiar el estado de la observación."
+      );
+    } finally {
+      setIdObservacionProcesando(null);
+    }
+  };
+
+  const eliminarObservacionDetalle = async (
+    observacion
+  ) => {
+    if (
+      !reservaDetalle ||
+      idObservacionProcesando
+    ) {
+      return;
+    }
+
+    const confirmar =
+      window.confirm(
+        "¿Querés eliminar esta observación interna?"
+      );
+
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      setIdObservacionProcesando(
+        observacion.idObservacionReserva
+      );
+
+      setErrorObservacionesDetalle("");
+
+      await api.delete(
+        `/reservas/${reservaDetalle.idReserva}/observaciones/${observacion.idObservacionReserva}`
+      );
+
+      setObservacionesDetalle(
+        (
+          observacionesAnteriores
+        ) =>
+          observacionesAnteriores.filter(
+            (item) =>
+              item.idObservacionReserva !==
+              observacion.idObservacionReserva
+          )
+      );
+
+      if (
+        observacionEditando
+          ?.idObservacionReserva ===
+        observacion.idObservacionReserva
+      ) {
+        cancelarFormularioObservacion();
+      }
+    } catch (error) {
+      setErrorObservacionesDetalle(
+        error.response?.data?.mensaje ||
+          "No se pudo eliminar la observación."
+      );
+    } finally {
+      setIdObservacionProcesando(null);
+    }
+  };
+
+  const formatearFechaHoraEvento = (
+    fecha
+  ) => {
+    if (!fecha) {
+      return "-";
+    }
+
+    const fechaEvento =
+      new Date(fecha);
+
+    if (
+      Number.isNaN(
+        fechaEvento.getTime()
+      )
+    ) {
+      return "-";
+    }
+
+    return new Intl.DateTimeFormat(
+      "es-AR",
+      {
+        timeZone:
+          "America/Argentina/Buenos_Aires",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }
+    ).format(fechaEvento);
+  };
+
+  const nombreCampoEvento = (
+    campo
+  ) => {
+    const nombres = {
+      fechaIngreso:
+        "Ingreso",
+      fechaEgreso:
+        "Egreso",
+      estado:
+        "Estado",
+      montoEstimado:
+        "Monto estimado",
+      cantidadHuespedes:
+        "Huéspedes",
+    };
+
+    return (
+      nombres[campo] ||
+      campo
+    );
+  };
+
+  const obtenerClaseOrigenTimeline = (
+    origen
+  ) => {
+    const valor =
+      String(origen || "")
+        .trim()
+        .toLowerCase();
+
+    if (valor === "airbnb") {
+      return "airbnb";
+    }
+
+    if (valor === "booking") {
+      return "booking";
+    }
+
+    if (valor === "manual") {
+      return "manual";
+    }
+
+    if (valor === "sistema") {
+      return "sistema";
+    }
+
+    return "hostflow";
+  };
+
+  const obtenerClaseEventoTimeline = (
+    evento
+  ) => {
+    if (
+      evento.tipo ===
+      "CONFLICTO_DETECTADO"
+    ) {
+      return "conflicto";
+    }
+
+    if (
+      evento.tipo ===
+      "RESERVA_FINALIZADA"
+    ) {
+      return "finalizada";
+    }
+
+    if (
+      evento.tipo ===
+      "RESERVA_CANCELADA"
+    ) {
+      return "cancelada";
+    }
+
+    return obtenerClaseOrigenTimeline(
+      evento.origen
+    );
+  };
+
+  const formatearValorEvento = (
+    campo,
+    valor
+  ) => {
+    if (
+      valor === null ||
+      valor === undefined ||
+      valor === ""
+    ) {
+      return "-";
+    }
+
+    if (
+      campo === "montoEstimado"
+    ) {
+      return formatearMonto(
+        valor
+      );
+    }
+
+    if (
+      campo === "fechaIngreso" ||
+      campo === "fechaEgreso"
+    ) {
+      return formatearFecha(
+        String(valor).slice(
+          0,
+          10
+        )
+      );
+    }
+
+    return String(valor);
+  };
+
+  // =========================================================
+  // FILTRADO DE RESERVAS
+  // =========================================================
+
+  const normalizarTexto = (valor) =>
+    String(valor ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const cambiarFiltro = (e) => {
+    const { name, value } = e.target;
+
+    setFiltros((anteriores) => ({
+      ...anteriores,
+      [name]: value,
+    }));
+  };
+
+  const limpiarFiltros = () => {
+    setFiltros({
+      ...FILTROS_INICIALES_RESERVAS,
+    });
+  };
+
+  const propiedadesDisponibles = [
+    ...new Set(
+      reservas
+        .map((reserva) => reserva.propiedad)
+        .filter(Boolean)
+    ),
+  ].sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
+
+  const reservasFiltradas = reservas.filter(
+    (reserva) => {
+      const busqueda =
+        normalizarTexto(
+          filtros.busqueda
+        );
+
+      const valoresBusqueda = [
+        reserva.idReserva,
+        reserva.huesped,
+        reserva.propiedad,
+        reserva.canal,
+        reserva.estado,
+        reserva.idExterno,
+      ];
+
+      const coincideBusqueda =
+        !busqueda ||
+        valoresBusqueda.some((valor) =>
+          normalizarTexto(
+            valor
+          ).includes(busqueda)
+        );
+
+      const coincideEstado =
+        !filtros.estado ||
+        reserva.estado ===
+          filtros.estado;
+
+      const coincideCanal =
+        !filtros.canal ||
+        reserva.canal ===
+          filtros.canal;
+
+      const coincidePropiedad =
+        !filtros.propiedad ||
+        reserva.propiedad ===
+          filtros.propiedad;
+
+      const fechaIngreso =
+        String(
+          reserva.fechaIngreso || ""
+        ).slice(0, 10);
+
+      const coincideFechaDesde =
+        !filtros.fechaDesde ||
+        (fechaIngreso &&
+          fechaIngreso >=
+            filtros.fechaDesde);
+
+      const coincideFechaHasta =
+        !filtros.fechaHasta ||
+        (fechaIngreso &&
+          fechaIngreso <=
+            filtros.fechaHasta);
+
+      return (
+        coincideBusqueda &&
+        coincideEstado &&
+        coincideCanal &&
+        coincidePropiedad &&
+        coincideFechaDesde &&
+        coincideFechaHasta
+      );
+    }
+  );
+
+  const cantidadFiltrosActivos =
+    Object.values(filtros).filter(
+      (valor) =>
+        String(valor).trim() !== ""
+    ).length;
 
   // =========================================================
   // ABRIR CANAL ORIGINAL
@@ -970,26 +2241,83 @@ function Reservas() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => {
-            setMostrarFormulario(
-              !mostrarFormulario
-            );
+        <div className="reservas-header-actions">
+          <button
+            type="button"
+            className={`reservas-filter-toggle ${
+              mostrarFiltros
+                ? "reservas-filter-toggle--active"
+                : ""
+            }`}
+            aria-expanded={mostrarFiltros}
+            onClick={() => {
+              setMostrarFiltros(
+                !mostrarFiltros
+              );
 
-            setReservaEditando(null);
+              setMostrarFormulario(false);
+              setReservaEditando(null);
 
-            cerrarPanelesExternos();
+              cerrarPanelesExternos();
 
-            setError("");
-            setMensaje("");
-          }}
-        >
-          {mostrarFormulario
-            ? "Cerrar formulario"
-            : "Nueva reserva"}
-        </button>
+              setError("");
+              setMensaje("");
+            }}
+          >
+            <span
+              className="reservas-filter-toggle-icon"
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 5H20L14 12V18.2L10 20V12L4 5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+
+            <span>
+              {mostrarFiltros
+                ? "Filtros"
+                : "Filtrar"}
+            </span>
+
+            {cantidadFiltrosActivos > 0 && (
+              <span className="reservas-filter-toggle-count">
+                {cantidadFiltrosActivos}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => {
+              setMostrarFormulario(
+                !mostrarFormulario
+              );
+
+              setMostrarFiltros(false);
+              setReservaEditando(null);
+
+              cerrarPanelesExternos();
+
+              setError("");
+              setMensaje("");
+            }}
+          >
+            {mostrarFormulario
+              ? "Cerrar formulario"
+              : "Nueva reserva"}
+          </button>
+        </div>
       </div>
 
       {/* MENSAJES */}
@@ -2236,6 +3564,169 @@ function Reservas() {
         )}
 
       {/* =====================================================
+          FILTROS
+      ====================================================== */}
+
+      {mostrarFiltros && (
+        <section className="reservas-filter-card">
+        <div className="reservas-filter-header">
+          <div>
+            <h3>Buscar y filtrar</h3>
+            <p>
+              Encontrá reservas por huésped,
+              propiedad, estado, canal o fecha de ingreso.
+            </p>
+          </div>
+
+          {cantidadFiltrosActivos > 0 && (
+            <span className="reservas-filter-active-badge">
+              {cantidadFiltrosActivos}{" "}
+              {cantidadFiltrosActivos === 1
+                ? "filtro activo"
+                : "filtros activos"}
+            </span>
+          )}
+        </div>
+
+        <div className="reservas-filter-grid">
+          <label className="reservas-filter-field reservas-filter-field--search">
+            <span>Buscar</span>
+
+            <input
+              type="search"
+              name="busqueda"
+              value={filtros.busqueda}
+              onChange={cambiarFiltro}
+              placeholder="Huésped, propiedad, ID externo..."
+            />
+          </label>
+
+          <label className="reservas-filter-field">
+            <span>Estado</span>
+
+            <select
+              name="estado"
+              value={filtros.estado}
+              onChange={cambiarFiltro}
+            >
+              <option value="">Todos</option>
+              <option value="Pendiente">
+                Pendiente
+              </option>
+              <option value="Confirmada">
+                Confirmada
+              </option>
+              <option value="Finalizada">
+                Finalizada
+              </option>
+              <option value="Cancelada">
+                Cancelada
+              </option>
+              <option value="No show">
+                No show
+              </option>
+            </select>
+          </label>
+
+          <label className="reservas-filter-field">
+            <span>Canal</span>
+
+            <select
+              name="canal"
+              value={filtros.canal}
+              onChange={cambiarFiltro}
+            >
+              <option value="">Todos</option>
+              <option value="Manual">
+                Manual
+              </option>
+              <option value="Airbnb">
+                Airbnb
+              </option>
+              <option value="Booking">
+                Booking
+              </option>
+            </select>
+          </label>
+
+          <label className="reservas-filter-field">
+            <span>Propiedad</span>
+
+            <select
+              name="propiedad"
+              value={filtros.propiedad}
+              onChange={cambiarFiltro}
+            >
+              <option value="">
+                Todas
+              </option>
+
+              {propiedadesDisponibles.map(
+                (propiedad) => (
+                  <option
+                    key={propiedad}
+                    value={propiedad}
+                  >
+                    {propiedad}
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+
+          <label className="reservas-filter-field">
+            <span>Ingreso desde</span>
+
+            <input
+              type="date"
+              lang="es-AR"
+              name="fechaDesde"
+              value={filtros.fechaDesde}
+              onChange={cambiarFiltro}
+            />
+          </label>
+
+          <label className="reservas-filter-field">
+            <span>Ingreso hasta</span>
+
+            <input
+              type="date"
+              lang="es-AR"
+              name="fechaHasta"
+              value={filtros.fechaHasta}
+              onChange={cambiarFiltro}
+            />
+          </label>
+        </div>
+
+        <div className="reservas-filter-footer">
+          <p>
+            Mostrando{" "}
+            <strong>
+              {reservasFiltradas.length}
+            </strong>{" "}
+            de{" "}
+            <strong>
+              {reservas.length}
+            </strong>{" "}
+            reservas
+          </p>
+
+          <button
+            type="button"
+            className="reservas-filter-clear"
+            onClick={limpiarFiltros}
+            disabled={
+              cantidadFiltrosActivos === 0
+            }
+          >
+            Limpiar filtros
+          </button>
+        </div>
+        </section>
+      )}
+
+      {/* =====================================================
           TABLA
       ====================================================== */}
 
@@ -2278,11 +3769,22 @@ function Reservas() {
           </thead>
 
           <tbody>
-            {reservas.map(
+            {reservasFiltradas.map(
               (reserva) => (
                 <tr
                   key={
                     reserva.idReserva
+                  }
+                  id={`reserva-${reserva.idReserva}`}
+                  className={
+                    Number(
+                      reservaDestacada
+                    ) ===
+                    Number(
+                      reserva.idReserva
+                    )
+                      ? "reserva-destacada"
+                      : ""
                   }
                 >
                   <td>
@@ -2498,6 +4000,20 @@ function Reservas() {
                 </tr>
               )
             )}
+
+            {reservasFiltradas.length === 0 && (
+              <tr className="reservas-empty-row">
+                <td colSpan="8">
+                  <strong>
+                    No encontramos reservas.
+                  </strong>
+
+                  <span>
+                    No hay reservas que coincidan con los filtros seleccionados.
+                  </span>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -2575,7 +4091,7 @@ function Reservas() {
                 </div>
 
                 <div className="reservation-detail-period-arrow">
-                  →
+                  ⟶
                 </div>
 
                 <div>
@@ -2714,14 +4230,1222 @@ function Reservas() {
                     </div>
                   </dl>
                 </section>
+
+                <section className="reservation-detail-card reservation-detail-card--wide reservation-timeline-card">
+                  <div className="reservation-detail-card-title">
+                    <span className="reservation-detail-icon reservation-detail-icon--timeline">
+                      ◷
+                    </span>
+
+                    <div>
+                      <h4>Historial de la reserva</h4>
+                      <p>
+                        Eventos registrados por HostFlow durante el ciclo de vida de la reserva.
+                      </p>
+                    </div>
+                  </div>
+
+                  {cargandoEventosDetalle ? (
+                    <div className="reservation-timeline-state">
+                      Cargando historial...
+                    </div>
+                  ) : errorEventosDetalle ? (
+                    <div className="reservation-timeline-state reservation-timeline-state--error">
+                      {errorEventosDetalle}
+                    </div>
+                  ) : eventosDetalle.length === 0 ? (
+                    <div className="reservation-timeline-empty">
+                      <strong>
+                        Todavía no hay eventos registrados.
+                      </strong>
+
+                      <span>
+                        El historial se registra desde la incorporación del timeline en HostFlow.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="reservation-timeline">
+                      {eventosDetalle.map(
+                        (
+                          evento,
+                          indice
+                        ) => {
+                          const cambios =
+                            evento.datosJson
+                              ?.camposModificados ||
+                            [];
+
+                          return (
+                            <article
+                              className={`reservation-timeline-item reservation-timeline-item--${obtenerClaseEventoTimeline(
+                                evento
+                              )}`}
+                              key={
+                                evento.idEventoReserva
+                              }
+                            >
+                              <div className="reservation-timeline-track">
+                                <span className="reservation-timeline-dot" />
+
+                                {indice <
+                                  eventosDetalle.length -
+                                    1 && (
+                                  <span className="reservation-timeline-line" />
+                                )}
+                              </div>
+
+                              <div className="reservation-timeline-content">
+                                <div className="reservation-timeline-top">
+                                  <div>
+                                    <h5>
+                                      {evento.titulo}
+                                    </h5>
+
+                                    {evento.descripcion && (
+                                      <p>
+                                        {evento.descripcion}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <time>
+                                    {formatearFechaHoraEvento(
+                                      evento.fechaEvento
+                                    )}
+                                  </time>
+                                </div>
+
+                                <div className="reservation-timeline-meta">
+                                  <span
+                                    className={`reservation-timeline-origin reservation-timeline-origin--${obtenerClaseOrigenTimeline(
+                                      evento.origen
+                                    )}`}
+                                  >
+                                    {evento.origen}
+                                  </span>
+
+                                  <span className="reservation-timeline-type">
+                                    {String(
+                                      evento.tipo
+                                    )
+                                      .toLowerCase()
+                                      .replace(
+                                        /_/g,
+                                        " "
+                                      )}
+                                  </span>
+                                </div>
+
+                                {(evento.tipo ===
+                                  "RESERVA_CREADA" ||
+                                  evento.tipo ===
+                                    "RESERVA_RECIBIDA") &&
+                                  evento.datosJson && (
+                                    <div className="reservation-timeline-summary">
+                                      <span>
+                                        {evento.datosJson
+                                          .propiedad ||
+                                          reservaDetalle.propiedad}
+                                      </span>
+
+                                      <span>
+                                        {evento.datosJson
+                                          .cantidadHuespedes ||
+                                          reservaDetalle.cantidadHuespedes}{" "}
+                                        huésped
+                                        {Number(
+                                          evento.datosJson
+                                            .cantidadHuespedes ||
+                                            reservaDetalle.cantidadHuespedes
+                                        ) === 1
+                                          ? ""
+                                          : "es"}
+                                      </span>
+
+                                      <span>
+                                        {formatearMonto(
+                                          evento.datosJson
+                                            .montoEstimado ??
+                                            reservaDetalle.montoEstimado
+                                        )}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                {evento.tipo ===
+                                  "RESERVA_MODIFICADA" &&
+                                  cambios.length >
+                                    0 && (
+                                    <div className="reservation-timeline-changes">
+                                      {cambios.map(
+                                        (
+                                          campo
+                                        ) => (
+                                          <div
+                                            key={
+                                              campo
+                                            }
+                                          >
+                                            <span>
+                                              {nombreCampoEvento(
+                                                campo
+                                              )}
+                                            </span>
+
+                                            <strong>
+                                              {formatearValorEvento(
+                                                campo,
+                                                evento
+                                                  .datosJson
+                                                  ?.antes
+                                                  ?.[
+                                                  campo
+                                                ]
+                                              )}
+                                              <em>
+                                                →
+                                              </em>
+                                              {formatearValorEvento(
+                                                campo,
+                                                evento
+                                                  .datosJson
+                                                  ?.despues
+                                                  ?.[
+                                                  campo
+                                                ]
+                                              )}
+                                            </strong>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+
+                                {(evento.tipo ===
+                                  "RESERVA_CANCELADA" ||
+                                  evento.tipo ===
+                                    "RESERVA_FINALIZADA" ||
+                                  evento.tipo ===
+                                    "NO_SHOW_CONFIRMADO") &&
+                                  evento.datosJson && (
+                                    <div className="reservation-timeline-changes">
+                                      <div>
+                                        <span>
+                                          Estado
+                                        </span>
+
+                                        <strong>
+                                          {evento.datosJson
+                                            .estadoAnterior ||
+                                            "-"}
+                                          <em>
+                                            →
+                                          </em>
+                                          {evento.datosJson
+                                            .estadoNuevo ||
+                                            (evento.tipo ===
+                                            "RESERVA_FINALIZADA"
+                                              ? "Finalizada"
+                                              : evento.tipo ===
+                                                "NO_SHOW_CONFIRMADO"
+                                              ? "No show"
+                                              : "Cancelada")}
+                                        </strong>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                {evento.tipo ===
+                                  "CONFLICTO_DETECTADO" &&
+                                  evento.datosJson && (
+                                    <div className="reservation-timeline-conflict">
+                                      <div>
+                                        <span>
+                                          Período en conflicto
+                                        </span>
+
+                                        <strong>
+                                          {formatearFecha(
+                                            String(
+                                              evento.datosJson
+                                                .fechaIngreso ||
+                                                ""
+                                            ).slice(
+                                              0,
+                                              10
+                                            )
+                                          )}
+                                          <em>
+                                            →
+                                          </em>
+                                          {formatearFecha(
+                                            String(
+                                              evento.datosJson
+                                                .fechaEgreso ||
+                                                ""
+                                            ).slice(
+                                              0,
+                                              10
+                                            )
+                                          )}
+                                        </strong>
+                                      </div>
+
+                                      <div>
+                                        <span>
+                                          Canal
+                                        </span>
+
+                                        <strong>
+                                          {evento.datosJson
+                                            .canal ||
+                                            "-"}
+                                        </strong>
+                                      </div>
+
+                                      {evento.datosJson
+                                        .contexto && (
+                                        <div>
+                                          <span>
+                                            Detectado durante
+                                          </span>
+
+                                          <strong>
+                                            {String(
+                                              evento.datosJson
+                                                .contexto
+                                            )
+                                              .toLowerCase()
+                                              .replace(
+                                                /_/g,
+                                                " "
+                                              )}
+                                          </strong>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
+                            </article>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                <section className="reservation-detail-card reservation-detail-card--wide reservation-messages-card">
+                  <div className="reservation-detail-card-title reservation-messages-title">
+                    <span className="reservation-detail-icon reservation-detail-icon--messages">
+                      ✉
+                    </span>
+
+                    <div>
+                      <h4>Mensajes</h4>
+                      <p>
+                        Conversación y comunicaciones asociadas a esta reserva.
+                      </p>
+                    </div>
+
+                    <span className="reservation-messages-count">
+                      {mensajesDetalle.length}
+                    </span>
+                  </div>
+
+                  {cargandoMensajesDetalle ? (
+                    <div className="reservation-messages-state">
+                      Cargando mensajes...
+                    </div>
+                  ) : errorMensajesDetalle &&
+                    mensajesDetalle.length === 0 ? (
+                    <div className="reservation-messages-state reservation-messages-state--error">
+                      {errorMensajesDetalle}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="reservation-messages-list">
+                        {mensajesDetalle.length === 0 ? (
+                          <div className="reservation-messages-empty">
+                            <strong>
+                              Todavía no hay mensajes.
+                            </strong>
+
+                            <span>
+                              Las comunicaciones que registres para esta reserva aparecerán acá.
+                            </span>
+                          </div>
+                        ) : (
+                          mensajesDetalle.map(
+                            (
+                              mensajeReserva
+                            ) => {
+                              const esSaliente =
+                                mensajeReserva.direccion ===
+                                "Saliente";
+
+                              return (
+                                <div
+                                  className={`reservation-message-row ${
+                                    esSaliente
+                                      ? "reservation-message-row--outgoing"
+                                      : "reservation-message-row--incoming"
+                                  }`}
+                                  key={
+                                    mensajeReserva.idMensajeReserva
+                                  }
+                                >
+                                  <div className="reservation-message-bubble">
+                                    <div className="reservation-message-meta">
+                                      <strong>
+                                        {mensajeReserva.remitenteNombre ||
+                                          (esSaliente
+                                            ? "HostFlow"
+                                            : reservaDetalle.huesped)}
+                                      </strong>
+
+                                      <span>
+                                        {mensajeReserva.origen}
+                                      </span>
+
+                                      <time>
+                                        {formatearFechaHoraEvento(
+                                          mensajeReserva.fechaMensaje
+                                        )}
+                                      </time>
+                                    </div>
+
+                                    <p>
+                                      {mensajeReserva.mensaje}
+                                    </p>
+
+                                    {esSaliente && (
+                                      <div className="reservation-message-status">
+                                        {mensajeReserva.estado}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )
+                        )}
+                      </div>
+
+                      {errorMensajesDetalle && (
+                        <div className="reservation-messages-inline-error">
+                          {errorMensajesDetalle}
+                        </div>
+                      )}
+
+                      <form
+                        className="reservation-message-composer"
+                        onSubmit={
+                          enviarMensajeDetalle
+                        }
+                      >
+                        <label htmlFor="reservation-message-input">
+                          Nuevo mensaje
+                        </label>
+
+                        <div className="reservation-message-composer-row">
+                          <textarea
+                            id="reservation-message-input"
+                            value={
+                              nuevoMensajeDetalle
+                            }
+                            onChange={(e) => {
+                              setNuevoMensajeDetalle(
+                                e.target.value
+                              );
+
+                              if (
+                                errorMensajesDetalle
+                              ) {
+                                setErrorMensajesDetalle(
+                                  ""
+                                );
+                              }
+                            }}
+                            placeholder={`Escribir mensaje para ${reservaDetalle.huesped}...`}
+                            maxLength="2000"
+                            rows="3"
+                          />
+
+                          <button
+                            type="submit"
+                            className="primary-button reservation-message-send"
+                            disabled={
+                              enviandoMensajeDetalle ||
+                              !nuevoMensajeDetalle.trim()
+                            }
+                          >
+                            {enviandoMensajeDetalle
+                              ? "Enviando..."
+                              : "Enviar mensaje"}
+                          </button>
+                        </div>
+
+                        <div className="reservation-message-composer-note">
+                          {reservaDetalle.canal ===
+                          "Manual"
+                            ? "El mensaje queda registrado como comunicación saliente de HostFlow."
+                            : `Integración simulada con ${reservaDetalle.canal}: el mensaje queda registrado en HostFlow y no se envía a la plataforma real.`}
+                        </div>
+                      </form>
+                    </>
+                  )}
+                </section>
+
+                <section className="reservation-detail-card reservation-detail-card--wide reservation-incidents-card">
+                  <div className="reservation-detail-card-title reservation-incidents-title">
+                    <span className="reservation-detail-icon reservation-detail-icon--incidents">
+                      !
+                    </span>
+
+                    <div>
+                      <h4>Incidencias</h4>
+                      <p>
+                        Problemas y situaciones operativas registradas durante la estadía.
+                      </p>
+                    </div>
+
+                    <div className="reservation-incidents-header-actions">
+                      <span className="reservation-incidents-count">
+                        {
+                          incidenciasDetalle.filter(
+                            (incidencia) =>
+                              incidencia.estado !==
+                              "Resuelta"
+                          ).length
+                        }{" "}
+                        abiertas
+                      </span>
+
+                      <button
+                        type="button"
+                        className="reservation-incidents-add"
+                        onClick={() => {
+                          setMostrarFormularioIncidencia(
+                            !mostrarFormularioIncidencia
+                          );
+
+                          setErrorIncidenciasDetalle("");
+                        }}
+                      >
+                        {mostrarFormularioIncidencia
+                          ? "Cancelar"
+                          : "+ Registrar incidencia"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {mostrarFormularioIncidencia && (
+                    <form
+                      className="reservation-incident-form"
+                      onSubmit={
+                        registrarIncidenciaDetalle
+                      }
+                    >
+                      <div className="reservation-incident-form-grid">
+                        <label>
+                          <span>Tipo</span>
+
+                          <select
+                            value={
+                              formularioIncidencia.tipo
+                            }
+                            onChange={(e) =>
+                              setFormularioIncidencia(
+                                (
+                                  anterior
+                                ) => ({
+                                  ...anterior,
+                                  tipo:
+                                    e.target
+                                      .value,
+                                })
+                              )
+                            }
+                          >
+                            <option value="Check-in">
+                              Check-in
+                            </option>
+                            <option value="Check-out">
+                              Check-out
+                            </option>
+                            <option value="Mantenimiento">
+                              Mantenimiento
+                            </option>
+                            <option value="Limpieza">
+                              Limpieza
+                            </option>
+                            <option value="Daño">
+                              Daño
+                            </option>
+                            <option value="Reclamo">
+                              Reclamo
+                            </option>
+                            <option value="Llaves">
+                              Llaves
+                            </option>
+                            <option value="Otro">
+                              Otro
+                            </option>
+                          </select>
+                        </label>
+
+                        <label>
+                          <span>Severidad</span>
+
+                          <select
+                            value={
+                              formularioIncidencia.severidad
+                            }
+                            onChange={(e) =>
+                              setFormularioIncidencia(
+                                (
+                                  anterior
+                                ) => ({
+                                  ...anterior,
+                                  severidad:
+                                    e.target
+                                      .value,
+                                })
+                              )
+                            }
+                          >
+                            <option value="Baja">
+                              Baja
+                            </option>
+                            <option value="Media">
+                              Media
+                            </option>
+                            <option value="Alta">
+                              Alta
+                            </option>
+                            <option value="Critica">
+                              Crítica
+                            </option>
+                          </select>
+                        </label>
+
+                        <label className="reservation-incident-form-title">
+                          <span>Título</span>
+
+                          <input
+                            type="text"
+                            value={
+                              formularioIncidencia.titulo
+                            }
+                            onChange={(e) =>
+                              setFormularioIncidencia(
+                                (
+                                  anterior
+                                ) => ({
+                                  ...anterior,
+                                  titulo:
+                                    e.target
+                                      .value,
+                                })
+                              )
+                            }
+                            placeholder="Ej. Problema con el acceso"
+                            maxLength="150"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="reservation-incident-form-description">
+                        <span>Descripción</span>
+
+                        <textarea
+                          value={
+                            formularioIncidencia.descripcion
+                          }
+                          onChange={(e) =>
+                            setFormularioIncidencia(
+                              (
+                                anterior
+                              ) => ({
+                                ...anterior,
+                                descripcion:
+                                  e.target
+                                    .value,
+                              })
+                            )
+                          }
+                          placeholder="Describí qué ocurrió y cualquier dato útil para el seguimiento..."
+                          rows="3"
+                          maxLength="3000"
+                        />
+                      </label>
+
+                      <div className="reservation-incident-form-actions">
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => {
+                            setMostrarFormularioIncidencia(
+                              false
+                            );
+
+                            setFormularioIncidencia({
+                              ...INCIDENCIA_INICIAL,
+                            });
+
+                            setErrorIncidenciasDetalle(
+                              ""
+                            );
+                          }}
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          type="submit"
+                          className="primary-button"
+                          disabled={
+                            registrandoIncidencia
+                          }
+                        >
+                          {registrandoIncidencia
+                            ? "Registrando..."
+                            : "Registrar incidencia"}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {errorIncidenciasDetalle && (
+                    <div className="reservation-incidents-inline-error">
+                      {errorIncidenciasDetalle}
+                    </div>
+                  )}
+
+                  {cargandoIncidenciasDetalle ? (
+                    <div className="reservation-incidents-state">
+                      Cargando incidencias...
+                    </div>
+                  ) : incidenciasDetalle.length ===
+                    0 ? (
+                    <div className="reservation-incidents-empty">
+                      <strong>
+                        Sin incidencias registradas.
+                      </strong>
+
+                      <span>
+                        Si ocurre algún problema durante la estadía, podés registrarlo acá.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="reservation-incidents-list">
+                      {incidenciasDetalle.map(
+                        (incidencia) => {
+                          const estaResuelta =
+                            incidencia.estado ===
+                            "Resuelta";
+
+                          const estaProcesando =
+                            idIncidenciaProcesando ===
+                            incidencia.idIncidenciaReserva;
+
+                          return (
+                            <article
+                              className={`reservation-incident-item ${
+                                estaResuelta
+                                  ? "reservation-incident-item--resolved"
+                                  : ""
+                              }`}
+                              key={
+                                incidencia.idIncidenciaReserva
+                              }
+                            >
+                              <div className="reservation-incident-top">
+                                <div>
+                                  <div className="reservation-incident-badges">
+                                    <span
+                                      className={`reservation-incident-severity reservation-incident-severity--${obtenerClaseSeveridadIncidencia(
+                                        incidencia.severidad
+                                      )}`}
+                                    >
+                                      {incidencia.severidad}
+                                    </span>
+
+                                    <span
+                                      className={`reservation-incident-status ${
+                                        estaResuelta
+                                          ? "reservation-incident-status--resolved"
+                                          : incidencia.estado ===
+                                            "En seguimiento"
+                                          ? "reservation-incident-status--tracking"
+                                          : ""
+                                      }`}
+                                    >
+                                      {incidencia.estado}
+                                    </span>
+
+                                    <span className="reservation-incident-type">
+                                      {incidencia.tipo}
+                                    </span>
+                                  </div>
+
+                                  <h5>
+                                    {incidencia.titulo}
+                                  </h5>
+                                </div>
+
+                                <time>
+                                  {formatearFechaHoraEvento(
+                                    incidencia.fechaIncidencia
+                                  )}
+                                </time>
+                              </div>
+
+                              <p className="reservation-incident-description">
+                                {incidencia.descripcion}
+                              </p>
+
+                              {incidencia.resolucion && (
+                                <div className="reservation-incident-resolution">
+                                  <span>
+                                    Resolución
+                                  </span>
+
+                                  <p>
+                                    {incidencia.resolucion}
+                                  </p>
+
+                                  {incidencia.fechaResolucion && (
+                                    <time>
+                                      Resuelta el{" "}
+                                      {formatearFechaHoraEvento(
+                                        incidencia.fechaResolucion
+                                      )}
+                                    </time>
+                                  )}
+                                </div>
+                              )}
+
+                              {!estaResuelta && (
+                                <div className="reservation-incident-actions">
+                                  {incidencia.estado ===
+                                    "Abierta" && (
+                                    <button
+                                      type="button"
+                                      className="secondary-button"
+                                      disabled={
+                                        estaProcesando
+                                      }
+                                      onClick={() =>
+                                        pasarIncidenciaASeguimiento(
+                                          incidencia
+                                        )
+                                      }
+                                    >
+                                      {estaProcesando
+                                        ? "Actualizando..."
+                                        : "En seguimiento"}
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    className="reservation-incident-resolve-button"
+                                    disabled={
+                                      estaProcesando
+                                    }
+                                    onClick={() =>
+                                      iniciarResolucionIncidencia(
+                                        incidencia
+                                      )
+                                    }
+                                  >
+                                    Resolver
+                                  </button>
+                                </div>
+                              )}
+
+                              {incidenciaResolviendo ===
+                                incidencia.idIncidenciaReserva &&
+                                !estaResuelta && (
+                                  <form
+                                    className="reservation-incident-resolution-form"
+                                    onSubmit={(e) =>
+                                      resolverIncidenciaDetalle(
+                                        e,
+                                        incidencia
+                                      )
+                                    }
+                                  >
+                                    <label>
+                                      <span>
+                                        ¿Cómo se resolvió?
+                                      </span>
+
+                                      <textarea
+                                        value={
+                                          resolucionIncidencia
+                                        }
+                                        onChange={(e) =>
+                                          setResolucionIncidencia(
+                                            e.target
+                                              .value
+                                          )
+                                        }
+                                        placeholder="Ej. Se coordinó la entrega de una llave alternativa..."
+                                        rows="3"
+                                        maxLength="3000"
+                                      />
+                                    </label>
+
+                                    <div>
+                                      <button
+                                        type="button"
+                                        className="secondary-button"
+                                        onClick={
+                                          cancelarResolucionIncidencia
+                                        }
+                                      >
+                                        Cancelar
+                                      </button>
+
+                                      <button
+                                        type="submit"
+                                        className="primary-button"
+                                        disabled={
+                                          estaProcesando
+                                        }
+                                      >
+                                        {estaProcesando
+                                          ? "Resolviendo..."
+                                          : "Marcar como resuelta"}
+                                      </button>
+                                    </div>
+                                  </form>
+                                )}
+                            </article>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                <section className="reservation-detail-card reservation-detail-card--wide reservation-notes-card">
+                  <div className="reservation-detail-card-title reservation-notes-title">
+                    <span className="reservation-detail-icon reservation-detail-icon--notes">
+                      ✎
+                    </span>
+
+                    <div>
+                      <h4>Observaciones internas</h4>
+                      <p>
+                        Notas privadas para la gestión de esta reserva. No se muestran ni se envían al huésped.
+                      </p>
+                    </div>
+
+                    <div className="reservation-notes-header-actions">
+                      <span className="reservation-notes-count">
+                        {observacionesDetalle.length}
+                      </span>
+
+                      <button
+                        type="button"
+                        className="reservation-notes-add"
+                        onClick={() => {
+                          if (
+                            mostrarFormularioObservacion
+                          ) {
+                            cancelarFormularioObservacion();
+                          } else {
+                            abrirNuevaObservacion();
+                          }
+                        }}
+                      >
+                        {mostrarFormularioObservacion
+                          ? "Cancelar"
+                          : "+ Nueva observación"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {mostrarFormularioObservacion && (
+                    <form
+                      className="reservation-note-form"
+                      onSubmit={
+                        guardarObservacionDetalle
+                      }
+                    >
+                      <div className="reservation-note-form-top">
+                        <label>
+                          <span>Categoría</span>
+
+                          <select
+                            value={
+                              formularioObservacion.categoria
+                            }
+                            onChange={(e) =>
+                              setFormularioObservacion(
+                                (
+                                  anterior
+                                ) => ({
+                                  ...anterior,
+                                  categoria:
+                                    e.target
+                                      .value,
+                                })
+                              )
+                            }
+                          >
+                            <option value="General">
+                              General
+                            </option>
+                            <option value="Check-in">
+                              Check-in
+                            </option>
+                            <option value="Check-out">
+                              Check-out
+                            </option>
+                            <option value="Cobro">
+                              Cobro
+                            </option>
+                            <option value="Limpieza">
+                              Limpieza
+                            </option>
+                            <option value="Mantenimiento">
+                              Mantenimiento
+                            </option>
+                            <option value="Huesped">
+                              Huésped
+                            </option>
+                            <option value="Otro">
+                              Otro
+                            </option>
+                          </select>
+                        </label>
+
+                        <label className="reservation-note-pin-control">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formularioObservacion.fijada
+                            }
+                            onChange={(e) =>
+                              setFormularioObservacion(
+                                (
+                                  anterior
+                                ) => ({
+                                  ...anterior,
+                                  fijada:
+                                    e.target
+                                      .checked,
+                                })
+                              )
+                            }
+                          />
+
+                          <span>
+                            Fijar como importante
+                          </span>
+                        </label>
+                      </div>
+
+                      <label className="reservation-note-form-text">
+                        <span>
+                          Observación
+                        </span>
+
+                        <textarea
+                          value={
+                            formularioObservacion.observacion
+                          }
+                          onChange={(e) =>
+                            setFormularioObservacion(
+                              (
+                                anterior
+                              ) => ({
+                                ...anterior,
+                                observacion:
+                                  e.target
+                                    .value,
+                              })
+                            )
+                          }
+                          placeholder="Ej. Prefiere coordinar el check-in con anticipación..."
+                          rows="3"
+                          maxLength="3000"
+                        />
+                      </label>
+
+                      <div className="reservation-note-form-footer">
+                        <span>
+                          {observacionEditando
+                            ? "Editando observación"
+                            : "Nota interna de HostFlow"}
+                        </span>
+
+                        <div>
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={
+                              cancelarFormularioObservacion
+                            }
+                          >
+                            Cancelar
+                          </button>
+
+                          <button
+                            type="submit"
+                            className="primary-button"
+                            disabled={
+                              guardandoObservacion
+                            }
+                          >
+                            {guardandoObservacion
+                              ? "Guardando..."
+                              : observacionEditando
+                              ? "Guardar cambios"
+                              : "Guardar observación"}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+
+                  {errorObservacionesDetalle && (
+                    <div className="reservation-notes-inline-error">
+                      {errorObservacionesDetalle}
+                    </div>
+                  )}
+
+                  {cargandoObservacionesDetalle ? (
+                    <div className="reservation-notes-state">
+                      Cargando observaciones...
+                    </div>
+                  ) : observacionesDetalle.length ===
+                    0 ? (
+                    <div className="reservation-notes-empty">
+                      <strong>
+                        Todavía no hay observaciones internas.
+                      </strong>
+
+                      <span>
+                        Podés guardar recordatorios y datos operativos sin mezclarlos con los mensajes del huésped.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="reservation-notes-list">
+                      {observacionesDetalle.map(
+                        (observacion) => {
+                          const procesando =
+                            idObservacionProcesando ===
+                            observacion.idObservacionReserva;
+
+                          return (
+                            <article
+                              className={`reservation-note-item ${
+                                observacion.fijada
+                                  ? "reservation-note-item--pinned"
+                                  : ""
+                              }`}
+                              key={
+                                observacion.idObservacionReserva
+                              }
+                            >
+                              <div className="reservation-note-top">
+                                <div className="reservation-note-meta">
+                                  {observacion.fijada && (
+                                    <span className="reservation-note-pinned-badge">
+                                      Fijada
+                                    </span>
+                                  )}
+
+                                  <span className="reservation-note-category">
+                                    {observacion.categoria}
+                                  </span>
+                                </div>
+
+                                <time>
+                                  {formatearFechaHoraEvento(
+                                    observacion.fechaCreacion
+                                  )}
+                                </time>
+                              </div>
+
+                              <p className="reservation-note-text">
+                                {observacion.observacion}
+                              </p>
+
+                              <div className="reservation-note-bottom">
+                                <span>
+                                  {observacion.autorNombre ||
+                                    "HostFlow"}
+                                </span>
+
+                                <div className="reservation-note-actions">
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      procesando
+                                    }
+                                    onClick={() =>
+                                      cambiarFijadaObservacionDetalle(
+                                        observacion
+                                      )
+                                    }
+                                  >
+                                    {observacion.fijada
+                                      ? "Desfijar"
+                                      : "Fijar"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      procesando
+                                    }
+                                    onClick={() =>
+                                      editarObservacionDetalle(
+                                        observacion
+                                      )
+                                    }
+                                  >
+                                    Editar
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="reservation-note-delete"
+                                    disabled={
+                                      procesando
+                                    }
+                                    onClick={() =>
+                                      eliminarObservacionDetalle(
+                                        observacion
+                                      )
+                                    }
+                                  >
+                                    {procesando
+                                      ? "Procesando..."
+                                      : "Eliminar"}
+                                  </button>
+                                </div>
+                              </div>
+                            </article>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                </section>
               </div>
 
               <footer className="reservation-detail-footer">
                 <div className="reservation-detail-footer-note">
-                  <strong>Historial de estadía</strong>
+                  <strong>Registro operativo</strong>
                   <span>
-                    Este detalle será la base para incorporar timeline,
-                    mensajes e incidencias de la reserva.
+                    Los eventos históricos anteriores a la incorporación del timeline no se reconstruyen artificialmente.
                   </span>
                 </div>
 

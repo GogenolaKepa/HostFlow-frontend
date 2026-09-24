@@ -5,19 +5,203 @@ import Propiedades from "./Propiedades";
 import Huespedes from "./Huespedes";
 import Calendario from "./Calendario";
 import Alertas from "./Alertas";
+import Reportes from "./Reportes";
 
 function Dashboard({ usuario, onLogout }) {
   const [datos, setDatos] = useState(null);
   const [seccionActiva, setSeccionActiva] = useState("inicio");
 
+  const [
+    historicoMensual,
+    setHistoricoMensual,
+  ] = useState([]);
+
+  const [
+    cargandoHistorico,
+    setCargandoHistorico,
+  ] = useState(false);
+
+  const [
+    errorHistorico,
+    setErrorHistorico,
+  ] = useState("");
+
+  const [
+    modalMetrica,
+    setModalMetrica,
+  ] = useState(null);
+
   useEffect(() => {
+    if (
+      seccionActiva !==
+      "inicio"
+    ) {
+      return undefined;
+    }
+
     obtenerDashboard();
-  }, []);
+    obtenerHistorico();
+
+    const intervalo =
+      window.setInterval(
+        obtenerDashboard,
+        30000
+      );
+
+    const manejarVisibilidad =
+      () => {
+        if (
+          document.visibilityState ===
+          "visible"
+        ) {
+          obtenerDashboard();
+          obtenerHistorico();
+        }
+      };
+
+    document.addEventListener(
+      "visibilitychange",
+      manejarVisibilidad
+    );
+
+    return () => {
+      window.clearInterval(
+        intervalo
+      );
+
+      document.removeEventListener(
+        "visibilitychange",
+        manejarVisibilidad
+      );
+    };
+  }, [seccionActiva]);
 
   const obtenerDashboard = async () => {
     const response = await api.get("/dashboard/resumen");
     setDatos(response.data);
   };
+
+  // =========================================================
+  // HISTÓRICO DE MÉTRICAS
+  // =========================================================
+
+  const obtenerHistorico =
+    async () => {
+      try {
+        setCargandoHistorico(
+          true
+        );
+
+        setErrorHistorico("");
+
+        const response =
+          await api.get(
+            "/dashboard/historico?meses=6"
+          );
+
+        setHistoricoMensual(
+          response.data
+            .historico || []
+        );
+      } catch (error) {
+        setErrorHistorico(
+          error.response?.data
+            ?.mensaje ||
+            "No se pudo cargar el histórico mensual."
+        );
+      } finally {
+        setCargandoHistorico(
+          false
+        );
+      }
+    };
+
+  const abrirModalMetrica =
+    async (
+      metrica
+    ) => {
+      setModalMetrica(
+        metrica
+      );
+
+      /*
+       * Cada vez que se abre un histórico lo
+       * refrescamos para que contemple reservas
+       * creadas o modificadas recientemente.
+       */
+      await obtenerHistorico();
+    };
+
+  const cerrarModalMetrica =
+    () => {
+      setModalMetrica(
+        null
+      );
+
+      setErrorHistorico("");
+    };
+
+  const formatearMes =
+    (
+      fecha
+    ) => {
+      if (!fecha) {
+        return "-";
+      }
+
+      const valor =
+        new Date(
+          `${String(fecha).slice(
+            0,
+            10
+          )}T00:00:00`
+        );
+
+      if (
+        Number.isNaN(
+          valor.getTime()
+        )
+      ) {
+        return "-";
+      }
+
+      const texto =
+        new Intl.DateTimeFormat(
+          "es-AR",
+          {
+            month:
+              "long",
+            year:
+              "numeric",
+          }
+        ).format(
+          valor
+        );
+
+      return (
+        texto.charAt(0)
+          .toUpperCase() +
+        texto.slice(1)
+      );
+    };
+
+  const formatearMontoDashboard =
+    (
+      monto
+    ) =>
+      Number(
+        monto || 0
+      ).toLocaleString(
+        "es-AR",
+        {
+          style:
+            "currency",
+          currency:
+            "ARS",
+          maximumFractionDigits:
+            0,
+        }
+      );
 
   // =========================================================
   // NAVEGACIÓN
@@ -57,6 +241,46 @@ function Dashboard({ usuario, onLogout }) {
 
     setSeccionActiva("reservas");
   };
+
+  useEffect(() => {
+    if (!modalMetrica) {
+      return undefined;
+    }
+
+    const overflowAnterior =
+      document.body.style
+        .overflow;
+
+    document.body.style
+      .overflow =
+      "hidden";
+
+    const manejarEscape =
+      (e) => {
+        if (
+          e.key ===
+          "Escape"
+        ) {
+          cerrarModalMetrica();
+        }
+      };
+
+    window.addEventListener(
+      "keydown",
+      manejarEscape
+    );
+
+    return () => {
+      document.body.style
+        .overflow =
+        overflowAnterior;
+
+      window.removeEventListener(
+        "keydown",
+        manejarEscape
+      );
+    };
+  }, [modalMetrica]);
 
   if (!datos) {
     return (
@@ -147,7 +371,16 @@ function Dashboard({ usuario, onLogout }) {
             Calendario
           </p>
 
-          <p className="sidebar-item-disabled">
+          <p
+            className={
+              seccionActiva === "reportes"
+                ? "active"
+                : ""
+            }
+            onClick={() =>
+              cambiarSeccion("reportes")
+            }
+          >
             Reportes
           </p>
 
@@ -191,6 +424,9 @@ function Dashboard({ usuario, onLogout }) {
               verReserva
             }
           />
+        ) : seccionActiva ===
+          "reportes" ? (
+          <Reportes />
         ) : seccionActiva ===
           "alertas" ? (
           <Alertas
@@ -260,10 +496,24 @@ function Dashboard({ usuario, onLogout }) {
                 </h2>
               </div>
 
-              <div className="card">
-                <p>
-                  Ingresos del mes
-                </p>
+              <button
+                type="button"
+                className="card dashboard-metric-card"
+                onClick={() =>
+                  abrirModalMetrica(
+                    "ingresos"
+                  )
+                }
+              >
+                <div className="dashboard-metric-card-top">
+                  <p>
+                    Ingresos del mes
+                  </p>
+
+                  <span>
+                    Ver histórico
+                  </span>
+                </div>
 
                 <h2>
                   $
@@ -271,20 +521,94 @@ function Dashboard({ usuario, onLogout }) {
                     "es-AR"
                   )}
                 </h2>
-              </div>
+              </button>
             </section>
 
             <section className="content">
-              <div className="panel">
-                <h3>
-                  Ocupación mensual
-                </h3>
+              <div
+                className="panel dashboard-occupancy-panel dashboard-occupancy-panel--clickable"
+                role="button"
+                tabIndex="0"
+                onClick={() =>
+                  abrirModalMetrica(
+                    "ocupacion"
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" ||
+                    e.key === " "
+                  ) {
+                    e.preventDefault();
 
-                <div className="circle">
-                  {
-                    resumen.ocupacionMensual
+                    abrirModalMetrica(
+                      "ocupacion"
+                    );
                   }
-                  %
+                }}
+              >
+                <div className="dashboard-occupancy-heading">
+                  <div>
+                    <h3>
+                      Ocupación mensual
+                    </h3>
+
+                    <p>
+                      Porcentaje de noches ocupadas sobre noches disponibles.
+                    </p>
+                  </div>
+
+                  <span className="dashboard-occupancy-history-label">
+                    Ver histórico
+                  </span>
+                </div>
+
+                <div className="dashboard-occupancy-body">
+                  <div className="circle">
+                    {
+                      resumen.ocupacionMensual
+                    }
+                    %
+                  </div>
+
+                  <div className="dashboard-occupancy-preview">
+                    {historicoMensual.length >
+                    0 ? (
+                      historicoMensual
+                        .slice(
+                          0,
+                          4
+                        )
+                        .map(
+                          (
+                            mes
+                          ) => (
+                            <div
+                              key={
+                                mes.mes
+                              }
+                            >
+                              <span>
+                                {formatearMes(
+                                  mes.inicioMes
+                                )}
+                              </span>
+
+                              <strong>
+                                {
+                                  mes.ocupacionMensual
+                                }
+                                %
+                              </strong>
+                            </div>
+                          )
+                        )
+                    ) : (
+                      <div className="dashboard-occupancy-preview-empty">
+                        Cargando histórico...
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -395,12 +719,22 @@ function Dashboard({ usuario, onLogout }) {
               </div>
             </section>
 
-            <section className="panel">
+            <section className="panel dashboard-upcoming-panel">
               <h3>
                 Próximas reservas
               </h3>
 
-              <table>
+              <table className="dashboard-upcoming-table">
+                <colgroup>
+                  <col className="col-huesped" />
+                  <col className="col-propiedad" />
+                  <col className="col-canal" />
+                  <col className="col-ingreso" />
+                  <col className="col-egreso" />
+                  <col className="col-estado" />
+                  <col className="col-accion" />
+                </colgroup>
+
                 <thead>
                   <tr>
                     <th>
@@ -425,6 +759,10 @@ function Dashboard({ usuario, onLogout }) {
 
                     <th>
                       Estado
+                    </th>
+
+                    <th>
+                      Acción
                     </th>
                   </tr>
                 </thead>
@@ -472,6 +810,20 @@ function Dashboard({ usuario, onLogout }) {
                             reserva.estado
                           }
                         </td>
+
+                        <td>
+                          <button
+                            type="button"
+                            className="dashboard-reservation-action"
+                            onClick={() =>
+                              verReserva(
+                                reserva.idReserva
+                              )
+                            }
+                          >
+                            Ver reserva
+                          </button>
+                        </td>
                       </tr>
                     )
                   )}
@@ -481,6 +833,205 @@ function Dashboard({ usuario, onLogout }) {
           </>
         )}
       </main>
+
+      {modalMetrica && (
+        <div
+          className="dashboard-metric-overlay"
+          onMouseDown={(e) => {
+            if (
+              e.target ===
+              e.currentTarget
+            ) {
+              cerrarModalMetrica();
+            }
+          }}
+        >
+          <article
+            className="dashboard-metric-modal"
+            role="dialog"
+            aria-modal="true"
+          >
+            <header className="dashboard-metric-modal-header">
+              <div>
+                <span>
+                  HISTÓRICO · ÚLTIMOS 6 MESES
+                </span>
+
+                <h3>
+                  {modalMetrica ===
+                  "ingresos"
+                    ? "Ingresos mensuales"
+                    : "Ocupación mensual"}
+                </h3>
+
+                <p>
+                  {modalMetrica ===
+                  "ingresos"
+                    ? "Importes estimados de reservas confirmadas y finalizadas según mes de check-in."
+                    : "Noches ocupadas únicas sobre noches disponibles de las propiedades activas."}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  cerrarModalMetrica
+                }
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="dashboard-metric-modal-content">
+              {cargandoHistorico ? (
+                <div className="dashboard-metric-modal-state">
+                  Cargando histórico...
+                </div>
+              ) : errorHistorico ? (
+                <div className="dashboard-metric-modal-state dashboard-metric-modal-state--error">
+                  {errorHistorico}
+                </div>
+              ) : (
+                <div className="dashboard-metric-history">
+                  {historicoMensual.map(
+                    (
+                      mes
+                    ) => {
+                      const maxIngreso =
+                        Math.max(
+                          ...historicoMensual.map(
+                            (
+                              item
+                            ) =>
+                              Number(
+                                item.ingresosMes ||
+                                0
+                              )
+                          ),
+                          1
+                        );
+
+                      const porcentajeBarra =
+                        modalMetrica ===
+                        "ingresos"
+                          ? Math.round(
+                              (
+                                Number(
+                                  mes.ingresosMes ||
+                                  0
+                                ) /
+                                maxIngreso
+                              ) * 100
+                            )
+                          : Number(
+                              mes.ocupacionMensual ||
+                              0
+                            );
+
+                      return (
+                        <article
+                          className="dashboard-metric-history-row"
+                          key={
+                            mes.mes
+                          }
+                        >
+                          <div className="dashboard-metric-history-top">
+                            <strong>
+                              {formatearMes(
+                                mes.inicioMes
+                              )}
+                            </strong>
+
+                            <span>
+                              {modalMetrica ===
+                              "ingresos"
+                                ? formatearMontoDashboard(
+                                    mes.ingresosMes
+                                  )
+                                : `${mes.ocupacionMensual}%`}
+                            </span>
+                          </div>
+
+                          <div className="dashboard-metric-history-bar">
+                            <span
+                              style={{
+                                width:
+                                  `${Math.max(
+                                    0,
+                                    Math.min(
+                                      100,
+                                      porcentajeBarra
+                                    )
+                                  )}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="dashboard-metric-history-meta">
+                            {modalMetrica ===
+                            "ingresos" ? (
+                              <>
+                                <span>
+                                  {
+                                    mes.cantidadReservas
+                                  }{" "}
+                                  reserva
+                                  {Number(
+                                    mes.cantidadReservas
+                                  ) === 1
+                                    ? ""
+                                    : "s"}
+                                </span>
+
+                                <span>
+                                  Check-in dentro del mes
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span>
+                                  {
+                                    mes.nochesOcupadas
+                                  }{" "}
+                                  noches ocupadas
+                                </span>
+
+                                <span>
+                                  {
+                                    mes.nochesDisponibles
+                                  }{" "}
+                                  noches disponibles
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    }
+                  )}
+                </div>
+              )}
+            </div>
+
+            <footer className="dashboard-metric-modal-footer">
+              <span>
+                Estos datos se calculan directamente desde las reservas registradas en HostFlow.
+              </span>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={
+                  cerrarModalMetrica
+                }
+              >
+                Cerrar
+              </button>
+            </footer>
+          </article>
+        </div>
+      )}
     </div>
   );
 }

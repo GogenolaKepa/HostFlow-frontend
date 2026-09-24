@@ -2167,7 +2167,19 @@ function Reservas() {
         coincideFechaHasta
       );
     }
-  );
+  )
+    .sort(
+      (
+        reservaA,
+        reservaB
+      ) =>
+        Number(
+          reservaB.idReserva
+        ) -
+        Number(
+          reservaA.idReserva
+        )
+    );
 
   const cantidadFiltrosActivos =
     Object.values(filtros).filter(

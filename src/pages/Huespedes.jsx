@@ -654,7 +654,7 @@ function Huespedes({ onVerReserva }) {
                   Reserva activa
                 </h3>
 
-                <div className="table-card">
+                <div className="table-card huesped-detail-table-desktop">
                   <table>
                     <thead>
                       <tr>
@@ -736,6 +736,81 @@ function Huespedes({ onVerReserva }) {
                     </tbody>
                   </table>
                 </div>
+
+                <div className="huesped-detail-reservas-mobile">
+                  {huespedSeleccionado.reservasActivas.map(
+                    (
+                      reserva
+                    ) => (
+                      <article
+                        key={`activa-mobile-${reserva.idReserva}`}
+                        className="huesped-detail-reserva-mobile-card"
+                      >
+                        <div className="huesped-detail-reserva-mobile-top">
+                          <div>
+                            <span className="huesped-detail-reserva-mobile-kicker">
+                              Reserva activa
+                            </span>
+
+                            <strong>
+                              {
+                                reserva.propiedad
+                              }
+                            </strong>
+                          </div>
+
+                          <span className="huesped-detail-reserva-mobile-status">
+                            {
+                              reserva.estado
+                            }
+                          </span>
+                        </div>
+
+                        <div className="huesped-detail-reserva-mobile-stay">
+                          <span>
+                            {formatearFecha(
+                              reserva.fechaIngreso
+                            )}
+                          </span>
+
+                          <strong>
+                            →
+                          </strong>
+
+                          <span>
+                            {formatearFecha(
+                              reserva.fechaEgreso
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="huesped-detail-reserva-mobile-bottom">
+                          <span
+                            className={`channel-badge channel-${String(
+                              reserva.canal
+                            ).toLowerCase()}`}
+                          >
+                            {
+                              reserva.canal
+                            }
+                          </span>
+
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() =>
+                              irAReserva(
+                                reserva.idReserva
+                              )
+                            }
+                          >
+                            Ver reserva
+                          </button>
+                        </div>
+                      </article>
+                    )
+                  )}
+                </div>
               </>
             )}
 
@@ -748,7 +823,7 @@ function Huespedes({ onVerReserva }) {
                     Próxima reserva
                   </h3>
 
-                  <div className="table-card">
+                  <div className="table-card huesped-detail-table-desktop">
                     <table>
                       <thead>
                         <tr>
@@ -832,6 +907,86 @@ function Huespedes({ onVerReserva }) {
                       </tbody>
                     </table>
                   </div>
+
+                  <div className="huesped-detail-reservas-mobile">
+                    <article className="huesped-detail-reserva-mobile-card">
+                      <div className="huesped-detail-reserva-mobile-top">
+                        <div>
+                          <span className="huesped-detail-reserva-mobile-kicker">
+                            Próxima reserva
+                          </span>
+
+                          <strong>
+                            {
+                              huespedSeleccionado
+                                .proximaReserva
+                                .propiedad
+                            }
+                          </strong>
+                        </div>
+
+                        <span className="huesped-detail-reserva-mobile-status huesped-detail-reserva-mobile-status--next">
+                          {
+                            huespedSeleccionado
+                              .proximaReserva
+                              .estado
+                          }
+                        </span>
+                      </div>
+
+                      <div className="huesped-detail-reserva-mobile-stay">
+                        <span>
+                          {formatearFecha(
+                            huespedSeleccionado
+                              .proximaReserva
+                              .fechaIngreso
+                          )}
+                        </span>
+
+                        <strong>
+                          →
+                        </strong>
+
+                        <span>
+                          {formatearFecha(
+                            huespedSeleccionado
+                              .proximaReserva
+                              .fechaEgreso
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="huesped-detail-reserva-mobile-bottom">
+                        <span
+                          className={`channel-badge channel-${String(
+                            huespedSeleccionado
+                              .proximaReserva
+                              .canal
+                          ).toLowerCase()}`}
+                        >
+                          {
+                            huespedSeleccionado
+                              .proximaReserva
+                              .canal
+                          }
+                        </span>
+
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() =>
+                            irAReserva(
+                              huespedSeleccionado
+                                .proximaReserva
+                                .idReserva
+                            )
+                          }
+                        >
+                          Ver reserva
+                        </button>
+                      </div>
+                    </article>
+                  </div>
                 </>
               )}
 
@@ -842,7 +997,8 @@ function Huespedes({ onVerReserva }) {
             {huespedSeleccionado
               .historialReservas
               ?.length > 0 ? (
-              <div className="table-card">
+              <>
+                <div className="table-card huesped-detail-table-desktop">
                 <table>
                   <thead>
                     <tr>
@@ -938,6 +1094,94 @@ function Huespedes({ onVerReserva }) {
                   </tbody>
                 </table>
               </div>
+
+              <div className="huesped-detail-history-mobile">
+                {huespedSeleccionado.historialReservas.map(
+                  (
+                    reserva
+                  ) => (
+                    <article
+                      key={`history-mobile-${reserva.idReserva}`}
+                      className="huesped-detail-history-mobile-card"
+                    >
+                      <div className="huesped-detail-history-mobile-top">
+                        <strong>
+                          {
+                            reserva.propiedad
+                          }
+                        </strong>
+
+                        <span
+                          className={`channel-badge channel-${String(
+                            reserva.canal
+                          ).toLowerCase()}`}
+                        >
+                          {
+                            reserva.canal
+                          }
+                        </span>
+                      </div>
+
+                      <div className="huesped-detail-history-mobile-stay">
+                        <span>
+                          {formatearFecha(
+                            reserva.fechaIngreso
+                          )}
+                        </span>
+
+                        <strong>
+                          →
+                        </strong>
+
+                        <span>
+                          {formatearFecha(
+                            reserva.fechaEgreso
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="huesped-detail-history-mobile-info">
+                        <div>
+                          <span>
+                            Estado
+                          </span>
+
+                          <strong>
+                            {
+                              reserva.estado
+                            }
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Importe
+                          </span>
+
+                          <strong>
+                            {formatearMonto(
+                              reserva.montoEstimado
+                            )}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() =>
+                          irAReserva(
+                            reserva.idReserva
+                          )
+                        }
+                      >
+                        Ver reserva
+                      </button>
+                    </article>
+                  )
+                )}
+                </div>
+              </>
             ) : (
               <p>
                 Este huésped todavía
@@ -951,7 +1195,7 @@ function Huespedes({ onVerReserva }) {
           LISTADO
       ====================================================== */}
 
-      <div className="table-card">
+      <div className="table-card huespedes-desktop-list">
         <table>
           <thead>
             <tr>
@@ -1070,6 +1314,137 @@ function Huespedes({ onVerReserva }) {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="huespedes-mobile-list">
+        {huespedes.map(
+          (
+            huesped
+          ) => (
+            <article
+              key={`mobile-${huesped.idHuesped}`}
+              className="huesped-mobile-card"
+            >
+              <div className="huesped-mobile-card-top">
+                <div className="huesped-mobile-identidad">
+                  <span className="huesped-mobile-avatar">
+                    {String(
+                      huesped.nombre ||
+                        "H"
+                    )
+                      .charAt(0)
+                      .toUpperCase()}
+                  </span>
+
+                  <div>
+                    <h3>
+                      {
+                        huesped.nombre
+                      }{" "}
+                      {
+                        huesped.apellido
+                      }
+                    </h3>
+
+                    <span
+                      className={`channel-badge channel-${String(
+                        huesped.origenRegistro
+                      ).toLowerCase()}`}
+                    >
+                      {
+                        huesped.origenRegistro
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <span className="guest-status huesped-mobile-status">
+                  {
+                    huesped.situacion
+                  }
+                </span>
+              </div>
+
+              <div className="huesped-mobile-contacto">
+                <div>
+                  <span>
+                    Email
+                  </span>
+
+                  <strong>
+                    {
+                      huesped.email
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Teléfono
+                  </span>
+
+                  <strong>
+                    {
+                      huesped.telefono
+                    }
+                  </strong>
+                </div>
+              </div>
+
+              <div className="huesped-mobile-meta">
+                <div>
+                  <span>
+                    Reservas
+                  </span>
+
+                  <strong>
+                    {
+                      huesped.cantidadReservas
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Situación
+                  </span>
+
+                  <strong>
+                    {
+                      huesped.situacion
+                    }
+                  </strong>
+                </div>
+              </div>
+
+              <div className="huesped-mobile-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    verHuesped(
+                      huesped.idHuesped
+                    )
+                  }
+                >
+                  Ver huésped
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    editarHuesped(
+                      huesped
+                    )
+                  }
+                >
+                  Editar
+                </button>
+              </div>
+            </article>
+          )
+        )}
       </div>
     </section>
   );

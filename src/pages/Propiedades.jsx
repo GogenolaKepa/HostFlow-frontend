@@ -1203,6 +1203,115 @@ function Propiedades() {
     };
 
   // =========================================================
+  // RESOLVER URL DE IMÁGENES
+  // =========================================================
+  //
+  // Las imágenes subidas desde un dispositivo pueden haber
+  // quedado guardadas con una URL local del equipo que hizo
+  // la carga, por ejemplo:
+  //
+  // http://localhost:4000/uploads/...
+  // http://192.168.x.x:4000/uploads/...
+  //
+  // Eso funciona en ese equipo, pero no necesariamente desde
+  // otro dispositivo de la red. Para archivos locales de
+  // HostFlow reconstruimos siempre la URL usando el origen
+  // actual del backend.
+  //
+  // Las URLs externas (por ejemplo una imagen https pública)
+  // se conservan sin cambios.
+  // =========================================================
+
+  const resolverUrlImagen =
+    (
+      urlImagen
+    ) => {
+      if (!urlImagen) {
+        return "";
+      }
+
+      const valor =
+        String(
+          urlImagen
+        ).trim();
+
+      if (!valor) {
+        return "";
+      }
+
+      let origenApi;
+
+      try {
+        origenApi =
+          new URL(
+            api.defaults.baseURL,
+            window.location.origin
+          ).origin;
+      } catch {
+        origenApi =
+          `${window.location.protocol}//${window.location.hostname}:4000`;
+      }
+
+      try {
+        const url =
+          new URL(
+            valor,
+            origenApi
+          );
+
+        const host =
+          url.hostname;
+
+        const hostLocal =
+          host === "localhost" ||
+          host === "127.0.0.1" ||
+          host === "::1" ||
+          /^10\./.test(
+            host
+          ) ||
+          /^192\.168\./.test(
+            host
+          ) ||
+          /^172\.(1[6-9]|2\d|3[01])\./.test(
+            host
+          );
+
+        const esArchivoLocalHostFlow =
+          url.pathname.includes(
+            "/uploads/"
+          );
+
+        if (
+          hostLocal &&
+          esArchivoLocalHostFlow
+        ) {
+          return `${origenApi}${url.pathname}${url.search}${url.hash}`;
+        }
+
+        /*
+         * Si el backend más adelante devuelve rutas relativas
+         * como /uploads/archivo.jpg, también quedan resueltas
+         * contra el backend y no contra Vite (:5173).
+         */
+        const eraRutaRelativa =
+          !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(
+            valor
+          );
+
+        if (
+          eraRutaRelativa &&
+          esArchivoLocalHostFlow
+        ) {
+          return `${origenApi}${url.pathname}${url.search}${url.hash}`;
+        }
+
+        return url.href;
+      } catch {
+        return valor;
+      }
+    };
+
+  // =========================================================
   // IMAGEN PRINCIPAL
   // =========================================================
 
@@ -1228,10 +1337,10 @@ function Propiedades() {
       return (
         <>
           <img
-            src={
+            src={resolverUrlImagen(
               propiedad
                 .imagenPrincipal
-            }
+            )}
             alt={
               propiedad
                 .descripcionImagenPrincipal ||
@@ -2231,9 +2340,9 @@ function Propiedades() {
                         }}
                       >
                         <img
-                          src={
+                          src={resolverUrlImagen(
                             imagen.urlImagen
-                          }
+                          )}
                           alt={
                             imagen.descripcion ||
                             `Imagen de ${propiedad.nombre}`
@@ -2383,9 +2492,9 @@ function Propiedades() {
                             }}
                           >
                             <img
-                              src={
+                              src={resolverUrlImagen(
                                 imagen.urlImagen
-                              }
+                              )}
                               alt={
                                 imagen.descripcion ||
                                 `Imagen eliminada de ${propiedad.nombre}`
@@ -2481,10 +2590,10 @@ function Propiedades() {
 
                 <div className="property-image-preview-media">
                   <img
-                    src={
+                    src={resolverUrlImagen(
                       imagenPrevisualizando
                         .urlImagen
-                    }
+                    )}
                     alt={
                       imagenPrevisualizando
                         .descripcion ||

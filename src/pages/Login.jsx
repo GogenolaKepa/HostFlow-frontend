@@ -17,11 +17,17 @@ function Login({ onLogin }) {
       });
 
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify(response.data.usuario)
+      );
 
       onLogin(response.data.usuario);
     } catch (error) {
-      setError(error.response?.data?.mensaje || "Error al iniciar sesión");
+      setError(
+        error.response?.data?.mensaje ||
+          "Error al iniciar sesión"
+      );
     }
   };
 
@@ -29,31 +35,56 @@ function Login({ onLogin }) {
     <div className="login-container">
       <div className="login-info">
         <h1>HostFlow</h1>
-        <p>Gestión centralizada de alquileres temporarios</p>
+        <p>
+          Gestión centralizada de alquileres temporarios
+        </p>
       </div>
 
-      <form className="login-card" onSubmit={iniciarSesion}>
+      <form
+        className="login-card"
+        onSubmit={iniciarSesion}
+      >
         <h2>Iniciar sesión</h2>
 
-        <label>Correo electrónico</label>
+        <label htmlFor="login-email">
+          Correo electrónico
+        </label>
         <input
+          id="login-email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
         />
 
-        <label>Contraseña</label>
+        <label htmlFor="login-password">
+          Contraseña
+        </label>
         <input
+          id="login-password"
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
         />
 
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="error">
+            {error}
+          </p>
+        )}
 
-        <button type="submit">Ingresar</button>
+        <button type="submit">
+          Ingresar
+        </button>
 
-        <small>Usuario de prueba: admin@hostflow.com / 123456</small>
+        <small>
+          Usuario de prueba: admin@hostflow.com / 123456
+        </small>
       </form>
     </div>
   );

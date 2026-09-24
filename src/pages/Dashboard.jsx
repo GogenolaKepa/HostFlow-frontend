@@ -7,6 +7,166 @@ import Calendario from "./Calendario";
 import Alertas from "./Alertas";
 import Reportes from "./Reportes";
 
+const ITEMS_NAVEGACION = [
+  {
+    id: "inicio",
+    label: "Inicio",
+    icono: "inicio",
+  },
+  {
+    id: "propiedades",
+    label: "Propiedades",
+    icono: "propiedades",
+  },
+  {
+    id: "reservas",
+    label: "Reservas",
+    icono: "reservas",
+  },
+  {
+    id: "huespedes",
+    label: "Huéspedes",
+    icono: "huespedes",
+  },
+  {
+    id: "calendario",
+    label: "Calendario",
+    icono: "calendario",
+  },
+  {
+    id: "reportes",
+    label: "Reportes",
+    icono: "reportes",
+  },
+  {
+    id: "alertas",
+    label: "Alertas",
+    icono: "alertas",
+  },
+];
+
+function IconoNavegacion({
+  nombre,
+}) {
+  const props = {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.9,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true",
+  };
+
+  if (nombre === "inicio") {
+    return (
+      <svg {...props}>
+        <path d="M3 10.5 12 3l9 7.5" />
+        <path d="M5.5 9.5V21h13V9.5" />
+        <path d="M9.5 21v-7h5v7" />
+      </svg>
+    );
+  }
+
+  if (nombre === "propiedades") {
+    return (
+      <svg {...props}>
+        <rect
+          x="4"
+          y="3"
+          width="16"
+          height="18"
+          rx="2"
+        />
+        <path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2" />
+      </svg>
+    );
+  }
+
+  if (nombre === "reservas") {
+    return (
+      <svg {...props}>
+        <path d="M7 3h10" />
+        <path d="M8 2v4M16 2v4" />
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="16"
+          rx="2"
+        />
+        <path d="M4 9h16" />
+        <path d="m9 15 2 2 4-4" />
+      </svg>
+    );
+  }
+
+  if (nombre === "huespedes") {
+    return (
+      <svg {...props}>
+        <circle
+          cx="9"
+          cy="8"
+          r="3"
+        />
+        <path d="M3.5 20c.4-4 2.3-6 5.5-6s5.1 2 5.5 6" />
+        <path d="M16 5.5a3 3 0 0 1 0 5.5" />
+        <path d="M17 14c2.2.6 3.3 2.5 3.5 5" />
+      </svg>
+    );
+  }
+
+  if (nombre === "calendario") {
+    return (
+      <svg {...props}>
+        <rect
+          x="3"
+          y="5"
+          width="18"
+          height="16"
+          rx="2"
+        />
+        <path d="M7 3v4M17 3v4M3 10h18" />
+        <path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2" />
+      </svg>
+    );
+  }
+
+  if (nombre === "reportes") {
+    return (
+      <svg {...props}>
+        <path d="M4 20V10" />
+        <path d="M10 20V4" />
+        <path d="M16 20v-7" />
+        <path d="M22 20H2" />
+      </svg>
+    );
+  }
+
+  if (nombre === "alertas") {
+    return (
+      <svg {...props}>
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+        <path d="M10 21h4" />
+      </svg>
+    );
+  }
+
+  if (nombre === "salir") {
+    return (
+      <svg {...props}>
+        <path d="M10 17l5-5-5-5" />
+        <path d="M15 12H3" />
+        <path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5" />
+      </svg>
+    );
+  }
+
+  return null;
+}
+
 function Dashboard({ usuario, onLogout }) {
   const [datos, setDatos] = useState(null);
   const [seccionActiva, setSeccionActiva] = useState("inicio");
@@ -30,6 +190,87 @@ function Dashboard({ usuario, onLogout }) {
     modalMetrica,
     setModalMetrica,
   ] = useState(null);
+
+  const [
+    sidebarColapsada,
+    setSidebarColapsada,
+  ] = useState(() => {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
+      return false;
+    }
+
+    const preferenciaGuardada =
+      window.localStorage.getItem(
+        "hostflowSidebarColapsada"
+      );
+
+    if (
+      preferenciaGuardada !==
+      null
+    ) {
+      return (
+        preferenciaGuardada ===
+        "true"
+      );
+    }
+
+    /*
+     * En tablet la dejamos contraída por defecto
+     * para conservar espacio útil.
+     * En escritorio queda expandida.
+     */
+    return (
+      window.innerWidth <=
+        1100 &&
+      window.innerWidth >
+        700
+    );
+  });
+
+  const [
+    menuMovilAbierto,
+    setMenuMovilAbierto,
+  ] = useState(false);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "hostflowSidebarColapsada",
+      String(
+        sidebarColapsada
+      )
+    );
+  }, [
+    sidebarColapsada,
+  ]);
+
+  useEffect(() => {
+    const manejarResize =
+      () => {
+        if (
+          window.innerWidth >
+          700
+        ) {
+          setMenuMovilAbierto(
+            false
+          );
+        }
+      };
+
+    window.addEventListener(
+      "resize",
+      manejarResize
+    );
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        manejarResize
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -203,6 +444,44 @@ function Dashboard({ usuario, onLogout }) {
         }
       );
 
+  const formatearFechaCortaDashboard =
+    (
+      fecha
+    ) => {
+      if (!fecha) {
+        return "-";
+      }
+
+      const valor =
+        String(
+          fecha
+        ).slice(
+          0,
+          10
+        );
+
+      const [
+        anio,
+        mes,
+        dia,
+      ] =
+        valor.split(
+          "-"
+        );
+
+      if (
+        !anio ||
+        !mes ||
+        !dia
+      ) {
+        return valor;
+      }
+
+      return `${dia}/${mes}/${anio.slice(
+        -2
+      )}`;
+    };
+
   // =========================================================
   // NAVEGACIÓN
   // =========================================================
@@ -215,6 +494,10 @@ function Dashboard({ usuario, onLogout }) {
     );
 
     setSeccionActiva(seccion);
+
+    setMenuMovilAbierto(
+      false
+    );
   };
 
   // =========================================================
@@ -240,6 +523,10 @@ function Dashboard({ usuario, onLogout }) {
     );
 
     setSeccionActiva("reservas");
+
+    setMenuMovilAbierto(
+      false
+    );
   };
 
   useEffect(() => {
@@ -297,110 +584,285 @@ function Dashboard({ usuario, onLogout }) {
   } = datos;
 
   return (
-    <div className="dashboard">
-      <aside className="sidebar">
-        <h2>HostFlow</h2>
+    <div
+      className={`dashboard ${
+        sidebarColapsada
+          ? "dashboard--sidebar-collapsed"
+          : ""
+      }`}
+    >
+      <div className="mobile-appbar">
+        <button
+          type="button"
+          className="mobile-appbar-brand"
+          onClick={() =>
+            cambiarSeccion(
+              "inicio"
+            )
+          }
+          aria-label="Ir al inicio"
+        >
+          HostFlow
+        </button>
 
-        <nav>
-          <p
-            className={
-              seccionActiva === "inicio"
-                ? "active"
-                : ""
-            }
-            onClick={() =>
-              cambiarSeccion("inicio")
-            }
-          >
-            Inicio
-          </p>
+        <button
+          type="button"
+          className={`mobile-menu-toggle ${
+            menuMovilAbierto
+              ? "is-open"
+              : ""
+          }`}
+          onClick={() =>
+            setMenuMovilAbierto(
+              (valor) =>
+                !valor
+            )
+          }
+          aria-label={
+            menuMovilAbierto
+              ? "Cerrar menú"
+              : "Abrir menú"
+          }
+          aria-expanded={
+            menuMovilAbierto
+          }
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </div>
 
-          <p
-            className={
-              seccionActiva === "propiedades"
-                ? "active"
-                : ""
-            }
+      {menuMovilAbierto && (
+        <>
+          <button
+            type="button"
+            className="mobile-nav-backdrop"
             onClick={() =>
-              cambiarSeccion(
-                "propiedades"
+              setMenuMovilAbierto(
+                false
               )
             }
-          >
-            Propiedades
-          </p>
+            aria-label="Cerrar menú"
+          />
 
-          <p
-            className={
-              seccionActiva === "reservas"
-                ? "active"
-                : ""
-            }
-            onClick={() =>
-              cambiarSeccion("reservas")
-            }
-          >
-            Reservas
-          </p>
+          <aside className="mobile-nav-drawer">
+            <nav className="mobile-nav-list">
+              {ITEMS_NAVEGACION.map(
+                (item) => (
+                  <button
+                    key={
+                      item.id
+                    }
+                    type="button"
+                    className={`mobile-nav-item ${
+                      seccionActiva ===
+                      item.id
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      cambiarSeccion(
+                        item.id
+                      )
+                    }
+                  >
+                    <span className="mobile-nav-icon">
+                      <IconoNavegacion
+                        nombre={
+                          item.icono
+                        }
+                      />
+                    </span>
 
-          <p
-            className={
-              seccionActiva === "huespedes"
-                ? "active"
-                : ""
-            }
-            onClick={() =>
-              cambiarSeccion("huespedes")
-            }
-          >
-            Huéspedes
-          </p>
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  </button>
+                )
+              )}
+            </nav>
 
-          <p
-            className={
-              seccionActiva === "calendario"
-                ? "active"
-                : ""
-            }
+            <div className="mobile-nav-footer">
+              <div className="mobile-nav-user">
+                <span className="mobile-nav-avatar">
+                  {String(
+                    usuario.nombre ||
+                      "H"
+                  )
+                    .charAt(0)
+                    .toUpperCase()}
+                </span>
+
+                <div>
+                  <strong>
+                    {
+                      usuario.nombre
+                    }
+                  </strong>
+
+                  <span>
+                    {
+                      usuario.rol
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="mobile-nav-logout"
+                onClick={onLogout}
+              >
+                <IconoNavegacion
+                  nombre="salir"
+                />
+                Cerrar sesión
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
+
+      <aside
+        className={`sidebar ${
+          sidebarColapsada
+            ? "sidebar--collapsed"
+            : ""
+        }`}
+      >
+        <div className="sidebar-top">
+          <button
+            type="button"
+            className="sidebar-brand"
             onClick={() =>
               cambiarSeccion(
-                "calendario"
+                "inicio"
               )
             }
+            title="HostFlow"
           >
-            Calendario
-          </p>
+            <span className="sidebar-brand-mark">
+              H
+            </span>
 
-          <p
-            className={
-              seccionActiva === "reportes"
-                ? "active"
-                : ""
-            }
-            onClick={() =>
-              cambiarSeccion("reportes")
-            }
-          >
-            Reportes
-          </p>
+            <span className="sidebar-brand-name">
+              HostFlow
+            </span>
+          </button>
 
-          <p
-            className={
-              seccionActiva === "alertas"
-                ? "active"
-                : ""
-            }
+          <button
+            type="button"
+            className="sidebar-collapse-toggle"
             onClick={() =>
-              cambiarSeccion("alertas")
+              setSidebarColapsada(
+                (valor) =>
+                  !valor
+              )
+            }
+            aria-label={
+              sidebarColapsada
+                ? "Expandir barra lateral"
+                : "Contraer barra lateral"
+            }
+            title={
+              sidebarColapsada
+                ? "Expandir barra lateral"
+                : "Contraer barra lateral"
             }
           >
-            Alertas
-          </p>
+            {sidebarColapsada
+              ? "›"
+              : "‹"}
+          </button>
+        </div>
+
+        <nav className="sidebar-nav">
+          {ITEMS_NAVEGACION.map(
+            (item) => (
+              <button
+                key={
+                  item.id
+                }
+                type="button"
+                className={`sidebar-nav-item ${
+                  seccionActiva ===
+                  item.id
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() =>
+                  cambiarSeccion(
+                    item.id
+                  )
+                }
+                title={
+                  sidebarColapsada
+                    ? item.label
+                    : undefined
+                }
+              >
+                <span className="sidebar-nav-icon">
+                  <IconoNavegacion
+                    nombre={
+                      item.icono
+                    }
+                  />
+                </span>
+
+                <span className="sidebar-nav-label">
+                  {
+                    item.label
+                  }
+                </span>
+              </button>
+            )
+          )}
         </nav>
 
-        <button onClick={onLogout}>
-          Cerrar sesión
-        </button>
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <span className="sidebar-user-avatar">
+              {String(
+                usuario.nombre ||
+                  "H"
+              )
+                .charAt(0)
+                .toUpperCase()}
+            </span>
+
+            <div className="sidebar-user-copy">
+              <strong>
+                {usuario.nombre}
+              </strong>
+
+              <span>
+                {usuario.rol}
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="sidebar-logout"
+            onClick={onLogout}
+            title={
+              sidebarColapsada
+                ? "Cerrar sesión"
+                : undefined
+            }
+          >
+            <IconoNavegacion
+              nombre="salir"
+            />
+
+            <span className="sidebar-nav-label">
+              Cerrar sesión
+            </span>
+          </button>
+        </div>
       </aside>
 
       <main className="main">
@@ -720,98 +1182,226 @@ function Dashboard({ usuario, onLogout }) {
             </section>
 
             <section className="panel dashboard-upcoming-panel">
-              <h3>
-                Próximas reservas
-              </h3>
+              <div className="dashboard-upcoming-heading">
+                <div>
+                  <h3>
+                    Próximas reservas
+                  </h3>
 
-              <table className="dashboard-upcoming-table">
-                <colgroup>
-                  <col className="col-huesped" />
-                  <col className="col-propiedad" />
-                  <col className="col-canal" />
-                  <col className="col-ingreso" />
-                  <col className="col-egreso" />
-                  <col className="col-estado" />
-                  <col className="col-accion" />
-                </colgroup>
+                  <p>
+                    Check-ins confirmados y pendientes más cercanos.
+                  </p>
+                </div>
+              </div>
 
-                <thead>
-                  <tr>
-                    <th>
-                      Huésped
-                    </th>
+              <div className="dashboard-upcoming-desktop">
+                <table className="dashboard-upcoming-table">
+                  <colgroup>
+                    <col className="col-huesped" />
+                    <col className="col-propiedad" />
+                    <col className="col-canal" />
+                    <col className="col-ingreso" />
+                    <col className="col-egreso" />
+                    <col className="col-estado" />
+                    <col className="col-accion" />
+                  </colgroup>
 
-                    <th>
-                      Propiedad
-                    </th>
+                  <thead>
+                    <tr>
+                      <th>
+                        Huésped
+                      </th>
 
-                    <th>
-                      Canal
-                    </th>
+                      <th>
+                        Propiedad
+                      </th>
 
-                    <th>
-                      Ingreso
-                    </th>
+                      <th>
+                        Canal
+                      </th>
 
-                    <th>
-                      Egreso
-                    </th>
+                      <th>
+                        Ingreso
+                      </th>
 
-                    <th>
-                      Estado
-                    </th>
+                      <th>
+                        Egreso
+                      </th>
 
-                    <th>
-                      Acción
-                    </th>
-                  </tr>
-                </thead>
+                      <th>
+                        Estado
+                      </th>
 
-                <tbody>
-                  {proximasReservas.map(
-                    (reserva) => (
-                      <tr
-                        key={
-                          reserva.idReserva
-                        }
+                      <th>
+                        Acción
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {proximasReservas.map(
+                      (reserva) => (
+                        <tr
+                          key={
+                            reserva.idReserva
+                          }
+                        >
+                          <td>
+                            {
+                              reserva.huesped
+                            }
+                          </td>
+
+                          <td>
+                            {
+                              reserva.propiedad
+                            }
+                          </td>
+
+                          <td>
+                            {
+                              reserva.canal
+                            }
+                          </td>
+
+                          <td>
+                            {
+                              reserva.fechaIngreso
+                            }
+                          </td>
+
+                          <td>
+                            {
+                              reserva.fechaEgreso
+                            }
+                          </td>
+
+                          <td>
+                            {
+                              reserva.estado
+                            }
+                          </td>
+
+                          <td>
+                            <button
+                              type="button"
+                              className="dashboard-reservation-action"
+                              onClick={() =>
+                                verReserva(
+                                  reserva.idReserva
+                                )
+                              }
+                            >
+                              Ver reserva
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="dashboard-upcoming-mobile">
+                {proximasReservas.length >
+                0 ? (
+                  proximasReservas.map(
+                    (
+                      reserva
+                    ) => (
+                      <article
+                        className="dashboard-upcoming-mobile-card"
+                        key={`mobile-${reserva.idReserva}`}
                       >
-                        <td>
-                          {
-                            reserva.huesped
-                          }
-                        </td>
+                        <div className="dashboard-upcoming-mobile-top">
+                          <div className="dashboard-upcoming-mobile-guest">
+                            <span className="dashboard-upcoming-mobile-avatar">
+                              {String(
+                                reserva.huesped ||
+                                  "H"
+                              )
+                                .charAt(
+                                  0
+                                )
+                                .toUpperCase()}
+                            </span>
 
-                        <td>
-                          {
-                            reserva.propiedad
-                          }
-                        </td>
+                            <div>
+                              <strong>
+                                {
+                                  reserva.huesped
+                                }
+                              </strong>
 
-                        <td>
-                          {
-                            reserva.canal
-                          }
-                        </td>
+                              <span>
+                                {
+                                  reserva.propiedad
+                                }
+                              </span>
+                            </div>
+                          </div>
 
-                        <td>
-                          {
-                            reserva.fechaIngreso
-                          }
-                        </td>
+                          <span
+                            className={`dashboard-upcoming-mobile-status dashboard-upcoming-mobile-status--${String(
+                              reserva.estado ||
+                                ""
+                            )
+                              .toLowerCase()
+                              .normalize(
+                                "NFD"
+                              )
+                              .replace(
+                                /[\u0300-\u036f]/g,
+                                ""
+                              )
+                              .replace(
+                                /\s+/g,
+                                "-"
+                              )}`}
+                          >
+                            {
+                              reserva.estado
+                            }
+                          </span>
+                        </div>
 
-                        <td>
-                          {
-                            reserva.fechaEgreso
-                          }
-                        </td>
+                        <div className="dashboard-upcoming-mobile-stay">
+                          <div>
+                            <span>
+                              Ingreso
+                            </span>
 
-                        <td>
-                          {
-                            reserva.estado
-                          }
-                        </td>
+                            <strong>
+                              {formatearFechaCortaDashboard(
+                                reserva.fechaIngreso
+                              )}
+                            </strong>
+                          </div>
 
-                        <td>
+                          <span className="dashboard-upcoming-mobile-arrow">
+                            →
+                          </span>
+
+                          <div>
+                            <span>
+                              Egreso
+                            </span>
+
+                            <strong>
+                              {formatearFechaCortaDashboard(
+                                reserva.fechaEgreso
+                              )}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div className="dashboard-upcoming-mobile-bottom">
+                          <span className="dashboard-upcoming-mobile-channel">
+                            {
+                              reserva.canal
+                            }
+                          </span>
+
                           <button
                             type="button"
                             className="dashboard-reservation-action"
@@ -823,12 +1413,22 @@ function Dashboard({ usuario, onLogout }) {
                           >
                             Ver reserva
                           </button>
-                        </td>
-                      </tr>
+                        </div>
+                      </article>
                     )
-                  )}
-                </tbody>
-              </table>
+                  )
+                ) : (
+                  <div className="dashboard-upcoming-mobile-empty">
+                    <strong>
+                      Sin próximas reservas
+                    </strong>
+
+                    <span>
+                      No hay check-ins próximos para mostrar.
+                    </span>
+                  </div>
+                )}
+              </div>
             </section>
           </>
         )}

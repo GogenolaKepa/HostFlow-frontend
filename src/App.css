@@ -1,3 +1,13 @@
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10249,4 +10259,4060 @@ textarea,
 .reportes-export-format span {
   margin-top: 2px;
   line-height: 1.45;
+}
+
+/* =========================================================
+   HOSTFLOW - RESPONSIVE GLOBAL V1
+   Ajustes finales para desktop / tablet / móvil.
+   Este bloque debe permanecer AL FINAL del App.css.
+   ========================================================= */
+
+/* Base segura para evitar desbordes de página completos. */
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+/* Los contenedores principales nunca deben forzar ancho extra. */
+.dashboard,
+.main,
+.reservas-page,
+.propiedades-page,
+.huespedes-page,
+.calendar-page,
+.alertas-page,
+.reportes-page {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Scroll horizontal táctil sólo donde tiene sentido. */
+.table-card,
+.huespedes-page .table-card,
+.calendar-board-scroll,
+.calendar-month-view-card,
+.reportes-property-table-wrap,
+.dashboard-upcoming-panel {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Login: viewport dinámico y sin ancho extra por 100vw. */
+.login-container {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+/* =========================================================
+   TABLET / NOTEBOOK ANGOSTA
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .dashboard {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  /*
+   * La barra lateral pasa a ser una barra superior desplazable.
+   * El CSS anterior ya intentaba hacerlo, pero faltaba display:flex
+   * sobre .sidebar, por lo que flex-direction/align-items no siempre
+   * tenían efecto.
+   */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 4000;
+
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+
+    padding: 12px 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    box-shadow:
+      0 8px 20px
+      rgba(15, 23, 42, 0.16);
+  }
+
+  .sidebar nav {
+    min-width: 0;
+    flex: 1 0 auto;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scrollbar-width: thin;
+  }
+
+  .sidebar nav p {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 12px;
+
+    white-space: nowrap;
+  }
+
+  .sidebar button {
+    width: auto;
+    min-width: max-content;
+    margin-top: 0;
+    flex: 0 0 auto;
+  }
+
+  .main {
+    width: 100%;
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .section-header,
+  .calendar-header,
+  .reportes-header {
+    min-width: 0;
+  }
+
+  .table-card,
+  .form-card,
+  .panel,
+  .card {
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   MÓVIL
+   ========================================================= */
+
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  .main {
+    padding: 12px;
+  }
+
+  .login-container {
+    min-height: 100dvh;
+    padding: 20px 14px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px 20px;
+  }
+
+  .login-info h1 {
+    font-size: 34px;
+  }
+
+  .login-info p {
+    font-size: 16px;
+  }
+
+  .section-header {
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .section-header p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .card,
+  .panel,
+  .table-card,
+  .form-card {
+    border-radius: 14px;
+  }
+
+  .table-card {
+    width: 100%;
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  /* Inputs cómodos para toque y para evitar zoom raro en iOS. */
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  button {
+    min-height: 40px;
+  }
+
+  /* Modales seguros para barras del navegador móvil. */
+  .reservation-detail-overlay,
+  .calendar-day-modal-backdrop,
+  .dashboard-metric-overlay,
+  .reportes-export-overlay,
+  .property-image-preview-backdrop {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .reservation-detail-modal,
+  .calendar-day-modal,
+  .dashboard-metric-modal,
+  .reportes-export-modal,
+  .property-image-preview-modal {
+    max-width: 100%;
+    max-height: calc(100dvh - 20px);
+  }
+
+  /* Dashboard: tablas y bloques anchos se desplazan internamente. */
+  .dashboard-upcoming-panel {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .dashboard-upcoming-table {
+    min-width: 820px;
+  }
+
+  /* Alertas: acciones más cómodas para toque. */
+  .alertas-item-actions button {
+    min-height: 38px;
+  }
+
+  /* Calendario: nunca debe hacer crecer el body. */
+  .calendar-page,
+  .calendar-board-card,
+  .calendar-month-view-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .calendar-board-scroll,
+  .calendar-month-view-card {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  /* Reportes: las tablas mantienen legibilidad mediante scroll interno. */
+  .reportes-property-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .reportes-header-actions {
+    width: 100%;
+  }
+
+  .reportes-filter-toggle,
+  .reportes-generate-button,
+  .reportes-refresh-compact {
+    width: 100%;
+  }
+
+  /* Detalle de propiedad / reserva: evitar textos cortados. */
+  .property-detail-operational-row,
+  .reservation-detail-list > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .property-detail-operational-row strong,
+  .reservation-detail-list dd {
+    width: 100%;
+    text-align: left;
+  }
+
+  .reservation-message-bubble {
+    max-width: 94%;
+  }
+}
+
+/* =========================================================
+   MÓVIL MUY ANGOSTO
+   ========================================================= */
+
+@media (max-width: 420px) {
+  .main {
+    padding: 10px;
+  }
+
+  .sidebar {
+    padding: 10px;
+  }
+
+  .sidebar nav p {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .section-header {
+    padding: 16px;
+  }
+
+  .section-header h2 {
+    font-size: 22px;
+  }
+
+  .calendar-header,
+  .reportes-header {
+    padding: 16px;
+  }
+
+  .reportes-panel,
+  .property-detail-panel,
+  .reservation-detail-card {
+    padding: 15px;
+  }
+
+  .calendar-day-modal-header,
+  .reservation-detail-header,
+  .reportes-export-header {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - NAVEGACIÓN RESPONSIVE V2
+   Desktop: sidebar expandible.
+   Tablet: sidebar lateral, contraída por defecto desde JSX.
+   Móvil: topbar + menú desplegable vertical.
+   Debe permanecer AL FINAL del App.css.
+   ========================================================= */
+
+:root {
+  --hostflow-sidebar-expanded: 240px;
+  --hostflow-sidebar-collapsed: 78px;
+  --hostflow-mobile-bar-height: 60px;
+}
+
+.dashboard {
+  align-items: stretch;
+}
+
+/* -------------------------
+   SIDEBAR DESKTOP / TABLET
+   ------------------------- */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 3500;
+
+  width: var(--hostflow-sidebar-expanded);
+  min-width: var(--hostflow-sidebar-expanded);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+
+  padding: 18px 14px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: #111827;
+  color: #ffffff;
+
+  transition:
+    width 0.22s ease,
+    min-width 0.22s ease,
+    padding 0.22s ease;
+
+  box-shadow:
+    8px 0 26px
+    rgba(15, 23, 42, 0.08);
+}
+
+.sidebar--collapsed {
+  width: var(--hostflow-sidebar-collapsed);
+  min-width: var(--hostflow-sidebar-collapsed);
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+}
+
+.sidebar-brand,
+.sidebar-collapse-toggle,
+.sidebar-nav-item,
+.sidebar-logout,
+.mobile-appbar-brand,
+.mobile-menu-toggle,
+.mobile-nav-item,
+.mobile-nav-logout,
+.mobile-nav-backdrop {
+  font: inherit;
+}
+
+.sidebar .sidebar-brand,
+.sidebar .sidebar-collapse-toggle,
+.sidebar .sidebar-nav-item,
+.sidebar .sidebar-logout {
+  margin-top: 0;
+}
+
+.sidebar-brand {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 8px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: transparent;
+  color: #ffffff;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-brand:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    );
+}
+
+.sidebar-brand-mark {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+}
+
+.sidebar-brand-name {
+  overflow: hidden;
+  white-space: nowrap;
+
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+
+  transition:
+    opacity 0.15s ease;
+}
+
+.sidebar-collapse-toggle {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px;
+  padding: 0 !important;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.12
+    ) !important;
+  border-radius: 9px !important;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    ) !important;
+  color: #dbeafe;
+
+  font-size: 24px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.sidebar-collapse-toggle:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.12
+    ) !important;
+}
+
+.sidebar-nav {
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+
+  overflow: visible;
+}
+
+.sidebar .sidebar-nav-item {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #cbd5e1;
+
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.sidebar .sidebar-nav-item:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+  color: #ffffff;
+  transform:
+    translateX(2px);
+}
+
+.sidebar .sidebar-nav-item.active {
+  background: #2563eb;
+  color: #ffffff;
+  transform: none;
+
+  box-shadow:
+    0 8px 18px
+    rgba(
+      37,
+      99,
+      235,
+      0.24
+    );
+}
+
+.sidebar-nav-icon {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-nav-icon svg,
+.sidebar-logout svg,
+.mobile-nav-icon svg,
+.mobile-nav-logout svg {
+  display: block;
+}
+
+.sidebar-nav-label {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 13px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+
+  border-top:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.11
+    );
+}
+
+.sidebar-user {
+  min-width: 0;
+  padding: 4px 5px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-user-avatar {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #e0e7ff;
+  color: #1e3a8a;
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.sidebar-user-copy {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-user-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.sidebar-user-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #94a3b8;
+  font-size: 10px;
+}
+
+.sidebar .sidebar-logout {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+
+  border: 1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.09
+    );
+  border-radius: 10px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
+  color: #dbeafe;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.sidebar .sidebar-logout:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.1
+    );
+  color: #ffffff;
+}
+
+/* Estado contraído */
+
+.sidebar--collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar--collapsed .sidebar-brand-name,
+.sidebar--collapsed .sidebar-nav-label,
+.sidebar--collapsed .sidebar-user-copy {
+  display: none;
+}
+
+.sidebar--collapsed .sidebar-top {
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sidebar--collapsed .sidebar-collapse-toggle {
+  width: 100% !important;
+}
+
+.sidebar--collapsed .sidebar-nav-item,
+.sidebar--collapsed .sidebar-logout {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar--collapsed .sidebar-nav-item:hover {
+  transform: none;
+}
+
+.sidebar--collapsed .sidebar-user {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Main siempre ocupa el espacio disponible. */
+
+.main {
+  width: auto;
+  min-width: 0;
+  flex: 1;
+}
+
+/* -------------------------
+   BARRA / MENÚ MÓVIL
+   ------------------------- */
+
+.mobile-appbar,
+.mobile-nav-drawer,
+.mobile-nav-backdrop {
+  display: none;
+}
+
+/* -------------------------
+   TABLET
+   Mantiene sidebar lateral.
+   ------------------------- */
+
+@media (
+  min-width: 701px
+) and (
+  max-width: 1100px
+) {
+  .dashboard {
+    flex-direction: row;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+
+    width:
+      var(
+        --hostflow-sidebar-expanded
+      );
+    min-width:
+      var(
+        --hostflow-sidebar-expanded
+      );
+    height: 100dvh;
+
+    padding: 18px 14px;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .sidebar--collapsed {
+    width:
+      var(
+        --hostflow-sidebar-collapsed
+      );
+    min-width:
+      var(
+        --hostflow-sidebar-collapsed
+      );
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar nav {
+    flex: 1;
+    flex-direction: column;
+
+    overflow: visible;
+  }
+
+  .sidebar button {
+    min-width: 0;
+  }
+
+  .main {
+    width: auto;
+    padding: 18px;
+  }
+}
+
+/* -------------------------
+   MÓVIL
+   ------------------------- */
+
+@media (max-width: 700px) {
+  .dashboard {
+    width: 100%;
+    min-height: 100dvh;
+
+    display: block;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .mobile-appbar {
+    position: sticky;
+    top: 0;
+    z-index: 5200;
+
+    width: 100%;
+    height:
+      var(
+        --hostflow-mobile-bar-height
+      );
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: #111827;
+    color: #ffffff;
+
+    box-shadow:
+      0 7px 20px
+      rgba(
+        15,
+        23,
+        42,
+        0.2
+      );
+  }
+
+  .mobile-appbar-brand {
+    width: auto;
+    min-height: 40px;
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+    color: #ffffff;
+
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.45px;
+
+    cursor: pointer;
+  }
+
+  .mobile-menu-toggle {
+    position: relative;
+
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    border: 1px solid
+      rgba(
+        255,
+        255,
+        255,
+        0.12
+      );
+    border-radius: 10px;
+
+    background:
+      rgba(
+        255,
+        255,
+        255,
+        0.06
+      );
+
+    cursor: pointer;
+  }
+
+  .mobile-menu-toggle span {
+    width: 19px;
+    height: 2px;
+
+    display: block;
+
+    border-radius: 999px;
+
+    background: #ffffff;
+
+    transition:
+      transform 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  .mobile-menu-toggle.is-open span:nth-child(1) {
+    transform:
+      translateY(7px)
+      rotate(45deg);
+  }
+
+  .mobile-menu-toggle.is-open span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-menu-toggle.is-open span:nth-child(3) {
+    transform:
+      translateY(-7px)
+      rotate(-45deg);
+  }
+
+  .mobile-nav-backdrop {
+    position: fixed;
+    top:
+      var(
+        --hostflow-mobile-bar-height
+      );
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    z-index: 5100;
+
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+
+    display: block;
+
+    border: 0;
+    border-radius: 0;
+
+    background:
+      rgba(
+        15,
+        23,
+        42,
+        0.46
+      );
+
+    cursor: default;
+  }
+
+  .mobile-nav-drawer {
+    position: fixed;
+    top:
+      var(
+        --hostflow-mobile-bar-height
+      );
+    right: 0;
+    left: 0;
+
+    z-index: 5150;
+
+    max-height:
+      calc(
+        100dvh -
+        var(
+          --hostflow-mobile-bar-height
+        )
+      );
+    padding: 12px 14px 16px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    overflow-y: auto;
+
+    background: #111827;
+    color: #ffffff;
+
+    border-top:
+      1px solid
+      rgba(
+        255,
+        255,
+        255,
+        0.08
+      );
+
+    box-shadow:
+      0 16px 30px
+      rgba(
+        15,
+        23,
+        42,
+        0.28
+      );
+  }
+
+  .mobile-nav-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .mobile-nav-item {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: transparent;
+    color: #cbd5e1;
+
+    font-size: 14px;
+    font-weight: 750;
+    text-align: left;
+
+    cursor: pointer;
+  }
+
+  .mobile-nav-item.active {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  .mobile-nav-icon {
+    width: 23px;
+    min-width: 23px;
+    height: 23px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-nav-footer {
+    padding-top: 13px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    border-top:
+      1px solid
+      rgba(
+        255,
+        255,
+        255,
+        0.1
+      );
+  }
+
+  .mobile-nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-nav-avatar {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #dbeafe;
+    color: #1e3a8a;
+
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .mobile-nav-user div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-nav-user strong {
+    color: #ffffff;
+    font-size: 13px;
+  }
+
+  .mobile-nav-user span:not(.mobile-nav-avatar) {
+    color: #94a3b8;
+    font-size: 11px;
+  }
+
+  .mobile-nav-logout {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    border: 1px solid
+      rgba(
+        255,
+        255,
+        255,
+        0.12
+      );
+    border-radius: 10px;
+
+    background:
+      rgba(
+        255,
+        255,
+        255,
+        0.06
+      );
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+  }
+
+  .main {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+  }
+}
+
+/* Móviles muy angostos */
+@media (max-width: 420px) {
+  .mobile-appbar {
+    padding:
+      0 11px;
+  }
+
+  .mobile-nav-drawer {
+    padding:
+      10px 11px 14px;
+  }
+
+  .mobile-nav-item {
+    min-height: 44px;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - BRAND + CALENDARIO MÓVIL V2
+   ========================================================= */
+
+/*
+ * Marca principal:
+ * - expandida: sólo "HostFlow", sin bloque HF.
+ * - contraída: mostramos una H discreta para conservar identidad.
+ *
+ * Usamos tipografías del sistema para no depender de Google Fonts
+ * ni de conexión externa. Segoe UI Variable Display / Aptos Display
+ * dan una presencia más seria y de producto SaaS.
+ */
+.sidebar-brand-name,
+.mobile-appbar-brand {
+  font-family:
+    "Segoe UI Variable Display",
+    "Aptos Display",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  font-weight: 800;
+  letter-spacing: -0.75px;
+}
+
+.sidebar-brand-name {
+  font-size: 22px;
+}
+
+.sidebar:not(.sidebar--collapsed)
+.sidebar-brand-mark {
+  display: none;
+}
+
+.sidebar:not(.sidebar--collapsed)
+.sidebar-brand {
+  padding-left: 4px;
+}
+
+.sidebar--collapsed
+.sidebar-brand-mark {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+
+  border-radius: 10px;
+
+  font-family:
+    "Segoe UI Variable Display",
+    "Aptos Display",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: -0.5px;
+}
+
+.mobile-appbar-brand {
+  font-size: 21px;
+}
+
+/* =========================================================
+   CALENDARIO POR PROPIEDAD - MÓVIL REAL
+   ========================================================= */
+
+/*
+ * Antes la vista mensual por propiedad conservaba un mínimo
+ * de 840px, por eso en celular obligaba a desplazarse y se
+ * sentía como una pantalla de escritorio comprimida.
+ *
+ * En móvil mostramos el mes completo dentro del ancho disponible.
+ * La celda queda más visual: número + color/indicador.
+ * El detalle completo sigue disponible tocando el día.
+ */
+@media (max-width: 700px) {
+  .calendar-month-view-card {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .calendar-month-property-header {
+    padding: 14px;
+
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .calendar-month-property-header h2 {
+    margin-top: 2px;
+    font-size: 18px;
+  }
+
+  .calendar-month-property-header p {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .calendar-month-property-stats {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+    gap: 6px;
+  }
+
+  .calendar-month-property-stats > div {
+    min-width: 0;
+    padding: 8px 5px;
+
+    align-items: center;
+    text-align: center;
+  }
+
+  .calendar-month-property-stats span {
+    font-size: 7px;
+    line-height: 1.2;
+  }
+
+  .calendar-month-property-stats strong {
+    font-size: 14px;
+  }
+
+  /*
+   * Anulamos el min-width: 840px de la versión tablet.
+   */
+  .calendar-month-weekdays,
+  .calendar-month-grid {
+    width: 100%;
+    min-width: 0;
+
+    grid-template-columns:
+      repeat(
+        7,
+        minmax(0, 1fr)
+      );
+  }
+
+  .calendar-month-weekdays > div {
+    min-width: 0;
+    padding: 7px 1px;
+
+    font-size: 7px;
+    letter-spacing: 0;
+  }
+
+  .calendar-month-day,
+  .calendar-month-day--empty {
+    min-width: 0;
+    min-height: 62px;
+  }
+
+  .calendar-month-day {
+    padding: 5px 3px;
+    gap: 4px;
+  }
+
+  .calendar-month-day-header {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .calendar-month-day-number {
+    width: 24px;
+    height: 24px;
+
+    font-size: 11px;
+  }
+
+  /*
+   * El color de la celda + la leyenda del calendario ya comunican
+   * el estado. Sacamos el badge largo para que no rompa las 7 columnas.
+   */
+  .calendar-month-day-state {
+    display: none;
+  }
+
+  .calendar-month-day-body {
+    width: 100%;
+    min-height: 8px;
+
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+  }
+
+  /*
+   * En celular las reservas se muestran como pequeñas barras.
+   * Tocando el día se abre el modal con huésped, canal, monto, etc.
+   */
+  .calendar-month-reservation {
+    width: 72%;
+    min-width: 0;
+    min-height: 4px;
+    height: 4px;
+    padding: 0;
+
+    display: block;
+
+    border: 0;
+    border-radius: 999px;
+
+    background: #2563eb;
+  }
+
+  .calendar-month-reservation strong,
+  .calendar-month-reservation span {
+    display: none;
+  }
+
+  .calendar-month-reservation--conflict {
+    background: #dc2626;
+  }
+
+  .calendar-month-more {
+    font-size: 6px;
+    line-height: 1;
+  }
+
+  /*
+   * Canceladas / no-show: sólo punto gris.
+   */
+  .calendar-month-history {
+    margin-top: 0;
+
+    width: 100%;
+    height: 8px;
+
+    justify-content: center;
+
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .calendar-month-history > span {
+    width: 6px;
+    height: 6px;
+  }
+
+  /*
+   * El "hoy" y la selección siguen siendo visibles,
+   * pero sin engordar la grilla.
+   */
+  .calendar-month-day--today {
+    box-shadow:
+      inset 0 0 0 1.5px
+      #60a5fa;
+  }
+
+  .calendar-month-day--selected {
+    box-shadow:
+      inset 0 0 0 1.5px
+      #2563eb;
+  }
+
+  /*
+   * Modal del día: ocupa casi todo el ancho y mantiene
+   * una separación cómoda respecto de los bordes.
+   */
+  .calendar-day-modal-backdrop {
+    padding: 10px;
+  }
+
+  .calendar-day-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height:
+      calc(
+        100dvh -
+        20px
+      );
+  }
+}
+
+@media (max-width: 420px) {
+  .calendar-month-property-header {
+    padding: 12px;
+  }
+
+  .calendar-month-weekdays > div {
+    padding:
+      6px 0;
+    font-size: 6.5px;
+  }
+
+  .calendar-month-day,
+  .calendar-month-day--empty {
+    min-height: 58px;
+  }
+
+  .calendar-month-day {
+    padding:
+      4px 2px;
+  }
+
+  .calendar-month-day-number {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .calendar-month-reservation {
+    width: 76%;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - SIDEBAR FIJA DESKTOP / TABLET V3
+   La navegación siempre ocupa exactamente el alto visible.
+   El contenido principal es el único que desplaza verticalmente.
+   ========================================================= */
+
+@media (min-width: 701px) {
+  .dashboard {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 100dvh;
+  }
+
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    z-index: 3500;
+
+    width:
+      var(
+        --hostflow-sidebar-expanded
+      );
+    min-width:
+      var(
+        --hostflow-sidebar-expanded
+      );
+
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    overscroll-behavior: contain;
+  }
+
+  .sidebar--collapsed {
+    width:
+      var(
+        --hostflow-sidebar-collapsed
+      );
+    min-width:
+      var(
+        --hostflow-sidebar-collapsed
+      );
+  }
+
+  .main {
+    width: auto;
+    min-width: 0;
+
+    margin-left:
+      var(
+        --hostflow-sidebar-expanded
+      );
+
+    transition:
+      margin-left 0.22s ease;
+
+    min-height: 100dvh;
+  }
+
+  .dashboard--sidebar-collapsed
+  .main {
+    margin-left:
+      var(
+        --hostflow-sidebar-collapsed
+      );
+  }
+}
+
+/*
+ * En móvil la sidebar desaparece completamente,
+ * por lo que el contenido vuelve a ocupar todo el ancho.
+ */
+@media (max-width: 700px) {
+  .dashboard,
+  .dashboard--sidebar-collapsed {
+    display: block;
+  }
+
+  .main,
+  .dashboard--sidebar-collapsed
+  .main {
+    margin-left: 0;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - FIX COLOR TÍTULO INGRESOS DEL MES
+   Evita el color azul por defecto de botones en Safari/iOS.
+   ========================================================= */
+
+.dashboard-metric-card {
+  color: #111827;
+}
+
+.dashboard-metric-card-top p {
+  color: #111827;
+}
+
+/* El valor monetario conserva el azul de las métricas. */
+.dashboard-metric-card h2 {
+  color: #2563eb;
+}
+
+/* =========================================================
+   HOSTFLOW - RESERVAS MÓVIL V1
+   Desktop / iPad conserva tabla.
+   Celular usa cards sin scroll horizontal.
+   ========================================================= */
+
+.reservas-mobile-list {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .reservas-page .reservas-desktop-list {
+    display: none;
+  }
+
+  .reservas-mobile-list {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .reservas-mobile-card {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 4px 14px
+      rgba(
+        15,
+        23,
+        42,
+        0.05
+      );
+
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .reservas-mobile-card--highlighted {
+    border-color: #60a5fa;
+
+    box-shadow:
+      0 0 0 3px
+        rgba(
+          59,
+          130,
+          246,
+          0.12
+        ),
+      0 8px 20px
+        rgba(
+          37,
+          99,
+          235,
+          0.12
+        );
+  }
+
+  .reservas-mobile-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .reservas-mobile-card-top > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .reservas-mobile-id {
+    display: block;
+    margin-bottom: 4px;
+
+    color: #64748b;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+  }
+
+  .reservas-mobile-card h3 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .reservas-mobile-card-top p {
+    margin:
+      4px 0 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    color: #475569;
+
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .reservas-mobile-card .estado {
+    flex: 0 0 auto;
+
+    max-width: 45%;
+    padding:
+      6px 9px;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .reservas-mobile-stay {
+    padding:
+      11px 12px;
+
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+
+    border-radius: 11px;
+
+    background: #f8fafc;
+  }
+
+  .reservas-mobile-stay > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .reservas-mobile-stay > div:last-child {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .reservas-mobile-stay span:not(
+    .reservas-mobile-stay-arrow
+  ),
+  .reservas-mobile-meta span {
+    color: #94a3b8;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.25px;
+    text-transform: uppercase;
+  }
+
+  .reservas-mobile-stay strong {
+    color: #1e293b;
+
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .reservas-mobile-stay-arrow {
+    color: #94a3b8;
+
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  .reservas-mobile-meta {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .reservas-mobile-meta > div {
+    min-width: 0;
+    padding:
+      9px 10px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+
+    background: #ffffff;
+  }
+
+  .reservas-mobile-meta strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #1e293b;
+
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .reservas-mobile-actions {
+    padding-top: 2px;
+
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 7px;
+  }
+
+  .reservas-mobile-actions button {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    margin: 0;
+    padding:
+      9px 10px;
+
+    justify-content: center;
+
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .reservas-mobile-actions
+  .detail-button {
+    grid-column:
+      1 / -1;
+  }
+
+  .reservas-mobile-pending {
+    grid-column:
+      1 / -1;
+
+    padding:
+      7px 9px;
+
+    border-radius: 8px;
+
+    background: #fff7ed;
+    color: #9a3412;
+
+    font-size: 9px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .reservas-mobile-empty {
+    width: 100%;
+    padding:
+      26px 18px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    text-align: center;
+  }
+
+  .reservas-mobile-empty strong {
+    color: #334155;
+    font-size: 13px;
+  }
+
+  .reservas-mobile-empty span {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /*
+   * La cabecera ya se apila; en móvil dejamos
+   * acciones cómodas sin crear scroll horizontal.
+   */
+  .reservas-page
+  .reservas-header-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .reservas-page
+  .reservas-header-actions
+  > button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /*
+   * Filtros realmente móviles.
+   */
+  .reservas-page
+  .reservas-filter-card {
+    margin-bottom: 12px;
+    padding: 13px;
+  }
+
+  .reservas-page
+  .reservas-filter-header h3 {
+    font-size: 15px;
+  }
+
+  .reservas-page
+  .reservas-filter-header p {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .reservas-page
+  .reservas-filter-field > span {
+    font-size: 10px;
+  }
+
+  .reservas-page
+  .reservas-filter-footer p {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .reservas-mobile-card {
+    padding: 13px;
+  }
+
+  .reservas-mobile-card h3 {
+    font-size: 16px;
+  }
+
+  .reservas-mobile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .reservas-mobile-actions
+  .detail-button,
+  .reservas-mobile-pending {
+    grid-column: auto;
+  }
+
+  .reservas-page
+  .reservas-header-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - DASHBOARD MÓVIL V1
+   Próximas reservas sin tabla horizontal.
+   ========================================================= */
+
+.dashboard-upcoming-heading {
+  margin-bottom: 14px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.dashboard-upcoming-heading h3 {
+  margin: 0;
+}
+
+.dashboard-upcoming-heading p {
+  margin:
+    4px 0 0;
+
+  color: #64748b;
+
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.dashboard-upcoming-mobile {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  /*
+   * En el teléfono la tabla desaparece.
+   * Las mismas reservas se muestran como cards táctiles.
+   */
+  .dashboard-upcoming-panel {
+    width: 100%;
+    padding: 14px;
+    overflow: visible;
+  }
+
+  .dashboard-upcoming-desktop {
+    display: none;
+  }
+
+  .dashboard-upcoming-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .dashboard-upcoming-heading {
+    margin-bottom: 11px;
+  }
+
+  .dashboard-upcoming-heading h3 {
+    color: #0f172a;
+
+    font-size: 17px;
+  }
+
+  .dashboard-upcoming-heading p {
+    font-size: 10px;
+  }
+
+  .dashboard-upcoming-mobile-card {
+    width: 100%;
+    min-width: 0;
+    padding: 13px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 3px 10px
+      rgba(
+        15,
+        23,
+        42,
+        0.04
+      );
+  }
+
+  .dashboard-upcoming-mobile-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 9px;
+  }
+
+  .dashboard-upcoming-mobile-guest {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .dashboard-upcoming-mobile-avatar {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #dbeafe;
+    color: #1d4ed8;
+
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .dashboard-upcoming-mobile-guest > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dashboard-upcoming-mobile-guest strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #0f172a;
+
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .dashboard-upcoming-mobile-guest span:not(
+    .dashboard-upcoming-mobile-avatar
+  ) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #64748b;
+
+    font-size: 10px;
+  }
+
+  .dashboard-upcoming-mobile-status {
+    flex: 0 0 auto;
+
+    padding:
+      5px 8px;
+
+    border-radius: 999px;
+
+    background: #eef2ff;
+    color: #4338ca;
+
+    font-size: 8px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .dashboard-upcoming-mobile-status--confirmada {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .dashboard-upcoming-mobile-status--pendiente {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .dashboard-upcoming-mobile-stay {
+    padding:
+      9px 10px;
+
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+
+    border-radius: 10px;
+
+    background: #f8fafc;
+  }
+
+  .dashboard-upcoming-mobile-stay > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dashboard-upcoming-mobile-stay > div:last-child {
+    align-items: flex-end;
+  }
+
+  .dashboard-upcoming-mobile-stay span:not(
+    .dashboard-upcoming-mobile-arrow
+  ) {
+    color: #94a3b8;
+
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.25px;
+    text-transform: uppercase;
+  }
+
+  .dashboard-upcoming-mobile-stay strong {
+    color: #334155;
+
+    font-size: 11px;
+  }
+
+  .dashboard-upcoming-mobile-arrow {
+    color: #94a3b8;
+
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .dashboard-upcoming-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dashboard-upcoming-mobile-channel {
+    padding:
+      5px 8px;
+
+    border-radius: 999px;
+
+    background: #f1f5f9;
+    color: #475569;
+
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .dashboard-upcoming-mobile-bottom
+  .dashboard-reservation-action {
+    width: auto;
+    min-width: 104px;
+    min-height: 36px;
+    margin: 0;
+    padding:
+      8px 12px;
+
+    font-size: 10px;
+  }
+
+  .dashboard-upcoming-mobile-empty {
+    padding:
+      24px 16px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+
+    background: #f8fafc;
+
+    text-align: center;
+  }
+
+  .dashboard-upcoming-mobile-empty strong {
+    color: #334155;
+    font-size: 12px;
+  }
+
+  .dashboard-upcoming-mobile-empty span {
+    color: #94a3b8;
+    font-size: 10px;
+  }
+
+  /*
+   * Aprovechamos la pasada para que Inicio no tenga
+   * ningún desborde accidental en móvil.
+   */
+  .dashboard .cards,
+  .dashboard .content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard .card,
+  .dashboard .panel {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-upcoming-panel {
+    padding: 12px;
+  }
+
+  .dashboard-upcoming-mobile-card {
+    padding: 12px;
+  }
+
+  .dashboard-upcoming-mobile-bottom {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-upcoming-mobile-bottom
+  .dashboard-reservation-action {
+    width: 100%;
+  }
+
+  .dashboard-upcoming-mobile-channel {
+    width: fit-content;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - HUÉSPEDES MÓVIL V1
+   Desktop / iPad conserva tablas.
+   Celular usa cards y elimina scroll horizontal innecesario.
+   ========================================================= */
+
+.huespedes-mobile-list,
+.huesped-detail-reservas-mobile,
+.huesped-detail-history-mobile {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  /* -----------------------------------------
+     LISTADO PRINCIPAL
+     ----------------------------------------- */
+
+  .huespedes-page .huespedes-desktop-list {
+    display: none;
+  }
+
+  .huespedes-mobile-list {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .huesped-mobile-card {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 4px 14px
+      rgba(
+        15,
+        23,
+        42,
+        0.05
+      );
+  }
+
+  .huesped-mobile-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .huesped-mobile-identidad {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .huesped-mobile-avatar {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #dbeafe;
+    color: #1d4ed8;
+
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .huesped-mobile-identidad > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .huesped-mobile-card h3 {
+    margin: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    color: #0f172a;
+
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .huesped-mobile-card .channel-badge {
+    min-width: 0;
+    padding:
+      5px 8px;
+
+    font-size: 9px;
+  }
+
+  .huesped-mobile-status {
+    flex: 0 0 auto;
+
+    max-width: 42%;
+    padding:
+      5px 8px;
+
+    border-radius: 999px;
+
+    background: #f1f5f9;
+    color: #475569;
+
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .huesped-mobile-contacto {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .huesped-mobile-contacto > div,
+  .huesped-mobile-meta > div {
+    min-width: 0;
+    padding:
+      9px 10px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+
+    background: #f8fafc;
+  }
+
+  .huesped-mobile-contacto span,
+  .huesped-mobile-meta span {
+    color: #94a3b8;
+
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.25px;
+    text-transform: uppercase;
+  }
+
+  .huesped-mobile-contacto strong,
+  .huesped-mobile-meta strong {
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    color: #334155;
+
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .huesped-mobile-contacto strong {
+    white-space: nowrap;
+  }
+
+  .huesped-mobile-meta {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .huesped-mobile-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .huesped-mobile-actions
+  .secondary-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    margin: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 10px;
+  }
+
+  /* -----------------------------------------
+     DETALLE DEL HUÉSPED
+     ----------------------------------------- */
+
+  .huesped-detail-card {
+    width: 100%;
+    min-width: 0;
+    padding: 13px;
+  }
+
+  .huesped-detail-card
+  > .section-header {
+    margin-bottom: 12px;
+    padding: 14px;
+
+    align-items: stretch;
+  }
+
+  .huesped-detail-card
+  > .section-header
+  .secondary-button {
+    width: 100%;
+  }
+
+  .huesped-detail-card
+  .guest-summary-grid {
+    margin:
+      12px 0 20px;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .huesped-detail-card
+  .guest-summary-grid
+  > div {
+    min-width: 0;
+    padding: 10px;
+
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+
+    background: #f8fafc;
+  }
+
+  .huesped-detail-card
+  .guest-summary-grid
+  strong {
+    font-size: 9px;
+  }
+
+  .huesped-detail-card
+  .guest-summary-grid
+  p {
+    margin:
+      4px 0 0;
+
+    overflow-wrap: anywhere;
+
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .huesped-detail-card > h3 {
+    margin:
+      20px 0 10px;
+
+    color: #0f172a;
+
+    font-size: 15px;
+  }
+
+  .huesped-detail-table-desktop {
+    display: none;
+  }
+
+  .huesped-detail-reservas-mobile,
+  .huesped-detail-history-mobile {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .huesped-detail-reserva-mobile-card,
+  .huesped-detail-history-mobile-card {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+
+    background: #ffffff;
+  }
+
+  .huesped-detail-reserva-mobile-top,
+  .huesped-detail-history-mobile-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .huesped-detail-reserva-mobile-top > div {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .huesped-detail-reserva-mobile-kicker {
+    color: #94a3b8;
+
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  .huesped-detail-reserva-mobile-top strong,
+  .huesped-detail-history-mobile-top strong {
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #1e293b;
+
+    font-size: 12px;
+  }
+
+  .huesped-detail-reserva-mobile-status {
+    flex: 0 0 auto;
+
+    padding:
+      5px 7px;
+
+    border-radius: 999px;
+
+    background: #dcfce7;
+    color: #166534;
+
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .huesped-detail-reserva-mobile-status--next {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .huesped-detail-reserva-mobile-stay,
+  .huesped-detail-history-mobile-stay {
+    padding:
+      8px 9px;
+
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+
+    border-radius: 9px;
+
+    background: #f8fafc;
+
+    color: #334155;
+
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .huesped-detail-reserva-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .huesped-detail-reserva-mobile-bottom
+  .secondary-button {
+    width: auto;
+    min-width: 106px;
+    min-height: 36px;
+    margin: 0;
+
+    font-size: 9px;
+  }
+
+  .huesped-detail-history-mobile-info {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 7px;
+  }
+
+  .huesped-detail-history-mobile-info > div {
+    min-width: 0;
+    padding:
+      8px 9px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    border-radius: 9px;
+
+    background: #f8fafc;
+  }
+
+  .huesped-detail-history-mobile-info span {
+    color: #94a3b8;
+
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .huesped-detail-history-mobile-info strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #334155;
+
+    font-size: 10px;
+  }
+
+  .huesped-detail-history-mobile-card
+  > .secondary-button {
+    width: 100%;
+    min-height: 38px;
+    margin: 0;
+
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 420px) {
+  .huesped-mobile-card {
+    padding: 13px;
+  }
+
+  .huesped-mobile-card-top {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .huesped-mobile-status {
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .huesped-mobile-contacto {
+    grid-template-columns: 1fr;
+  }
+
+  .huesped-mobile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .huesped-detail-card
+  .guest-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .huesped-detail-reserva-mobile-bottom {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .huesped-detail-reserva-mobile-bottom
+  .secondary-button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - BADGES DE CANAL MÁS VISIBLES V2
+   Airbnb / Booking / Manual con identidad clara.
+   ========================================================= */
+
+.huespedes-page .channel-badge {
+  gap: 6px;
+  padding: 6px 10px;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(255, 255, 255, 0.35);
+}
+
+/* Punto visual previo al nombre del canal */
+.huespedes-page .channel-badge::before {
+  content: "";
+
+  width: 7px;
+  min-width: 7px;
+  height: 7px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+/* Airbnb */
+.huespedes-page .channel-airbnb {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+/* Booking */
+.huespedes-page .channel-booking {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* Manual / HostFlow */
+.huespedes-page .channel-manual {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+}
+
+/*
+ * Por si en algún registro manual el backend devuelve "HostFlow"
+ * como origen en vez de "Manual".
+ */
+.huespedes-page .channel-hostflow {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+@media (max-width: 700px) {
+  .huesped-mobile-card .channel-badge,
+  .huesped-detail-reserva-mobile-card .channel-badge,
+  .huesped-detail-history-mobile-card .channel-badge {
+    min-width: fit-content;
+    padding: 6px 9px;
+
+    font-size: 9px;
+    font-weight: 900;
+
+    box-shadow:
+      0 2px 5px
+      rgba(
+        15,
+        23,
+        42,
+        0.05
+      );
+  }
+
+  .huesped-mobile-card .channel-badge::before,
+  .huesped-detail-reserva-mobile-card .channel-badge::before,
+  .huesped-detail-history-mobile-card .channel-badge::before {
+    width: 6px;
+    min-width: 6px;
+    height: 6px;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - PROPIEDADES RESPONSIVE V1
+   Desktop / iPad conserva la experiencia completa.
+   Celular prioriza lectura vertical y elimina desbordes.
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .propiedades-page {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* CABECERA */
+  .propiedades-page > .section-header {
+    align-items: stretch;
+  }
+
+  .propiedades-page > .section-header .primary-button {
+    width: 100%;
+  }
+
+  /* LISTADO */
+  .properties-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .property-card {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    flex-direction: column;
+
+    border-radius: 15px;
+  }
+
+  .property-card:hover {
+    transform: none;
+  }
+
+  .property-image {
+    width: 100%;
+    min-width: 0;
+    height: 190px;
+    min-height: 190px;
+
+    flex: 0 0 auto;
+  }
+
+  .property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .property-info {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+  }
+
+  .property-title {
+    margin-bottom: 11px;
+    gap: 8px;
+  }
+
+  .property-title h3 {
+    font-size: 18px;
+  }
+
+  .property-statuses {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .propiedades-page .estado {
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+
+  .property-info > p {
+    margin-top: 3px;
+    margin-bottom: 3px;
+
+    overflow-wrap: anywhere;
+
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .property-details {
+    margin-top: 11px;
+
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 7px;
+  }
+
+  .property-details span {
+    min-width: 0;
+    padding: 8px 9px;
+
+    border: 1px solid #edf2f7;
+    border-radius: 9px;
+
+    background: #f8fafc;
+
+    font-size: 10px;
+    line-height: 1.3;
+
+    overflow-wrap: anywhere;
+  }
+
+  .property-details span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .property-reservation-info {
+    margin:
+      12px 0;
+    padding: 10px 11px;
+
+    font-size: 10px;
+  }
+
+  .property-reservation-info strong {
+    font-size: 11px;
+  }
+
+  .property-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .property-actions button {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+
+    font-size: 10px;
+  }
+
+  /* FORMULARIO DE PROPIEDAD */
+  .propiedades-page .form-card {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+  }
+
+  .propiedades-page .form-card h3 {
+    font-size: 16px;
+  }
+
+  /* DETALLE - HERO */
+  .property-detail-view {
+    width: 100%;
+    min-width: 0;
+    gap: 13px;
+  }
+
+  .property-detail-hero {
+    width: 100%;
+    min-width: 0;
+
+    grid-template-columns: 1fr;
+
+    border-radius: 15px;
+  }
+
+  .property-detail-cover,
+  .property-detail-cover img {
+    width: 100%;
+    min-width: 0;
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+  }
+
+  .property-detail-cover-label {
+    left: 10px;
+    bottom: 10px;
+
+    padding: 5px 8px;
+
+    font-size: 8px;
+  }
+
+  .property-detail-hero-content {
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .property-detail-topline {
+    margin-bottom: 15px;
+
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .property-detail-back {
+    font-size: 10px;
+  }
+
+  .property-detail-hero-content > h3 {
+    font-size: 25px;
+    line-height: 1.12;
+
+    overflow-wrap: anywhere;
+  }
+
+  .property-detail-location {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+
+  /*
+   * Cuatro métricas en 2 x 2:
+   * mucho más compacto que una columna larga,
+   * pero sigue siendo cómodo en móvil.
+   */
+  .property-detail-summary {
+    margin-top: 16px;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 7px;
+  }
+
+  .property-detail-summary > div {
+    padding: 9px;
+  }
+
+  .property-detail-summary span {
+    font-size: 8px;
+  }
+
+  .property-detail-summary strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    font-size: 10px;
+  }
+
+  .property-detail-hero-actions {
+    padding-top: 14px;
+  }
+
+  .property-detail-hero-actions button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* DETALLE - PANELES */
+  .property-detail-main-grid,
+  .property-detail-stays-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .property-detail-panel {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+
+    border-radius: 14px;
+  }
+
+  .property-detail-section-heading {
+    margin-bottom: 12px;
+    gap: 9px;
+  }
+
+  .property-detail-section-icon {
+    width: 36px;
+    height: 36px;
+
+    font-size: 16px;
+  }
+
+  .property-detail-section-heading h4 {
+    font-size: 14px;
+  }
+
+  .property-detail-section-heading p {
+    font-size: 9px;
+  }
+
+  /*
+   * Información general en dos columnas cuando entra.
+   * Evitamos alargar innecesariamente la pantalla.
+   */
+  .property-detail-data-list {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap:
+      0 10px;
+  }
+
+  .property-detail-data-list > div {
+    min-width: 0;
+    padding:
+      9px 0;
+  }
+
+  .property-detail-data-list span,
+  .property-detail-operational-row span {
+    font-size: 8px;
+  }
+
+  .property-detail-data-list strong,
+  .property-detail-operational-row strong {
+    font-size: 10px;
+  }
+
+  .property-detail-operational-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .property-detail-operational-row strong {
+    width: 100%;
+    text-align: left;
+  }
+
+  .property-detail-operational-note {
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  /* RESERVAS / OCUPACIÓN */
+  .property-detail-stay-card {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .property-detail-stay-header {
+    align-items: flex-start;
+    gap: 7px;
+  }
+
+  .property-detail-stay-header strong {
+    font-size: 11px;
+  }
+
+  .property-detail-stay-status {
+    padding: 5px 7px;
+    font-size: 8px;
+  }
+
+  .property-detail-stay-body {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  /* GALERÍA */
+  .property-gallery-section {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .property-gallery-section
+  .property-channels-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .property-gallery-section
+  .property-channels-header
+  .primary-button {
+    width: 100%;
+  }
+
+  .property-gallery-grid {
+    width: 100%;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .property-gallery-card {
+    min-width: 0;
+  }
+
+  .property-gallery-image {
+    height: 112px;
+  }
+
+  .property-gallery-info {
+    padding: 8px;
+  }
+
+  .property-gallery-info strong {
+    font-size: 9px;
+  }
+
+  .property-gallery-meta {
+    font-size: 8px;
+    line-height: 1.35;
+  }
+
+  .property-gallery-actions {
+    padding: 0 8px 8px;
+
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .property-gallery-actions button {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+    margin: 0;
+
+    font-size: 8px;
+  }
+
+  .property-gallery-archive-toggle {
+    min-width: 0;
+
+    font-size: 9px;
+  }
+
+  /* CARGA DE IMÁGENES */
+  .property-upload-area {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .property-upload-files {
+    overflow-wrap: anywhere;
+  }
+
+  /* CANALES AIRBNB / BOOKING */
+  .property-channels-section {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .property-channels-grid {
+    width: 100%;
+
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .property-channel-card {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .property-channel-title {
+    align-items: flex-start;
+  }
+
+  .property-channel-title strong {
+    font-size: 13px;
+  }
+
+  .channel-status {
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .property-channel-id,
+  .property-channel-sync {
+    font-size: 9px;
+    line-height: 1.45;
+
+    overflow-wrap: anywhere;
+  }
+
+  .property-channel-actions button,
+  .property-channel-sync-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 38px;
+
+    font-size: 9px;
+  }
+
+  /* PREVIEW DE FOTO */
+  .property-image-preview-backdrop {
+    padding: 10px;
+  }
+
+  .property-image-preview-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height:
+      calc(
+        100dvh -
+        20px
+      );
+  }
+
+  .property-image-preview-media {
+    height: 56dvh;
+  }
+
+  .property-image-preview-info {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* FOOTER DEL DETALLE */
+  .property-detail-footer {
+    width: 100%;
+
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .property-detail-footer button {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .property-image {
+    height: 175px;
+    min-height: 175px;
+  }
+
+  .property-details {
+    grid-template-columns: 1fr;
+  }
+
+  .property-details span:last-child {
+    grid-column: auto;
+  }
+
+  .property-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .property-detail-cover,
+  .property-detail-cover img {
+    height: 195px;
+    min-height: 195px;
+    max-height: 195px;
+  }
+
+  .property-detail-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .property-detail-data-list {
+    grid-template-columns: 1fr;
+  }
+
+  .property-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .property-gallery-image {
+    height: 175px;
+  }
+
+  .property-channel-title {
+    flex-direction: column;
+  }
+
+  .channel-status {
+    width: fit-content;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - CONSOLIDACIÓN RESPONSIVE FINAL V1
+   Un único App.css para PC, tablet y celular.
+   ========================================================= */
+
+/* Marca HostFlow consistente en login / sidebar / appbar. */
+.login-info h1,
+.sidebar-brand-name,
+.mobile-appbar-brand {
+  font-family:
+    "Segoe UI Variable Display",
+    "Aptos Display",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+  font-weight: 850;
+  letter-spacing: -0.8px;
+}
+
+/* Formularios: evita zoom automático de Safari/iOS. */
+@media (max-width: 700px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* =========================================================
+   LOGIN RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .login-container {
+    width: 100%;
+    min-height: 100dvh;
+    padding:
+      max(24px, env(safe-area-inset-top))
+      18px
+      max(24px, env(safe-area-inset-bottom));
+
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .login-info {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+
+  .login-info h1 {
+    margin-bottom: 10px;
+    font-size: 40px;
+  }
+
+  .login-info p {
+    max-width: 320px;
+    margin: 0 auto;
+    font-size: 15px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .login-card h2 {
+    margin-top: 0;
+    font-size: 22px;
+  }
+
+  .login-card input {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .login-card button {
+    min-height: 46px;
+  }
+
+  .login-card small {
+    line-height: 1.45;
+    text-align: center;
+  }
+}
+
+/* =========================================================
+   ALERTAS RESPONSIVE FINAL
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .alertas-page-header {
+    align-items: stretch;
+  }
+
+  .alertas-refresh-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .alertas-summary-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 9px;
+  }
+
+  .alertas-summary-card {
+    min-height: 108px;
+    padding: 13px;
+  }
+
+  .alertas-summary-card > strong {
+    font-size: 24px;
+  }
+
+  .alertas-toolbar {
+    padding: 12px;
+  }
+
+  .alertas-filter-group {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .alertas-item {
+    padding: 13px;
+    gap: 10px;
+  }
+
+  .alertas-item-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .alertas-item h3 {
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .alertas-item-footer {
+    margin-top: 10px;
+  }
+
+  .alertas-item-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .alertas-item-actions button {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  .alertas-auto-resolution {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (max-width: 420px) {
+  .alertas-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   REPORTES RESPONSIVE FINAL
+   Rendimiento por propiedad pasa de tabla a cards en celular.
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .reportes-header {
+    padding: 18px;
+  }
+
+  .reportes-header h1 {
+    font-size: 29px;
+  }
+
+  .reportes-header-actions {
+    width: 100%;
+  }
+
+  .reportes-filter-toggle,
+  .reportes-generate-button {
+    width: 100%;
+  }
+
+  .reportes-active-filters {
+    width: 100%;
+  }
+
+  .reportes-active-filters > span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .reportes-summary-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 9px;
+  }
+
+  .reportes-summary-card {
+    min-height: 122px;
+    padding: 14px;
+  }
+
+  .reportes-summary-card > strong {
+    font-size: 21px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .reportes-panel {
+    padding: 14px;
+  }
+
+  .reportes-month-row-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .reportes-breakdown-row {
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+  }
+
+  .reportes-property-table-wrap {
+    overflow: visible;
+  }
+
+  .reportes-property-table {
+    width: 100%;
+    min-width: 0;
+    display: block;
+  }
+
+  .reportes-property-table thead {
+    display: none;
+  }
+
+  .reportes-property-table tbody {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .reportes-property-table tr {
+    width: 100%;
+    padding: 13px;
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 10px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+
+  .reportes-property-table td,
+  .reportes-property-table td:first-child {
+    width: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    border-bottom: 0;
+
+    text-align: left;
+  }
+
+  .reportes-property-table td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .reportes-property-table td:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+
+  .reportes-property-table td:nth-child(2)::before,
+  .reportes-property-table td:nth-child(3)::before,
+  .reportes-property-table td:nth-child(4)::before,
+  .reportes-property-table td:nth-child(5)::before {
+    color: #94a3b8;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.25px;
+    text-transform: uppercase;
+  }
+
+  .reportes-property-table td:nth-child(2)::before {
+    content: "Reservas";
+  }
+
+  .reportes-property-table td:nth-child(3)::before {
+    content: "Noches";
+  }
+
+  .reportes-property-table td:nth-child(4)::before {
+    content: "Ingresos estimados";
+  }
+
+  .reportes-property-table td:nth-child(5)::before {
+    content: "Participación de ingresos";
+  }
+
+  .reportes-property-share {
+    width: 100%;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+  }
+
+  .reportes-export-header,
+  .reportes-export-content,
+  .reportes-export-footer {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .reportes-export-section-heading {
+    flex-direction: column;
+  }
+
+  .reportes-export-selection-actions {
+    width: 100%;
+  }
+
+  .reportes-export-selection-actions button {
+    flex: 1;
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 420px) {
+  .reportes-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reportes-property-table tr {
+    grid-template-columns: 1fr;
+  }
+
+  .reportes-property-table td:first-child,
+  .reportes-property-table td:nth-child(5) {
+    grid-column: auto;
+  }
+}
+
+/* =========================================================
+   MODALES / OVERLAYS - SEGURIDAD MÓVIL
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .dashboard-metric-overlay,
+  .reservation-detail-backdrop,
+  .calendar-day-modal-backdrop,
+  .property-image-preview-backdrop,
+  .reportes-export-overlay {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      10px
+      max(10px, env(safe-area-inset-bottom));
+  }
+
+  .dashboard-metric-modal,
+  .reservation-detail-modal,
+  .calendar-day-modal,
+  .property-image-preview-modal,
+  .reportes-export-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height:
+      calc(
+        100dvh -
+        20px
+      );
+  }
+}
+
+/* =========================================================
+   ÁREAS TÁCTILES Y TEXTO
+   ========================================================= */
+
+@media (max-width: 700px) {
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  button {
+    min-height: 40px;
+  }
+
+  p,
+  span,
+  strong,
+  td,
+  th {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - FIX DASHBOARD HEADER MÓVIL V2
+   Evita que el badge del rol (Administrador) quede cortado.
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .main > header {
+    width: 100%;
+    min-width: 0;
+
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .main > header > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .main > header > span {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    padding: 8px 12px;
+
+    align-self: flex-start;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+  }
 }

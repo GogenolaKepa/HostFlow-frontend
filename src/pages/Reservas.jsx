@@ -315,13 +315,20 @@ function Reservas() {
 
     const temporizadorScroll =
       window.setTimeout(() => {
-        const fila =
+        const vistaMovil =
+          window.matchMedia(
+            "(max-width: 700px)"
+          ).matches;
+
+        const elemento =
           document.getElementById(
-            `reserva-${idReservaObjetivo}`
+            vistaMovil
+              ? `reserva-mobile-${idReservaObjetivo}`
+              : `reserva-${idReservaObjetivo}`
           );
 
-        if (fila) {
-          fila.scrollIntoView({
+        if (elemento) {
+          elemento.scrollIntoView({
             behavior: "smooth",
             block: "center",
           });
@@ -3742,7 +3749,7 @@ function Reservas() {
           TABLA
       ====================================================== */}
 
-      <div className="table-card">
+      <div className="table-card reservas-desktop-list">
         <table>
           <thead>
             <tr>
@@ -4028,6 +4035,295 @@ function Reservas() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* =====================================================
+          LISTADO MÓVIL
+      ====================================================== */}
+
+      <div className="reservas-mobile-list">
+        {reservasFiltradas.map(
+          (reserva) => (
+            <article
+              key={`mobile-${reserva.idReserva}`}
+              id={`reserva-mobile-${reserva.idReserva}`}
+              className={`reservas-mobile-card ${
+                Number(
+                  reservaDestacada
+                ) ===
+                Number(
+                  reserva.idReserva
+                )
+                  ? "reservas-mobile-card--highlighted"
+                  : ""
+              }`}
+            >
+              <div className="reservas-mobile-card-top">
+                <div>
+                  <span className="reservas-mobile-id">
+                    Reserva #
+                    {
+                      reserva.idReserva
+                    }
+                  </span>
+
+                  <h3>
+                    {
+                      reserva.huesped
+                    }
+                  </h3>
+
+                  <p>
+                    {
+                      reserva.propiedad
+                    }
+                  </p>
+                </div>
+
+                <span
+                  className={`estado ${String(
+                    reserva.estado
+                  )
+                    .toLowerCase()
+                    .replace(
+                      /\s+/g,
+                      "-"
+                    )}`}
+                >
+                  {
+                    reserva.estado
+                  }
+                </span>
+              </div>
+
+              <div className="reservas-mobile-stay">
+                <div>
+                  <span>
+                    Ingreso
+                  </span>
+
+                  <strong>
+                    {formatearFecha(
+                      reserva.fechaIngreso
+                    )}
+                  </strong>
+                </div>
+
+                <span className="reservas-mobile-stay-arrow">
+                  →
+                </span>
+
+                <div>
+                  <span>
+                    Egreso
+                  </span>
+
+                  <strong>
+                    {formatearFecha(
+                      reserva.fechaEgreso
+                    )}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="reservas-mobile-meta">
+                <div>
+                  <span>
+                    Canal
+                  </span>
+
+                  <strong>
+                    {
+                      reserva.canal
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Monto
+                  </span>
+
+                  <strong>
+                    $
+                    {Number(
+                      reserva.montoEstimado ||
+                        0
+                    ).toLocaleString(
+                      "es-AR"
+                    )}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="reservas-mobile-actions">
+                {tieneAccion(
+                  reserva,
+                  "VER"
+                ) && (
+                  <button
+                    type="button"
+                    className="detail-button"
+                    onClick={() =>
+                      abrirDetalleReserva(
+                        reserva
+                      )
+                    }
+                  >
+                    Ver detalle
+                  </button>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "EDITAR"
+                ) && (
+                  <button
+                    type="button"
+                    className="edit-button"
+                    onClick={() =>
+                      abrirEdicion(
+                        reserva
+                      )
+                    }
+                  >
+                    Editar
+                  </button>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "CANCELAR"
+                ) && (
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() =>
+                      cancelarReserva(
+                        reserva.idReserva
+                      )
+                    }
+                  >
+                    Cancelar
+                  </button>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "PROPONER_CAMBIO"
+                ) && (
+                  <button
+                    type="button"
+                    className="channel-button"
+                    onClick={() =>
+                      abrirPropuestaAirbnb(
+                        reserva
+                      )
+                    }
+                  >
+                    Proponer cambio
+                  </button>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "VER_PROPUESTA_AIRBNB"
+                ) && (
+                  <>
+                    <span className="reservas-mobile-pending">
+                      Cambio pendiente
+                    </span>
+
+                    <button
+                      type="button"
+                      className="channel-button"
+                      onClick={() =>
+                        verPropuestaAirbnb(
+                          reserva
+                        )
+                      }
+                    >
+                      Ver propuesta
+                    </button>
+                  </>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "GESTIONAR_BOOKING"
+                ) && (
+                  <button
+                    type="button"
+                    className="channel-button"
+                    onClick={() =>
+                      abrirGestionBooking(
+                        reserva
+                      )
+                    }
+                  >
+                    Gestionar Booking
+                  </button>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "VER_OPERACION_BOOKING"
+                ) && (
+                  <>
+                    <span className="reservas-mobile-pending">
+                      Operación pendiente
+                    </span>
+
+                    <button
+                      type="button"
+                      className="channel-button"
+                      onClick={() =>
+                        verOperacionBooking(
+                          reserva
+                        )
+                      }
+                    >
+                      Ver operación
+                    </button>
+                  </>
+                )}
+
+                {tieneAccion(
+                  reserva,
+                  "ABRIR_EN_CANAL"
+                ) && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      abrirEnCanal(
+                        reserva
+                      )
+                    }
+                  >
+                    {
+                      reserva.canal
+                    }{" "}
+                    ↗
+                  </button>
+                )}
+              </div>
+            </article>
+          )
+        )}
+
+        {reservasFiltradas.length ===
+          0 && (
+          <div className="reservas-mobile-empty">
+            <strong>
+              No encontramos reservas.
+            </strong>
+
+            <span>
+              No hay reservas que coincidan con los filtros seleccionados.
+            </span>
+          </div>
+        )}
       </div>
 
       {/* =====================================================

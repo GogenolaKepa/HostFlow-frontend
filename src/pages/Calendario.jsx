@@ -5,10 +5,7 @@ import {
 } from "react";
 
 import { createPortal } from "react-dom";
-import axios from "axios";
-
-const API_CALENDARIO =
-  "http://localhost:4000/api/calendario";
+import api from "../services/api";
 
 const NOMBRES_MESES = [
   "Enero",
@@ -166,8 +163,8 @@ function Calendario({
           }
 
           const peticiones = [
-            axios.get(
-              API_CALENDARIO,
+            api.get(
+              "/calendario",
               {
                 params,
               }
@@ -181,8 +178,8 @@ function Calendario({
            */
           if (idPropiedad) {
             peticiones.push(
-              axios.get(
-                API_CALENDARIO,
+              api.get(
+                "/calendario",
                 {
                   params: {
                     anio,

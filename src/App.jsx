@@ -4,11 +4,15 @@ import Dashboard from "./pages/Dashboard";
 import "./App.css";
 
 function App() {
-  const usuarioGuardado = localStorage.getItem("usuario");
+  const usuarioGuardado =
+    localStorage.getItem("usuario");
 
-  const [usuario, setUsuario] = useState(
-    usuarioGuardado ? JSON.parse(usuarioGuardado) : null
-  );
+  const [usuario, setUsuario] =
+    useState(
+      usuarioGuardado
+        ? JSON.parse(usuarioGuardado)
+        : null
+    );
 
   const cerrarSesion = () => {
     localStorage.removeItem("token");
@@ -19,9 +23,14 @@ function App() {
   return (
     <>
       {usuario ? (
-        <Dashboard usuario={usuario} onLogout={cerrarSesion} />
+        <Dashboard
+          usuario={usuario}
+          onLogout={cerrarSesion}
+        />
       ) : (
-        <Login onLogin={setUsuario} />
+        <Login
+          onLogin={setUsuario}
+        />
       )}
     </>
   );

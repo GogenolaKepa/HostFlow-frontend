@@ -167,6 +167,31 @@ function IconoNavegacion({
   return null;
 }
 
+function IconoSidebarToggle() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect
+        x="3.5"
+        y="4"
+        width="17"
+        height="16"
+        rx="2.5"
+      />
+      <path d="M9 4v16" />
+    </svg>
+  );
+}
+
 function Dashboard({ usuario, onLogout }) {
   const [datos, setDatos] = useState(null);
   const [seccionActiva, setSeccionActiva] = useState("inicio");
@@ -745,7 +770,7 @@ function Dashboard({ usuario, onLogout }) {
             title="HostFlow"
           >
             <span className="sidebar-brand-mark">
-              H
+              HF
             </span>
 
             <span className="sidebar-brand-name">
@@ -773,9 +798,7 @@ function Dashboard({ usuario, onLogout }) {
                 : "Contraer barra lateral"
             }
           >
-            {sidebarColapsada
-              ? "›"
-              : "‹"}
+            <IconoSidebarToggle />
           </button>
         </div>
 

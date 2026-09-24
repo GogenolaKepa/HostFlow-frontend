@@ -14316,3 +14316,341 @@ svg {
     white-space: nowrap;
   }
 }
+
+/* =========================================================
+   HOSTFLOW - SIDEBAR TOGGLE V3
+   Inspirado en el patrón de interacción de sidebars modernas:
+   - Expandida: HF + HostFlow + botón de panel.
+   - Comprimida: HF visible.
+   - Hover sobre HF comprimido: HF se oculta y aparece
+     el botón para volver a expandir.
+   ========================================================= */
+
+.sidebar-brand-mark {
+  font-size: 10px;
+  letter-spacing: -0.55px;
+
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease,
+    background 0.14s ease;
+}
+
+.sidebar-collapse-toggle {
+  color: #d7deea;
+  font-size: inherit;
+
+  transition:
+    opacity 0.14s ease,
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.sidebar-collapse-toggle svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.sidebar-collapse-toggle:hover {
+  color: #ffffff;
+}
+
+/* Estado comprimido: una sola posición superior. */
+.sidebar--collapsed .sidebar-top {
+  position: relative;
+  min-height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 0;
+}
+
+.sidebar--collapsed .sidebar-brand {
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
+  flex: 0 0 46px;
+
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar--collapsed .sidebar-brand-mark {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+}
+
+/*
+ * El botón de expandir queda superpuesto al HF,
+ * invisible hasta que el usuario pasa por esa zona.
+ */
+.sidebar--collapsed .sidebar-collapse-toggle {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  z-index: 3;
+
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px;
+
+  transform: translateX(-50%);
+
+  opacity: 0;
+  pointer-events: none;
+
+  border-color:
+    rgba(
+      255,
+      255,
+      255,
+      0.13
+    ) !important;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    ) !important;
+}
+
+/* HF desaparece y aparece el icono del panel. */
+.sidebar--collapsed .sidebar-top:hover
+.sidebar-brand-mark,
+.sidebar--collapsed .sidebar-top:focus-within
+.sidebar-brand-mark {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+.sidebar--collapsed .sidebar-top:hover
+.sidebar-collapse-toggle,
+.sidebar--collapsed .sidebar-top:focus-within
+.sidebar-collapse-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * Tablet táctil: no depende de hover.
+ * Mostramos HF y debajo el botón de expandir.
+ */
+@media (
+  min-width: 701px
+) and (
+  max-width: 1100px
+) and (
+  hover: none
+) {
+  .sidebar--collapsed .sidebar-top {
+    min-height: 87px;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 7px;
+  }
+
+  .sidebar--collapsed .sidebar-collapse-toggle {
+    position: static;
+
+    width: 34px !important;
+    min-width: 34px !important;
+
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar--collapsed .sidebar-top:hover
+  .sidebar-brand-mark,
+  .sidebar--collapsed .sidebar-top:focus-within
+  .sidebar-brand-mark {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* =========================================================
+   HOSTFLOW - SIDEBAR TOGGLE V4
+   Ajustes finos:
+   1. HostFlow no genera fondo al pasar el mouse.
+   2. En sidebar comprimida se ve HF por defecto.
+   3. El icono del panel aparece únicamente con hover real.
+   ========================================================= */
+
+/* La marca HostFlow queda limpia, sin bloque de fondo al hover. */
+.sidebar-brand:hover,
+.sidebar-brand:focus,
+.sidebar-brand:focus-visible {
+  background: transparent !important;
+  outline: none;
+}
+
+/*
+ * Estado comprimido:
+ * HF es el contenido visible por defecto.
+ */
+.sidebar--collapsed .sidebar-brand-mark {
+  opacity: 1;
+  transform: none;
+
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: -0.55px;
+}
+
+/*
+ * El botón del panel permanece completamente oculto
+ * mientras el mouse no esté sobre la zona superior.
+ */
+.sidebar--collapsed .sidebar-collapse-toggle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * Importante:
+ * usamos solamente :hover.
+ * No usamos :focus-within porque, después de hacer click,
+ * el navegador conserva el foco y dejaba visible el icono.
+ */
+.sidebar--collapsed .sidebar-top:hover
+.sidebar-brand-mark {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+.sidebar--collapsed .sidebar-top:hover
+.sidebar-collapse-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * Anulamos explícitamente el comportamiento de focus
+ * definido en la versión anterior.
+ */
+.sidebar--collapsed .sidebar-top:focus-within
+.sidebar-brand-mark {
+  opacity: 1;
+  transform: none;
+}
+
+.sidebar--collapsed .sidebar-top:focus-within
+.sidebar-collapse-toggle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * Si además hay hover, hover tiene prioridad sobre focus.
+ * Esto permite clicar el icono normalmente.
+ */
+.sidebar--collapsed .sidebar-top:hover
+.sidebar-collapse-toggle:focus,
+.sidebar--collapsed .sidebar-top:hover
+.sidebar-collapse-toggle:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* En desktop el botón expandido mantiene su aspecto normal. */
+.sidebar:not(.sidebar--collapsed)
+.sidebar-collapse-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* =========================================================
+   HOSTFLOW - SIDEBAR TOGGLE V5
+   Intercambio real HF <-> icono de panel.
+   No se superponen visualmente.
+   ========================================================= */
+
+/*
+ * Estado normal de la sidebar comprimida:
+ * se ve únicamente HF.
+ */
+.sidebar--collapsed .sidebar-brand-mark {
+  opacity: 1 !important;
+  visibility: visible;
+}
+
+.sidebar--collapsed .sidebar-collapse-toggle {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none !important;
+}
+
+/*
+ * Al entrar con el mouse en la zona superior hacemos un
+ * intercambio directo:
+ *
+ * HF -> desaparece por completo
+ * icono -> aparece en exactamente la misma posición
+ *
+ * visibility evita que el fondo azul de HF quede visible
+ * debajo del botón del panel.
+ */
+@media (hover: hover) {
+  .sidebar--collapsed .sidebar-top:hover
+  .sidebar-brand-mark {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: scale(0.94);
+  }
+
+  .sidebar--collapsed .sidebar-top:hover
+  .sidebar-collapse-toggle {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /*
+   * Aunque el botón conserve focus después de un click,
+   * mientras haya hover siempre gana el intercambio.
+   */
+  .sidebar--collapsed .sidebar-top:hover:focus-within
+  .sidebar-brand-mark {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  .sidebar--collapsed .sidebar-top:hover:focus-within
+  .sidebar-collapse-toggle {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
+
+/*
+ * Cuando el mouse sale de la zona superior volvemos
+ * inmediatamente a HF, incluso si quedó algún focus interno.
+ */
+@media (hover: hover) {
+  .sidebar--collapsed .sidebar-top:not(:hover)
+  .sidebar-brand-mark {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
+
+  .sidebar--collapsed .sidebar-top:not(:hover)
+  .sidebar-collapse-toggle {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}

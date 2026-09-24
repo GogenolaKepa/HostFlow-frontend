@@ -4,6 +4,7 @@ import Reservas from "./Reservas";
 import Propiedades from "./Propiedades";
 import Huespedes from "./Huespedes";
 import Calendario from "./Calendario";
+import Alertas from "./Alertas";
 
 function Dashboard({ usuario, onLogout }) {
   const [datos, setDatos] = useState(null);
@@ -146,8 +147,22 @@ function Dashboard({ usuario, onLogout }) {
             Calendario
           </p>
 
-          <p>Reportes</p>
-          <p>Alertas</p>
+          <p className="sidebar-item-disabled">
+            Reportes
+          </p>
+
+          <p
+            className={
+              seccionActiva === "alertas"
+                ? "active"
+                : ""
+            }
+            onClick={() =>
+              cambiarSeccion("alertas")
+            }
+          >
+            Alertas
+          </p>
         </nav>
 
         <button onClick={onLogout}>
@@ -174,6 +189,18 @@ function Dashboard({ usuario, onLogout }) {
           <Calendario
             onVerReserva={
               verReserva
+            }
+          />
+        ) : seccionActiva ===
+          "alertas" ? (
+          <Alertas
+            onVerReserva={
+              verReserva
+            }
+            onVerPropiedades={() =>
+              setSeccionActiva(
+                "propiedades"
+              )
             }
           />
         ) : (
@@ -261,30 +288,109 @@ function Dashboard({ usuario, onLogout }) {
                 </div>
               </div>
 
-              <div className="panel">
-                <h3>Alertas</h3>
+              <div className="panel dashboard-alerts-panel">
+                <div className="dashboard-alerts-heading">
+                  <div>
+                    <h3>Alertas</h3>
 
-                {alertas.map(
-                  (alerta) => (
-                    <div
-                      className="alert"
-                      key={
-                        alerta.idAlerta
-                      }
-                    >
-                      <strong>
-                        {
-                          alerta.tipo
-                        }
-                      </strong>
+                    <p>
+                      Situaciones operativas que requieren atención.
+                    </p>
+                  </div>
 
-                      <p>
-                        {
-                          alerta.mensaje
-                        }
-                      </p>
-                    </div>
-                  )
+                  <button
+                    type="button"
+                    className="dashboard-alerts-open"
+                    onClick={() =>
+                      cambiarSeccion(
+                        "alertas"
+                      )
+                    }
+                  >
+                    Ver todas
+                  </button>
+                </div>
+
+                {alertas.length ===
+                0 ? (
+                  <div className="dashboard-alerts-empty">
+                    <strong>
+                      Sin alertas pendientes
+                    </strong>
+
+                    <span>
+                      No hay situaciones operativas activas en este momento.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="dashboard-alerts-list">
+                    {alertas.map(
+                      (
+                        alerta
+                      ) => (
+                        <button
+                          type="button"
+                          className={`dashboard-alert-item dashboard-alert-item--${String(
+                            alerta.severidad
+                          ).toLowerCase()}`}
+                          key={
+                            alerta.idAlerta
+                          }
+                          onClick={() => {
+                            if (
+                              alerta.idReserva
+                            ) {
+                              verReserva(
+                                alerta.idReserva
+                              );
+
+                              return;
+                            }
+
+                            cambiarSeccion(
+                              "alertas"
+                            );
+                          }}
+                        >
+                          <span className="dashboard-alert-item-icon">
+                            {alerta.severidad ===
+                            "Critica"
+                              ? "!"
+                              : alerta.categoria ===
+                                "Sincronizacion"
+                              ? "↻"
+                              : alerta.categoria ===
+                                "Incidencia"
+                              ? "!"
+                              : "◷"}
+                          </span>
+
+                          <span className="dashboard-alert-item-content">
+                            <span className="dashboard-alert-item-top">
+                              <strong>
+                                {
+                                  alerta.titulo
+                                }
+                              </strong>
+
+                              <small>
+                                {alerta.severidad ===
+                                "Critica"
+                                  ? "Crítica"
+                                  : alerta.severidad}
+                              </small>
+                            </span>
+
+                            <span>
+                              {
+                                alerta.mensaje
+                              }
+                            </span>
+                          </span>
+                        </button>
+                      )
+                    )}
+                  </div>
                 )}
               </div>
             </section>

@@ -20,6 +20,11 @@ function Propiedades() {
   ] = useState(null);
 
   const [
+    canalSincronizando,
+    setCanalSincronizando,
+  ] = useState(null);
+
+  const [
     propiedades,
     setPropiedades,
   ] = useState([]);
@@ -1551,6 +1556,84 @@ function Propiedades() {
     };
 
   // =========================================================
+  // SINCRONIZAR MANUALMENTE UN CANAL
+  // =========================================================
+
+  const sincronizarCanal =
+    async (
+      propiedad,
+      canal
+    ) => {
+      try {
+        setError("");
+        setMensaje("");
+
+        setCanalSincronizando(
+          canal
+        );
+
+        const response =
+          await api.post(
+            `/propiedades/${propiedad.idPropiedad}/canales/sincronizar`,
+            {
+              canal,
+            }
+          );
+
+        setMensaje(
+          response.data.mensaje ||
+            `Propiedad sincronizada correctamente con ${canal}.`
+        );
+
+        /*
+         * Recargamos detalle completo para que
+         * se actualicen inmediatamente:
+         *
+         * - Estado de sincronización
+         * - Última sincronización
+         * - Mensaje de error
+         * - Datos generales de la propiedad
+         */
+        await recargarDetallePropiedad(
+          propiedad.idPropiedad
+        );
+      } catch (error) {
+        setError(
+          error.response?.data
+            ?.mensaje ||
+            `No se pudo sincronizar la propiedad con ${canal}.`
+        );
+
+        /*
+         * Aunque haya error, refrescamos para
+         * mostrar el estado Error persistido en Azure.
+         */
+        try {
+          const detalleResponse =
+            await api.get(
+              `/propiedades/${propiedad.idPropiedad}`
+            );
+
+          setPropiedadSeleccionada(
+            detalleResponse.data
+              .propiedad
+          );
+        } catch (
+          errorRecarga
+        ) {
+          console.error(
+            "No se pudo recargar el detalle después del error de sincronización:",
+            errorRecarga
+          );
+        }
+      } finally {
+        setCanalSincronizando(
+          null
+        );
+      }
+    };
+
+  // =========================================================
   // CANALES
   // =========================================================
 
@@ -1685,7 +1768,9 @@ function Propiedades() {
                             }
                             disabled={
                               canalPublicando !==
-                              null
+                                null ||
+                              canalSincronizando !==
+                                null
                             }
                           >
                             {canalPublicando ===
@@ -1708,10 +1793,24 @@ function Propiedades() {
                       {publicada && (
                         <button
                           type="button"
-                          className="secondary-button"
-                          disabled
+                          className="property-channel-sync-button"
+                          onClick={() =>
+                            sincronizarCanal(
+                              propiedad,
+                              canal.canal
+                            )
+                          }
+                          disabled={
+                            canalSincronizando !==
+                              null ||
+                            canalPublicando !==
+                              null
+                          }
                         >
-                          Administrar
+                          {canalSincronizando ===
+                          canal.canal
+                            ? "Sincronizando..."
+                            : "Sincronizar ahora"}
                         </button>
                       )}
                     </div>
@@ -2437,143 +2536,525 @@ function Propiedades() {
       const propiedad =
         propiedadSeleccionada;
 
-      return (
-            <div className="property-card property-detail-card">
-            <div className="property-image">
-            {renderizarImagenPropiedad(
-              propiedad,
-              true
-            )}
-          </div>
+      const fechaAlta =
+        propiedad.fechaCreacion
+          ? new Date(
+              propiedad.fechaCreacion
+            ).toLocaleDateString(
+              "es-AR",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }
+            )
+          : "Sin dato";
 
-          <div className="property-info">
-            <div className="property-title">
+      const tieneReservaActual =
+        Boolean(
+          propiedad.idReservaActual
+        );
+
+      const tieneProximaReserva =
+        Boolean(
+          propiedad.idProximaReserva
+        );
+
+      return (
+        <div className="property-detail-view">
+          <section className="property-detail-hero">
+            <div className="property-detail-cover">
+              {renderizarImagenPropiedad(
+                propiedad,
+                true
+              )}
+
+              <span className="property-detail-cover-label">
+                Imagen principal
+              </span>
+            </div>
+
+            <div className="property-detail-hero-content">
+              <div className="property-detail-topline">
+                <button
+                  type="button"
+                  className="property-detail-back"
+                  onClick={
+                    volverAPropiedades
+                  }
+                >
+                  ← Volver a propiedades
+                </button>
+
+                <div className="property-statuses">
+                  <span
+                    className={`estado ${obtenerClaseEstado(
+                      propiedad.estado
+                    )}`}
+                  >
+                    {propiedad.estado}
+                  </span>
+
+                  <span
+                    className={`estado ${obtenerClaseSituacion(
+                      propiedad.situacion
+                    )}`}
+                  >
+                    {
+                      propiedad.situacion
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <span className="property-detail-eyebrow">
+                PROPIEDAD #
+                {propiedad.idPropiedad}
+              </span>
+
               <h3>
-                {
-                  propiedad.nombre
-                }
+                {propiedad.nombre}
               </h3>
 
-              <div className="property-statuses">
-                <span
-                  className={`estado ${obtenerClaseEstado(
-                    propiedad.estado
-                  )}`}
-                >
-                  {
-                    propiedad.estado
+              <p className="property-detail-location">
+                {propiedad.direccion}
+                {" · "}
+                {propiedad.ciudad}
+                {propiedad.provincia
+                  ? `, ${propiedad.provincia}`
+                  : ""}
+              </p>
+
+              <div className="property-detail-summary">
+                <div>
+                  <span>Tipo</span>
+                  <strong>
+                    {propiedad.tipo ||
+                      "No especificado"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Capacidad</span>
+                  <strong>
+                    {
+                      propiedad.capacidadMaxima
+                    }{" "}
+                    huésped
+                    {Number(
+                      propiedad.capacidadMaxima
+                    ) === 1
+                      ? ""
+                      : "es"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Precio base</span>
+                  <strong className="property-detail-price">
+                    $
+                    {Number(
+                      propiedad.precioBase
+                    ).toLocaleString(
+                      "es-AR"
+                    )}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Alta en HostFlow</span>
+                  <strong>
+                    {fechaAlta}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="property-detail-hero-actions">
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() =>
+                    editarPropiedad(
+                      propiedad
+                    )
                   }
+                >
+                  Editar propiedad
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <div className="property-detail-main-grid">
+            <section className="property-detail-panel">
+              <div className="property-detail-section-heading">
+                <span className="property-detail-section-icon">
+                  ⌂
                 </span>
 
-                <span
-                  className={`estado ${obtenerClaseSituacion(
-                    propiedad.situacion
-                  )}`}
-                >
-                  {
-                    propiedad
-                      .situacion
-                  }
+                <div>
+                  <h4>
+                    Información general
+                  </h4>
+
+                  <p>
+                    Datos principales registrados para el inmueble.
+                  </p>
+                </div>
+              </div>
+
+              <div className="property-detail-data-list">
+                <div>
+                  <span>
+                    Nombre
+                  </span>
+
+                  <strong>
+                    {propiedad.nombre}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Dirección
+                  </span>
+
+                  <strong>
+                    {propiedad.direccion}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Ciudad
+                  </span>
+
+                  <strong>
+                    {propiedad.ciudad}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Provincia
+                  </span>
+
+                  <strong>
+                    {propiedad.provincia ||
+                      "No especificada"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Tipo
+                  </span>
+
+                  <strong>
+                    {propiedad.tipo ||
+                      "No especificado"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Capacidad máxima
+                  </span>
+
+                  <strong>
+                    {
+                      propiedad.capacidadMaxima
+                    }{" "}
+                    huésped
+                    {Number(
+                      propiedad.capacidadMaxima
+                    ) === 1
+                      ? ""
+                      : "es"}
+                  </strong>
+                </div>
+              </div>
+            </section>
+
+            <section className="property-detail-panel">
+              <div className="property-detail-section-heading">
+                <span className="property-detail-section-icon property-detail-section-icon--status">
+                  ◉
                 </span>
+
+                <div>
+                  <h4>
+                    Estado operativo
+                  </h4>
+
+                  <p>
+                    Situación actual y disponibilidad de la propiedad.
+                  </p>
+                </div>
+              </div>
+
+              <div className="property-detail-operational">
+                <div className="property-detail-operational-row">
+                  <span>
+                    Estado
+                  </span>
+
+                  <strong>
+                    {propiedad.estado}
+                  </strong>
+                </div>
+
+                <div className="property-detail-operational-row">
+                  <span>
+                    Situación
+                  </span>
+
+                  <strong>
+                    {
+                      propiedad.situacion
+                    }
+                  </strong>
+                </div>
+
+                <div className="property-detail-operational-row">
+                  <span>
+                    Precio base
+                  </span>
+
+                  <strong className="property-detail-price">
+                    $
+                    {Number(
+                      propiedad.precioBase
+                    ).toLocaleString(
+                      "es-AR"
+                    )}
+                  </strong>
+                </div>
+
+                <div className="property-detail-operational-note">
+                  {propiedad.situacion ===
+                  "No disponible"
+                    ? "La propiedad no está disponible para recibir nuevas reservas mientras mantenga su estado operativo actual."
+                    : propiedad.situacion ===
+                      "Ocupada"
+                    ? "La propiedad se encuentra actualmente ocupada por una reserva activa."
+                    : propiedad.situacion ===
+                      "Reservada"
+                    ? "La propiedad está libre actualmente, pero ya tiene una próxima reserva."
+                    : "La propiedad se encuentra disponible y sin una reserva activa en este momento."}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section className="property-detail-panel property-detail-stays-panel">
+            <div className="property-detail-section-heading">
+              <span className="property-detail-section-icon property-detail-section-icon--calendar">
+                ◷
+              </span>
+
+              <div>
+                <h4>
+                  Reservas y ocupación
+                </h4>
+
+                <p>
+                  Estado de la estadía actual y próxima reserva registrada.
+                </p>
               </div>
             </div>
 
-            <p>
-              {
-                propiedad.direccion
-              }
-            </p>
+            <div className="property-detail-stays-grid">
+              <article
+                className={`property-detail-stay-card ${
+                  tieneReservaActual
+                    ? "property-detail-stay-card--active"
+                    : ""
+                }`}
+              >
+                <div className="property-detail-stay-header">
+                  <div>
+                    <span>
+                      Estadía actual
+                    </span>
 
-            <p>
-              {
-                propiedad.ciudad
-              }
-              {propiedad.provincia
-                ? `, ${propiedad.provincia}`
-                : ""}
-            </p>
+                    <strong>
+                      {tieneReservaActual
+                        ? `Reserva #${propiedad.idReservaActual}`
+                        : "Sin ocupación actual"}
+                    </strong>
+                  </div>
 
-            <div className="property-details">
-              <span>
-                <strong>
-                  Tipo:
-                </strong>{" "}
-                {propiedad.tipo ||
-                  "No especificado"}
-              </span>
+                  <span
+                    className={`property-detail-stay-status ${
+                      tieneReservaActual
+                        ? "active"
+                        : "empty"
+                    }`}
+                  >
+                    {tieneReservaActual
+                      ? "Ocupada"
+                      : "Libre"}
+                  </span>
+                </div>
 
-              <span>
-                <strong>
-                  Capacidad máxima:
-                </strong>{" "}
-                {
-                  propiedad
-                    .capacidadMaxima
-                }{" "}
-                huéspedes
-              </span>
+                {tieneReservaActual ? (
+                  <div className="property-detail-stay-body">
+                    <div>
+                      <span>
+                        Huésped
+                      </span>
 
-              <span>
-                <strong>
-                  Precio base:
-                </strong>{" "}
-                $
-                {Number(
-                  propiedad
-                    .precioBase
-                ).toLocaleString(
-                  "es-AR"
+                      <strong>
+                        {propiedad.huespedActual ||
+                          "Sin dato"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Ingreso
+                      </span>
+
+                      <strong>
+                        {formatearFecha(
+                          propiedad.fechaIngresoActual
+                        )}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Egreso
+                      </span>
+
+                      <strong>
+                        {formatearFecha(
+                          propiedad.fechaEgresoActual
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="property-detail-stay-empty">
+                    No hay huéspedes alojados actualmente.
+                  </p>
                 )}
-              </span>
+              </article>
 
-              {propiedad.fechaCreacion && (
-                <span>
-                  <strong>
-                    Registrada en HostFlow:
-                  </strong>{" "}
-                  {new Date(
-                    propiedad
-                      .fechaCreacion
-                  ).toLocaleDateString(
-                    "es-AR"
-                  )}
-                </span>
-              )}
+              <article
+                className={`property-detail-stay-card ${
+                  tieneProximaReserva
+                    ? "property-detail-stay-card--next"
+                    : ""
+                }`}
+              >
+                <div className="property-detail-stay-header">
+                  <div>
+                    <span>
+                      Próxima reserva
+                    </span>
+
+                    <strong>
+                      {tieneProximaReserva
+                        ? `Reserva #${propiedad.idProximaReserva}`
+                        : "Sin reserva próxima"}
+                    </strong>
+                  </div>
+
+                  <span
+                    className={`property-detail-stay-status ${
+                      tieneProximaReserva
+                        ? "next"
+                        : "empty"
+                    }`}
+                  >
+                    {tieneProximaReserva
+                      ? "Programada"
+                      : "Sin fecha"}
+                  </span>
+                </div>
+
+                {tieneProximaReserva ? (
+                  <div className="property-detail-stay-body">
+                    <div>
+                      <span>
+                        Huésped
+                      </span>
+
+                      <strong>
+                        {propiedad.proximoHuesped ||
+                          "Sin dato"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Ingreso
+                      </span>
+
+                      <strong>
+                        {formatearFecha(
+                          propiedad.proximaFechaIngreso
+                        )}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Egreso
+                      </span>
+
+                      <strong>
+                        {formatearFecha(
+                          propiedad.proximaFechaEgreso
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="property-detail-stay-empty">
+                    No hay reservas futuras registradas para esta propiedad.
+                  </p>
+                )}
+              </article>
             </div>
+          </section>
 
-            {renderizarSituacionReserva(
-              propiedad
-            )}
-
+          <section className="property-detail-panel property-detail-management-panel">
             {renderizarGaleria(
               propiedad
             )}
+          </section>
 
+          <section className="property-detail-panel property-detail-management-panel">
             {renderizarCanales(
               propiedad
             )}
+          </section>
 
-            <div className="property-actions">
-              <button
-                className="secondary-button"
-                onClick={
-                  volverAPropiedades
-                }
-              >
-                Volver a propiedades
-              </button>
+          <div className="property-detail-footer">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={
+                volverAPropiedades
+              }
+            >
+              Volver a propiedades
+            </button>
 
-              <button
-                className="primary-button"
-                onClick={() =>
-                  editarPropiedad(
-                    propiedad
-                  )
-                }
-              >
-                Editar propiedad
-              </button>
-            </div>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() =>
+                editarPropiedad(
+                  propiedad
+                )
+              }
+            >
+              Editar propiedad
+            </button>
           </div>
         </div>
       );

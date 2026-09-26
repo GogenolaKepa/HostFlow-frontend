@@ -224,7 +224,9 @@ function Reservas() {
   const [formularioAirbnb, setFormularioAirbnb] =
     useState({
       fechaIngreso: "",
+      horaIngreso: "",
       fechaEgreso: "",
+      horaEgreso: "",
       cantidadHuespedes: "",
       montoEstimado: "",
     });
@@ -249,6 +251,7 @@ function Reservas() {
     setFormularioBookingEstadia,
   ] = useState({
     fechaEgreso: "",
+    horaEgreso: "",
     montoEstimado: "",
   });
 
@@ -655,8 +658,14 @@ function Reservas() {
       fechaIngreso:
         reserva.fechaIngreso,
 
+      horaIngreso:
+        reserva.horaIngreso || "00:00",
+
       fechaEgreso:
         reserva.fechaEgreso,
+
+      horaEgreso:
+        reserva.horaEgreso || "00:00",
 
       cantidadHuespedes:
         reserva.cantidadHuespedes,
@@ -674,7 +683,9 @@ function Reservas() {
 
     setFormularioAirbnb({
       fechaIngreso: "",
+      horaIngreso: "",
       fechaEgreso: "",
+      horaEgreso: "",
       cantidadHuespedes: "",
       montoEstimado: "",
     });
@@ -708,8 +719,14 @@ function Reservas() {
           fechaIngreso:
             formularioAirbnb.fechaIngreso,
 
+          horaIngreso:
+            formularioAirbnb.horaIngreso,
+
           fechaEgreso:
             formularioAirbnb.fechaEgreso,
+
+          horaEgreso:
+            formularioAirbnb.horaEgreso,
 
           cantidadHuespedes:
             Number(
@@ -852,6 +869,9 @@ function Reservas() {
       fechaEgreso:
         reserva.fechaEgreso,
 
+      horaEgreso:
+        reserva.horaEgreso || "00:00",
+
       montoEstimado:
         reserva.montoEstimado,
     });
@@ -868,6 +888,7 @@ function Reservas() {
 
     setFormularioBookingEstadia({
       fechaEgreso: "",
+      horaEgreso: "",
       montoEstimado: "",
     });
 
@@ -891,6 +912,9 @@ function Reservas() {
       setFormularioBookingEstadia({
         fechaEgreso:
           reservaBooking.fechaEgreso,
+
+        horaEgreso:
+          reservaBooking.horaEgreso || "00:00",
 
         montoEstimado:
           reservaBooking.montoEstimado,
@@ -929,6 +953,10 @@ function Reservas() {
               fechaEgreso:
                 formularioBookingEstadia
                   .fechaEgreso,
+
+              horaEgreso:
+                formularioBookingEstadia
+                  .horaEgreso,
 
               montoEstimado:
                 Number(
@@ -2856,6 +2884,25 @@ function Reservas() {
 
             <div>
               <label>
+                Hora de check-in
+              </label>
+
+              <input
+                type="time"
+                name="horaIngreso"
+                value={
+                  formularioAirbnb
+                    .horaIngreso
+                }
+                onChange={
+                  cambiarFormularioAirbnb
+                }
+                required
+              />
+            </div>
+
+            <div>
+              <label>
                 Fecha de egreso
               </label>
 
@@ -2866,6 +2913,25 @@ function Reservas() {
                 value={
                   formularioAirbnb
                     .fechaEgreso
+                }
+                onChange={
+                  cambiarFormularioAirbnb
+                }
+                required
+              />
+            </div>
+
+            <div>
+              <label>
+                Hora de check-out
+              </label>
+
+              <input
+                type="time"
+                name="horaEgreso"
+                value={
+                  formularioAirbnb
+                    .horaEgreso
                 }
                 onChange={
                   cambiarFormularioAirbnb
@@ -3029,6 +3095,38 @@ function Reservas() {
 
               <div>
                 <label>
+                  Hora ingreso actual
+                </label>
+
+                <input
+                  type="time"
+                  value={
+                    propuestaAirbnbVisualizando
+                      .horaIngreso || "00:00"
+                  }
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label>
+                  Hora ingreso propuesta
+                </label>
+
+                <input
+                  type="time"
+                  value={
+                    propuestaAirbnbVisualizando
+                      .solicitudAirbnbPendiente
+                      .cambiosSolicitados
+                      .horaIngreso || "00:00"
+                  }
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label>
                   Egreso actual
                 </label>
 
@@ -3056,6 +3154,38 @@ function Reservas() {
                       .solicitudAirbnbPendiente
                       .cambiosSolicitados
                       .fechaEgreso
+                  }
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label>
+                  Hora egreso actual
+                </label>
+
+                <input
+                  type="time"
+                  value={
+                    propuestaAirbnbVisualizando
+                      .horaEgreso || "00:00"
+                  }
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label>
+                  Hora egreso propuesta
+                </label>
+
+                <input
+                  type="time"
+                  value={
+                    propuestaAirbnbVisualizando
+                      .solicitudAirbnbPendiente
+                      .cambiosSolicitados
+                      .horaEgreso || "00:00"
                   }
                   disabled
                 />
@@ -3296,6 +3426,21 @@ function Reservas() {
 
                 <div>
                   <label>
+                    Hora ingreso actual
+                  </label>
+
+                  <input
+                    type="time"
+                    value={
+                      reservaBooking
+                        .horaIngreso || "00:00"
+                    }
+                    disabled
+                  />
+                </div>
+
+                <div>
+                  <label>
                     Egreso actual
                   </label>
 
@@ -3305,6 +3450,21 @@ function Reservas() {
                     value={
                       reservaBooking
                         .fechaEgreso
+                    }
+                    disabled
+                  />
+                </div>
+
+                <div>
+                  <label>
+                    Hora egreso actual
+                  </label>
+
+                  <input
+                    type="time"
+                    value={
+                      reservaBooking
+                        .horaEgreso || "00:00"
                     }
                     disabled
                   />
@@ -3322,6 +3482,25 @@ function Reservas() {
                     value={
                       formularioBookingEstadia
                         .fechaEgreso
+                    }
+                    onChange={
+                      cambiarFormularioBookingEstadia
+                    }
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label>
+                    Nueva hora de check-out
+                  </label>
+
+                  <input
+                    type="time"
+                    name="horaEgreso"
+                    value={
+                      formularioBookingEstadia
+                        .horaEgreso
                     }
                     onChange={
                       cambiarFormularioBookingEstadia
@@ -3574,6 +3753,38 @@ function Reservas() {
 
                   <div>
                     <label>
+                      Hora ingreso actual
+                    </label>
+
+                    <input
+                      type="time"
+                      value={
+                        operacionBookingVisualizando
+                          .horaIngreso || "00:00"
+                      }
+                      disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label>
+                      Hora ingreso solicitada
+                    </label>
+
+                    <input
+                      type="time"
+                      value={
+                        operacionBookingVisualizando
+                          .operacionBookingPendiente
+                          .cambiosSolicitados
+                          .horaIngreso || "00:00"
+                      }
+                      disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label>
                       Egreso actual
                     </label>
 
@@ -3601,6 +3812,38 @@ function Reservas() {
                           .operacionBookingPendiente
                           .cambiosSolicitados
                           .fechaEgreso
+                      }
+                      disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label>
+                      Hora egreso actual
+                    </label>
+
+                    <input
+                      type="time"
+                      value={
+                        operacionBookingVisualizando
+                          .horaEgreso || "00:00"
+                      }
+                      disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label>
+                      Hora egreso solicitada
+                    </label>
+
+                    <input
+                      type="time"
+                      value={
+                        operacionBookingVisualizando
+                          .operacionBookingPendiente
+                          .cambiosSolicitados
+                          .horaEgreso || "00:00"
                       }
                       disabled
                     />

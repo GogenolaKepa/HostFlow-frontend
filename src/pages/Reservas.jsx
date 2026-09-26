@@ -192,7 +192,9 @@ function Reservas() {
     idPropiedad: "1",
     idHuesped: "1",
     fechaIngreso: "2026-07-01",
+    horaIngreso: "15:00",
     fechaEgreso: "2026-07-05",
+    horaEgreso: "10:00",
     cantidadHuespedes: "2",
     montoEstimado: "120000",
   });
@@ -200,7 +202,9 @@ function Reservas() {
   const [formularioEdicion, setFormularioEdicion] =
     useState({
       fechaIngreso: "",
+      horaIngreso: "",
       fechaEgreso: "",
+      horaEgreso: "",
       estado: "",
       montoEstimado: "",
     });
@@ -450,8 +454,14 @@ function Reservas() {
         fechaIngreso:
           formulario.fechaIngreso,
 
+        horaIngreso:
+          formulario.horaIngreso,
+
         fechaEgreso:
           formulario.fechaEgreso,
+
+        horaEgreso:
+          formulario.horaEgreso,
 
         cantidadHuespedes:
           Number(
@@ -474,7 +484,9 @@ function Reservas() {
         idPropiedad: "1",
         idHuesped: "1",
         fechaIngreso: "2026-07-01",
+        horaIngreso: "15:00",
         fechaEgreso: "2026-07-05",
+        horaEgreso: "10:00",
         cantidadHuespedes: "2",
         montoEstimado: "120000",
       });
@@ -515,8 +527,16 @@ function Reservas() {
       fechaIngreso:
         reserva.fechaIngreso,
 
+      horaIngreso:
+        reserva.horaIngreso ||
+        "00:00",
+
       fechaEgreso:
         reserva.fechaEgreso,
+
+      horaEgreso:
+        reserva.horaEgreso ||
+        "00:00",
 
       estado:
         reserva.estado,
@@ -539,8 +559,14 @@ function Reservas() {
           fechaIngreso:
             formularioEdicion.fechaIngreso,
 
+          horaIngreso:
+            formularioEdicion.horaIngreso,
+
           fechaEgreso:
             formularioEdicion.fechaEgreso,
+
+          horaEgreso:
+            formularioEdicion.horaEgreso,
 
           estado:
             formularioEdicion.estado,
@@ -1966,8 +1992,12 @@ function Reservas() {
     const nombres = {
       fechaIngreso:
         "Ingreso",
+      horaIngreso:
+        "Hora de ingreso",
       fechaEgreso:
         "Egreso",
+      horaEgreso:
+        "Hora de egreso",
       estado:
         "Estado",
       montoEstimado:
@@ -2056,6 +2086,13 @@ function Reservas() {
       return formatearMonto(
         valor
       );
+    }
+
+    if (
+      campo === "horaIngreso" ||
+      campo === "horaEgreso"
+    ) {
+      return `${String(valor)} hs`;
     }
 
     if (
@@ -2466,6 +2503,26 @@ function Reservas() {
                 onChange={
                   manejarCambio
                 }
+                required
+              />
+            </div>
+
+            <div>
+              <label>
+                Hora de check-in
+              </label>
+
+              <input
+                type="time"
+                name="horaIngreso"
+                step="60"
+                value={
+                  formulario.horaIngreso
+                }
+                onChange={
+                  manejarCambio
+                }
+                required
               />
             </div>
 
@@ -2484,6 +2541,26 @@ function Reservas() {
                 onChange={
                   manejarCambio
                 }
+                required
+              />
+            </div>
+
+            <div>
+              <label>
+                Hora de check-out
+              </label>
+
+              <input
+                type="time"
+                name="horaEgreso"
+                step="60"
+                value={
+                  formulario.horaEgreso
+                }
+                onChange={
+                  manejarCambio
+                }
+                required
               />
             </div>
 
@@ -2581,6 +2658,26 @@ function Reservas() {
                 onChange={
                   manejarCambioEdicion
                 }
+                required
+              />
+            </div>
+
+            <div>
+              <label>
+                Hora de check-in
+              </label>
+
+              <input
+                type="time"
+                name="horaIngreso"
+                step="60"
+                value={
+                  formularioEdicion.horaIngreso
+                }
+                onChange={
+                  manejarCambioEdicion
+                }
+                required
               />
             </div>
 
@@ -2599,6 +2696,26 @@ function Reservas() {
                 onChange={
                   manejarCambioEdicion
                 }
+                required
+              />
+            </div>
+
+            <div>
+              <label>
+                Hora de check-out
+              </label>
+
+              <input
+                type="time"
+                name="horaEgreso"
+                step="60"
+                value={
+                  formularioEdicion.horaEgreso
+                }
+                onChange={
+                  manejarCambioEdicion
+                }
+                required
               />
             </div>
 
@@ -3824,8 +3941,34 @@ function Reservas() {
                     }
                   </td>
 
-                  <td>{formatearFecha(reserva.fechaIngreso)}</td>
-                  <td>{formatearFecha(reserva.fechaEgreso)}</td>
+                  <td>
+                    <div className="reservation-date-with-time">
+                      <strong>
+                        {formatearFecha(
+                          reserva.fechaIngreso
+                        )}
+                      </strong>
+                      <span>
+                        {reserva.horaIngreso ||
+                          "00:00"}{" "}
+                        hs
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="reservation-date-with-time">
+                      <strong>
+                        {formatearFecha(
+                          reserva.fechaEgreso
+                        )}
+                      </strong>
+                      <span>
+                        {reserva.horaEgreso ||
+                          "00:00"}{" "}
+                        hs
+                      </span>
+                    </div>
+                  </td>
 
                   <td>
                     $
@@ -4107,6 +4250,11 @@ function Reservas() {
                       reserva.fechaIngreso
                     )}
                   </strong>
+                  <small>
+                    {reserva.horaIngreso ||
+                      "00:00"}{" "}
+                    hs
+                  </small>
                 </div>
 
                 <span className="reservas-mobile-stay-arrow">
@@ -4123,6 +4271,11 @@ function Reservas() {
                       reserva.fechaEgreso
                     )}
                   </strong>
+                  <small>
+                    {reserva.horaEgreso ||
+                      "00:00"}{" "}
+                    hs
+                  </small>
                 </div>
               </div>
 
@@ -4396,6 +4549,11 @@ function Reservas() {
                       reservaDetalle.fechaIngreso
                     )}
                   </strong>
+                  <small className="reservation-detail-time">
+                    {reservaDetalle.horaIngreso ||
+                      "00:00"}{" "}
+                    hs
+                  </small>
                 </div>
 
                 <div className="reservation-detail-period-arrow">
@@ -4409,6 +4567,11 @@ function Reservas() {
                       reservaDetalle.fechaEgreso
                     )}
                   </strong>
+                  <small className="reservation-detail-time">
+                    {reservaDetalle.horaEgreso ||
+                      "00:00"}{" "}
+                    hs
+                  </small>
                 </div>
 
                 <div className="reservation-detail-period-summary">

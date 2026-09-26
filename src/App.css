@@ -14654,3 +14654,61 @@ svg {
     pointer-events: none !important;
   }
 }
+
+/* =========================================================
+   HOSTFLOW - RESERVAS / HORARIOS CHECK-IN Y CHECK-OUT
+   ========================================================= */
+
+.reservation-date-with-time {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reservation-date-with-time strong {
+  color: #1e293b;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.reservation-date-with-time span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.reservation-detail-time {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.reservas-page .form-grid input[type="time"] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  .reservas-mobile-stay > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .reservas-mobile-stay small {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .reservation-detail-time {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+}

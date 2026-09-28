@@ -85,6 +85,7 @@ function Limpiezas({ onVerReserva }) {
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPropiedad, setFiltroPropiedad] = useState("Todas");
+  const [tareaObjetivo, setTareaObjetivo] = useState(null);
 
   const cargarDatos = async ({ mostrarCarga = true } = {}) => {
     try {
@@ -120,6 +121,91 @@ function Limpiezas({ onVerReserva }) {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+
+  useEffect(() => {
+    const valorObjetivo =
+      window.sessionStorage.getItem(
+        "hostflowLimpiezaObjetivo"
+      );
+
+    if (
+      !valorObjetivo ||
+      limpiezas.length === 0
+    ) {
+      return undefined;
+    }
+
+    const idObjetivo =
+      Number(valorObjetivo);
+
+    window.sessionStorage.removeItem(
+      "hostflowLimpiezaObjetivo"
+    );
+
+    const existe =
+      limpiezas.some(
+        (tarea) =>
+          Number(
+            tarea.idTareaLimpieza
+          ) === idObjetivo
+      );
+
+    if (!existe) {
+      return undefined;
+    }
+
+    setBusqueda("");
+    setFiltroEstado("Todos");
+    setFiltroPropiedad("Todas");
+    setTareaObjetivo(
+      idObjetivo
+    );
+
+    const timeoutScroll =
+      window.setTimeout(
+        () => {
+          const selector =
+            window.innerWidth <=
+            800
+              ? `[data-limpieza-mobile-id="${idObjetivo}"]`
+              : `[data-limpieza-row-id="${idObjetivo}"]`;
+
+          document
+            .querySelector(
+              selector
+            )
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+        },
+        160
+      );
+
+    const timeoutHighlight =
+      window.setTimeout(
+        () => {
+          setTareaObjetivo(
+            null
+          );
+        },
+        3600
+      );
+
+    return () => {
+      window.clearTimeout(
+        timeoutScroll
+      );
+
+      window.clearTimeout(
+        timeoutHighlight
+      );
+    };
+  }, [
+    limpiezas,
+  ]);
+
 
   const propiedades = useMemo(() => {
     const nombres = new Set(
@@ -410,7 +496,18 @@ function Limpiezas({ onVerReserva }) {
                     tareaActualizando === tarea.idTareaLimpieza;
 
                   return (
-                    <tr key={tarea.idTareaLimpieza}>
+                    <tr
+                      key={tarea.idTareaLimpieza}
+                      data-limpieza-row-id={
+                        tarea.idTareaLimpieza
+                      }
+                      className={
+                        tareaObjetivo ===
+                        tarea.idTareaLimpieza
+                          ? "limpiezas-row--highlight"
+                          : ""
+                      }
+                    >
                       <td>
                         <div className="limpiezas-property-cell">
                           <strong>{tarea.propiedad}</strong>
@@ -564,8 +661,16 @@ function Limpiezas({ onVerReserva }) {
 
               return (
                 <article
-                  className="limpiezas-mobile-card"
+                  className={`limpiezas-mobile-card ${
+                    tareaObjetivo ===
+                    tarea.idTareaLimpieza
+                      ? "limpiezas-mobile-card--highlight"
+                      : ""
+                  }`}
                   key={`mobile-${tarea.idTareaLimpieza}`}
+                  data-limpieza-mobile-id={
+                    tarea.idTareaLimpieza
+                  }
                 >
                   <div className="limpiezas-mobile-card-top">
                     <div>

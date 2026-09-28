@@ -1133,6 +1133,52 @@ function Dashboard({ usuario, onLogout }) {
 
 
 
+  const verLimpieza = (
+
+    idTareaLimpieza
+
+  ) => {
+
+    if (idTareaLimpieza) {
+
+      window.sessionStorage.setItem(
+
+        "hostflowLimpiezaObjetivo",
+
+        String(idTareaLimpieza)
+
+      );
+
+    } else {
+
+      window.sessionStorage.removeItem(
+
+        "hostflowLimpiezaObjetivo"
+
+      );
+
+    }
+
+
+
+    setSeccionActiva(
+
+      "limpiezas"
+
+    );
+
+
+
+    setMenuMovilAbierto(
+
+      false
+
+    );
+
+  };
+
+
+
   useEffect(() => {
 
     if (!modalMetrica) {
@@ -1838,6 +1884,12 @@ function Dashboard({ usuario, onLogout }) {
             onVerReserva={
 
               verReserva
+
+            }
+
+            onVerLimpieza={
+
+              verLimpieza
 
             }
 

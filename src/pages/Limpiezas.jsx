@@ -85,7 +85,6 @@ function Limpiezas({ onVerReserva }) {
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [filtroPropiedad, setFiltroPropiedad] = useState("Todas");
-  const [tareaObjetivo, setTareaObjetivo] = useState(null);
 
   const cargarDatos = async ({ mostrarCarga = true } = {}) => {
     try {
@@ -121,91 +120,6 @@ function Limpiezas({ onVerReserva }) {
   useEffect(() => {
     cargarDatos();
   }, []);
-
-
-  useEffect(() => {
-    const valorObjetivo =
-      window.sessionStorage.getItem(
-        "hostflowLimpiezaObjetivo"
-      );
-
-    if (
-      !valorObjetivo ||
-      limpiezas.length === 0
-    ) {
-      return undefined;
-    }
-
-    const idObjetivo =
-      Number(valorObjetivo);
-
-    window.sessionStorage.removeItem(
-      "hostflowLimpiezaObjetivo"
-    );
-
-    const existe =
-      limpiezas.some(
-        (tarea) =>
-          Number(
-            tarea.idTareaLimpieza
-          ) === idObjetivo
-      );
-
-    if (!existe) {
-      return undefined;
-    }
-
-    setBusqueda("");
-    setFiltroEstado("Todos");
-    setFiltroPropiedad("Todas");
-    setTareaObjetivo(
-      idObjetivo
-    );
-
-    const timeoutScroll =
-      window.setTimeout(
-        () => {
-          const selector =
-            window.innerWidth <=
-            800
-              ? `[data-limpieza-mobile-id="${idObjetivo}"]`
-              : `[data-limpieza-row-id="${idObjetivo}"]`;
-
-          document
-            .querySelector(
-              selector
-            )
-            ?.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-        },
-        160
-      );
-
-    const timeoutHighlight =
-      window.setTimeout(
-        () => {
-          setTareaObjetivo(
-            null
-          );
-        },
-        3600
-      );
-
-    return () => {
-      window.clearTimeout(
-        timeoutScroll
-      );
-
-      window.clearTimeout(
-        timeoutHighlight
-      );
-    };
-  }, [
-    limpiezas,
-  ]);
-
 
   const propiedades = useMemo(() => {
     const nombres = new Set(
@@ -496,18 +410,7 @@ function Limpiezas({ onVerReserva }) {
                     tareaActualizando === tarea.idTareaLimpieza;
 
                   return (
-                    <tr
-                      key={tarea.idTareaLimpieza}
-                      data-limpieza-row-id={
-                        tarea.idTareaLimpieza
-                      }
-                      className={
-                        tareaObjetivo ===
-                        tarea.idTareaLimpieza
-                          ? "limpiezas-row--highlight"
-                          : ""
-                      }
-                    >
+                    <tr key={tarea.idTareaLimpieza}>
                       <td>
                         <div className="limpiezas-property-cell">
                           <strong>{tarea.propiedad}</strong>
@@ -585,13 +488,17 @@ function Limpiezas({ onVerReserva }) {
                       </td>
 
                       <td>
-                        <span
-                          className={`limpiezas-priority limpiezas-priority--${claseTexto(
-                            tarea.prioridad || "Normal"
-                          )}`}
-                        >
-                          {tarea.prioridad || "-"}
-                        </span>
+                        {tarea.prioridad && tarea.prioridad !== "-" && tarea.prioridad !== "." ? (
+                          <span
+                            className={`limpiezas-priority limpiezas-priority--${claseTexto(
+                              tarea.prioridad
+                            )}`}
+                          >
+                            {tarea.prioridad}
+                          </span>
+                        ) : (
+                          <span className="limpiezas-empty-value">—</span>
+                        )}
                       </td>
 
                       <td>
@@ -635,8 +542,12 @@ function Limpiezas({ onVerReserva }) {
                           )}
 
                           {tarea.estado === "Completada" && (
-                            <span className="limpiezas-action-done">
-                              Finalizada
+                            <span
+                              className="limpiezas-empty-value"
+                              aria-label="Sin acciones pendientes"
+                              title="Sin acciones pendientes"
+                            >
+                              —
                             </span>
                           )}
 
@@ -661,16 +572,8 @@ function Limpiezas({ onVerReserva }) {
 
               return (
                 <article
-                  className={`limpiezas-mobile-card ${
-                    tareaObjetivo ===
-                    tarea.idTareaLimpieza
-                      ? "limpiezas-mobile-card--highlight"
-                      : ""
-                  }`}
+                  className="limpiezas-mobile-card"
                   key={`mobile-${tarea.idTareaLimpieza}`}
-                  data-limpieza-mobile-id={
-                    tarea.idTareaLimpieza
-                  }
                 >
                   <div className="limpiezas-mobile-card-top">
                     <div>
@@ -680,13 +583,17 @@ function Limpiezas({ onVerReserva }) {
                       <strong>{tarea.propiedad}</strong>
                     </div>
 
-                    <span
-                      className={`limpiezas-priority limpiezas-priority--${claseTexto(
-                        tarea.prioridad || "Normal"
-                      )}`}
-                    >
-                      {tarea.prioridad || "-"}
-                    </span>
+                    {tarea.prioridad && tarea.prioridad !== "-" && tarea.prioridad !== "." ? (
+                      <span
+                        className={`limpiezas-priority limpiezas-priority--${claseTexto(
+                          tarea.prioridad
+                        )}`}
+                      >
+                        {tarea.prioridad}
+                      </span>
+                    ) : (
+                      <span className="limpiezas-empty-value">—</span>
+                    )}
                   </div>
 
                   <div className="limpiezas-mobile-state-row">
@@ -759,45 +666,36 @@ function Limpiezas({ onVerReserva }) {
                     )}
                   </div>
 
-                  <div className="limpiezas-mobile-actions">
-                    {tarea.estado === "Pendiente" && (
-                      <button
-                        type="button"
-                        className="limpiezas-action-button limpiezas-action-button--primary"
-                        onClick={() => cambiarEstado(tarea, "En progreso")}
-                        disabled={actualizando}
-                      >
-                        {actualizando
-                          ? "Actualizando..."
-                          : "Iniciar limpieza"}
-                      </button>
-                    )}
+                  {(tarea.estado === "Pendiente" ||
+                    tarea.estado === "En progreso") && (
+                    <div className="limpiezas-mobile-actions">
+                      {tarea.estado === "Pendiente" && (
+                        <button
+                          type="button"
+                          className="limpiezas-action-button limpiezas-action-button--primary"
+                          onClick={() => cambiarEstado(tarea, "En progreso")}
+                          disabled={actualizando}
+                        >
+                          {actualizando
+                            ? "Actualizando..."
+                            : "Iniciar limpieza"}
+                        </button>
+                      )}
 
-                    {tarea.estado === "En progreso" && (
-                      <button
-                        type="button"
-                        className="limpiezas-action-button limpiezas-action-button--success"
-                        onClick={() => cambiarEstado(tarea, "Completada")}
-                        disabled={actualizando}
-                      >
-                        {actualizando
-                          ? "Actualizando..."
-                          : "Marcar completada"}
-                      </button>
-                    )}
-
-                    {tarea.estado === "Completada" && (
-                      <span className="limpiezas-action-done">
-                        Limpieza completada
-                      </span>
-                    )}
-
-                    {tarea.estado === "Cancelada" && (
-                      <span className="limpiezas-action-cancelled">
-                        Tarea cancelada automáticamente
-                      </span>
-                    )}
-                  </div>
+                      {tarea.estado === "En progreso" && (
+                        <button
+                          type="button"
+                          className="limpiezas-action-button limpiezas-action-button--success"
+                          onClick={() => cambiarEstado(tarea, "Completada")}
+                          disabled={actualizando}
+                        >
+                          {actualizando
+                            ? "Actualizando..."
+                            : "Marcar completada"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </article>
               );
             })}

@@ -410,7 +410,7 @@ function Calendario({
 
                   "No se pudieron cargar las limpiezas en calendario:",
 
-                  errorLimpiezas
+                  { estadoHttp: errorLimpiezas.response?.status }
 
                 );
 
@@ -502,7 +502,7 @@ function Calendario({
 
             "Error al cargar calendario:",
 
-            err
+            { estadoHttp: err.response?.status }
 
           );
 

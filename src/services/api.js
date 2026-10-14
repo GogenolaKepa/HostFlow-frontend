@@ -1,4 +1,5 @@
 import axios from "axios";
+import { configurarAutenticacion } from "./session";
 
 const obtenerApiUrl = () => {
   /*
@@ -33,5 +34,7 @@ const obtenerApiUrl = () => {
 const api = axios.create({
   baseURL: obtenerApiUrl(),
 });
+
+configurarAutenticacion(api);
 
 export default api;

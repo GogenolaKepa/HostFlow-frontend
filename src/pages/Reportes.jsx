@@ -125,7 +125,7 @@ function Reportes() {
       } catch (error) {
         console.error(
           "No se pudieron cargar las opciones de filtros:",
-          error
+          { estadoHttp: error.response?.status }
         );
       }
     };

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../services/api";
+import { guardarSesion } from "../services/session";
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState("admin@hostflow.com");
@@ -16,13 +17,8 @@ function Login({ onLogin }) {
         password,
       });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify(response.data.usuario)
-      );
-
-      onLogin(response.data.usuario);
+      guardarSesion(response.data.token, response.data.usuario);
+      onLogin();
     } catch (error) {
       setError(
         error.response?.data?.mensaje ||

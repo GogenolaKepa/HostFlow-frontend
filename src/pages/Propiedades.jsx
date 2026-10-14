@@ -1732,7 +1732,7 @@ function Propiedades() {
         ) {
           console.error(
             "No se pudo recargar el detalle después del error de sincronización:",
-            errorRecarga
+            { estadoHttp: errorRecarga.response?.status }
           );
         }
       } finally {

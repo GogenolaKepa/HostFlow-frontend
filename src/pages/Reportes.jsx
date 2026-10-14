@@ -1,3 +1,4 @@
+import { usePermisos } from "../context/PermisosContext";
 import {
   useEffect,
   useMemo,
@@ -17,6 +18,7 @@ const FILTROS_INICIALES = {
 };
 
 function Reportes() {
+  const tienePermiso = usePermisos();
   const [
     datos,
     setDatos,
@@ -2173,6 +2175,7 @@ function Reportes() {
 
   const generarArchivoReporte =
     () => {
+      if (!tienePermiso("reportes.exportar")) return;
       if (
         !haySeccionesSeleccionadas
       ) {
@@ -2410,9 +2413,9 @@ function Reportes() {
           </h1>
 
           <p>
-            Análisis de rendimiento,
-            ocupación, ingresos y reservas
-            registradas en HostFlow.
+            {tienePermiso("reportes.economia")
+              ? "Análisis de rendimiento, ocupación, ingresos y reservas registradas en HostFlow."
+              : "Análisis operativo de ocupación y reservas registradas en HostFlow."}
           </p>
         </div>
 
@@ -2444,7 +2447,7 @@ function Reportes() {
             )}
           </button>
 
-          <button
+          {tienePermiso("reportes.exportar") && (<button
             type="button"
             className="reportes-generate-button"
             onClick={() => {
@@ -2458,7 +2461,7 @@ function Reportes() {
             }}
           >
             Generar reporte
-          </button>
+          </button>)}
         </div>
       </div>
 
@@ -2768,7 +2771,7 @@ function Reportes() {
           </div>
 
           <div className="reportes-summary-grid">
-            <article className="reportes-summary-card">
+            {tienePermiso("reportes.economia") && (<article className="reportes-summary-card">
               <span>
                 Ingresos estimados
               </span>
@@ -2784,7 +2787,7 @@ function Reportes() {
                 Solo reservas confirmadas
                 y finalizadas.
               </small>
-            </article>
+            </article>)}
 
             <article className="reportes-summary-card">
               <span>
@@ -2847,7 +2850,7 @@ function Reportes() {
           </div>
 
           <div className="reportes-main-grid">
-            <article className="reportes-panel reportes-panel--income">
+            {tienePermiso("reportes.economia") && (<article className="reportes-panel reportes-panel--income">
               <div className="reportes-panel-heading">
                 <div>
                   <h2>
@@ -2931,7 +2934,7 @@ function Reportes() {
                   }
                 )}
               </div>
-            </article>
+            </article>)}
 
             <article className="reportes-panel reportes-panel--occupancy">
               <div className="reportes-panel-heading">
@@ -3169,9 +3172,9 @@ function Reportes() {
                 </h2>
 
                 <p>
-                  Reservas, noches e ingresos
-                  estimados generados por cada
-                  alojamiento.
+                  {tienePermiso("reportes.economia")
+                    ? "Reservas, noches e ingresos estimados generados por cada alojamiento."
+                    : "Reservas y noches por alojamiento."}
                 </p>
               </div>
             </div>
@@ -3192,13 +3195,13 @@ function Reportes() {
                       Noches
                     </th>
 
-                    <th>
+                    {tienePermiso("reportes.economia") && (<th>
                       Ingresos estimados
-                    </th>
+                    </th>)}
 
-                    <th>
+                    {tienePermiso("reportes.economia") && (<th>
                       Participación de ingresos
-                    </th>
+                    </th>)}
                   </tr>
                 </thead>
 
@@ -3232,13 +3235,13 @@ function Reportes() {
                           }
                         </td>
 
-                        <td className="reportes-money">
+                        {tienePermiso("reportes.economia") && (<td className="reportes-money">
                           {formatearMonto(
                             item.ingresosEstimados
                           )}
-                        </td>
+                        </td>)}
 
-                        <td>
+                        {tienePermiso("reportes.economia") && (<td>
                           <div className="reportes-property-share">
                             <div className="reportes-bar reportes-bar--compact">
                               <span
@@ -3256,7 +3259,7 @@ function Reportes() {
                               %
                             </span>
                           </div>
-                        </td>
+                        </td>)}
                       </tr>
                     )
                   )}
@@ -3267,7 +3270,7 @@ function Reportes() {
         </>
       )}
 
-      {mostrarGenerador && (
+      {mostrarGenerador && tienePermiso("reportes.exportar") && (
         <div
           className="reportes-export-overlay"
           onMouseDown={(e) => {

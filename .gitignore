@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Configuración local y secretos. Solo compartir ejemplos sin credenciales.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

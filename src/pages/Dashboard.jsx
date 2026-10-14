@@ -1,3 +1,4 @@
+import { usePermisos } from "../context/PermisosContext";
 import { useEffect, useState } from "react";
 
 
@@ -825,6 +826,7 @@ function IconoSidebarToggle() {
 
 
 function Dashboard({ usuario, onLogout }) {
+  const tienePermiso = usePermisos();
 
 
 
@@ -4094,7 +4096,7 @@ function Dashboard({ usuario, onLogout }) {
 
 
 
-              <button
+              {tienePermiso("dashboard.economia") && (<button
 
 
 
@@ -4194,7 +4196,7 @@ function Dashboard({ usuario, onLogout }) {
 
 
 
-              </button>
+              </button>)}
 
 
 

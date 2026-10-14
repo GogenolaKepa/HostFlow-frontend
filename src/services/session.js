@@ -49,7 +49,8 @@ export async function consultarSesion(api) {
   const { usuario, expiraEn } = response.data;
   if (!usuario || !Number.isInteger(usuario.idUsuario) ||
       typeof usuario.nombre !== "string" || typeof usuario.email !== "string" ||
-      typeof usuario.rol !== "string" || !Number.isInteger(expiraEn) ||
+      typeof usuario.rol !== "string" || !Array.isArray(usuario.permisos) ||
+      !usuario.permisos.every((permiso) => typeof permiso === "string") || !Number.isInteger(expiraEn) ||
       expiraEn * 1000 <= Date.now()) {
     throw new Error("No se pudo validar la sesión del servidor.");
   }

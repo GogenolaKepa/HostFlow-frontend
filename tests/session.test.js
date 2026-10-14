@@ -28,6 +28,7 @@ const usuarioServidor = {
   nombre: "Cuenta de prueba",
   email: "prueba@example.invalid",
   rol: "Operador",
+  permisos: ["reservas.ver", "reservas.modificar"],
 };
 
 function crearApi(adapter) {
@@ -143,4 +144,15 @@ test("restaurar con token rechazado limpia la sesión", async () => {
   await assert.rejects(consultarSesion(api));
   assert.equal(obtenerToken(), null);
   assert.equal(cierres, 1);
+});
+
+test("la sesión exige permisos del servidor y no deriva privilegios del rol almacenado", async () => {
+  guardarSesion("token-sintetico", { ...usuarioServidor, rol: "Administrador" });
+  const expiraEn = Math.floor(Date.now() / 1000) + 7200;
+  const api = crearApi(async (config) => responder(config, { usuario: usuarioServidor, expiraEn }));
+  const sesion = await consultarSesion(api);
+  assert.ok(!sesion.usuario.permisos.includes("reservas.cancelar"));
+  const { permisos: _permisos, ...sinPermisos } = usuarioServidor;
+  const apiSinPermisos = crearApi(async (config) => responder(config, { usuario: sinPermisos, expiraEn }));
+  await assert.rejects(consultarSesion(apiSinPermisos));
 });

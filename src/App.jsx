@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import api from "./services/api";
+import { PermisosContext } from "./context/PermisosContext";
 import {
   SESION_CERRADA,
   consultarSesion,
@@ -105,10 +106,14 @@ function App() {
     );
   }
 
-  return usuario ? (
-    <Dashboard usuario={usuario} onLogout={cerrarSesion} />
-  ) : (
-    <Login onLogin={validarSesion} />
+  return (
+    <PermisosContext.Provider value={usuario?.permisos || []}>
+      {usuario ? (
+        <Dashboard usuario={usuario} onLogout={cerrarSesion} />
+      ) : (
+        <Login onLogin={validarSesion} />
+      )}
+    </PermisosContext.Provider>
   );
 }
 

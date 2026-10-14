@@ -1,3 +1,4 @@
+import { usePermisos } from "../context/PermisosContext";
 import {
   useEffect,
   useState,
@@ -10,6 +11,7 @@ import {
 import api from "../services/api";
 
 function Propiedades() {
+  const tienePermiso = usePermisos();
   // =========================================================
   // ESTADOS GENERALES
   // =========================================================
@@ -238,9 +240,9 @@ function Propiedades() {
               `/propiedades/${idPropiedad}/imagenes`
             ),
 
-            api.get(
+            tienePermiso("imagenes.gestionar") ? api.get(
               `/propiedades/${idPropiedad}/imagenes/todas`
-            ),
+            ) : Promise.resolve({ data: { imagenes: [] } }),
           ]);
 
         setImagenes(
@@ -294,9 +296,9 @@ function Propiedades() {
             `/propiedades/${idPropiedad}/imagenes`
           ),
 
-          api.get(
+          tienePermiso("imagenes.gestionar") ? api.get(
             `/propiedades/${idPropiedad}/imagenes/todas`
-          ),
+          ) : Promise.resolve({ data: { imagenes: [] } }),
         ]);
 
       setPropiedadSeleccionada(
@@ -1863,7 +1865,7 @@ function Propiedades() {
                       </div>
                     )}
 
-                    <div className="property-channel-actions">
+                    {tienePermiso("canales.gestionar") && (<div className="property-channel-actions">
                       {!publicada &&
                         !pendiente && (
                           <button
@@ -1922,7 +1924,7 @@ function Propiedades() {
                             : "Sincronizar ahora"}
                         </button>
                       )}
-                    </div>
+                    </div>)}
                   </div>
                 );
               }
@@ -1956,7 +1958,7 @@ function Propiedades() {
               </p>
             </div>
 
-            <button
+            {tienePermiso("imagenes.gestionar") && (<button
               type="button"
               className="primary-button"
               onClick={
@@ -1967,7 +1969,7 @@ function Propiedades() {
               }
             >
               + Agregar imagen
-            </button>
+            </button>)}
           </div>
 
           {mostrarFormularioImagen && (
@@ -2375,7 +2377,7 @@ function Propiedades() {
                         </span>
                       </div>
 
-                      <div className="property-gallery-actions">
+                      {tienePermiso("imagenes.gestionar") && (<div className="property-gallery-actions">
                         {!imagen.esPrincipal && (
                           <button
                             type="button"
@@ -2422,7 +2424,7 @@ function Propiedades() {
                             ? "Procesando..."
                             : "Eliminar"}
                         </button>
-                      </div>
+                      </div>)}
                     </div>
                   )
                 )}
@@ -2779,7 +2781,7 @@ function Propiedades() {
               </div>
 
               <div className="property-detail-hero-actions">
-                <button
+                {tienePermiso("propiedades.gestionar") && (<button
                   type="button"
                   className="primary-button"
                   onClick={() =>
@@ -2789,7 +2791,7 @@ function Propiedades() {
                   }
                 >
                   Editar propiedad
-                </button>
+                </button>)}
               </div>
             </div>
           </section>
@@ -3153,7 +3155,7 @@ function Propiedades() {
               Volver a propiedades
             </button>
 
-            <button
+            {tienePermiso("propiedades.gestionar") && (<button
               type="button"
               className="primary-button"
               onClick={() =>
@@ -3163,7 +3165,7 @@ function Propiedades() {
               }
             >
               Editar propiedad
-            </button>
+            </button>)}
           </div>
         </div>
       );
@@ -3202,7 +3204,7 @@ function Propiedades() {
           </p>
         </div>
 
-        {!propiedadSeleccionada && (
+        {!propiedadSeleccionada && tienePermiso("propiedades.gestionar") && (
           <button
             className="primary-button"
             onClick={
@@ -3554,7 +3556,7 @@ function Propiedades() {
                       )}
 
                       <div className="property-actions">
-                        <button
+                        {tienePermiso("propiedades.gestionar") && (<button
                           className="secondary-button"
                           onClick={() =>
                             editarPropiedad(
@@ -3563,7 +3565,7 @@ function Propiedades() {
                           }
                         >
                           Editar
-                        </button>
+                        </button>)}
 
                         <button
                           className="primary-button"

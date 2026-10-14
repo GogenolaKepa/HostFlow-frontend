@@ -1,3 +1,4 @@
+import { usePermisos } from "../context/PermisosContext";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
@@ -25,6 +26,7 @@ const OBSERVACION_INICIAL = {
 };
 
 function Reservas() {
+  const tienePermiso = usePermisos();
   const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -571,13 +573,8 @@ function Reservas() {
           horaEgreso:
             formularioEdicion.horaEgreso,
 
-          estado:
-            formularioEdicion.estado,
-
-          montoEstimado:
-            Number(
-              formularioEdicion.montoEstimado
-            ),
+          ...(tienePermiso("reservas.estado") ? { estado: formularioEdicion.estado } : {}),
+          ...(tienePermiso("reservas.importes") ? { montoEstimado: Number(formularioEdicion.montoEstimado) } : {}),
         }
       );
 
@@ -2753,6 +2750,7 @@ function Reservas() {
               </label>
 
               <select
+                disabled={!tienePermiso("reservas.estado")}
                 name="estado"
                 value={
                   formularioEdicion
@@ -2786,6 +2784,7 @@ function Reservas() {
               </label>
 
               <input
+                disabled={!tienePermiso("reservas.importes")}
                 type="number"
                 name="montoEstimado"
                 min="0"
@@ -3274,7 +3273,7 @@ function Reservas() {
             </p>
 
             <div className="form-actions">
-              <button
+              {tienePermiso("integraciones.gestionar") && (<button
                 type="button"
                 className="primary-button"
                 onClick={() =>
@@ -3285,9 +3284,9 @@ function Reservas() {
               >
                 Simular aceptación
                 Airbnb
-              </button>
+              </button>)}
 
-              <button
+              {tienePermiso("integraciones.gestionar") && (<button
                 type="button"
                 className="cancel-button"
                 onClick={() =>
@@ -3297,7 +3296,7 @@ function Reservas() {
                 }
               >
                 Simular rechazo Airbnb
-              </button>
+              </button>)}
 
               <button
                 type="button"
@@ -3918,7 +3917,7 @@ function Reservas() {
             </p>
 
             <div className="form-actions">
-              <button
+              {tienePermiso("integraciones.gestionar") && (<button
                 type="button"
                 className="primary-button"
                 onClick={
@@ -3927,7 +3926,7 @@ function Reservas() {
               >
                 Simular sincronización
                 Booking
-              </button>
+              </button>)}
 
               <button
                 type="button"
@@ -5938,7 +5937,7 @@ function Reservas() {
                           </select>
                         </label>
 
-                        <label className="reservation-note-pin-control">
+                        {tienePermiso("observaciones.fijar") && (<label className="reservation-note-pin-control">
                           <input
                             type="checkbox"
                             checked={
@@ -5961,7 +5960,7 @@ function Reservas() {
                           <span>
                             Fijar como importante
                           </span>
-                        </label>
+                        </label>)}
                       </div>
 
                       <label className="reservation-note-form-text">
@@ -6098,7 +6097,7 @@ function Reservas() {
                                 </span>
 
                                 <div className="reservation-note-actions">
-                                  <button
+                                  {tienePermiso("observaciones.fijar") && (<button
                                     type="button"
                                     disabled={
                                       procesando
@@ -6112,9 +6111,9 @@ function Reservas() {
                                     {observacion.fijada
                                       ? "Desfijar"
                                       : "Fijar"}
-                                  </button>
+                                  </button>)}
 
-                                  <button
+                                  {tienePermiso("observaciones.modificar") && (<button
                                     type="button"
                                     disabled={
                                       procesando
@@ -6126,9 +6125,9 @@ function Reservas() {
                                     }
                                   >
                                     Editar
-                                  </button>
+                                  </button>)}
 
-                                  <button
+                                  {tienePermiso("observaciones.eliminar") && (<button
                                     type="button"
                                     className="reservation-note-delete"
                                     disabled={
@@ -6143,7 +6142,7 @@ function Reservas() {
                                     {procesando
                                       ? "Procesando..."
                                       : "Eliminar"}
-                                  </button>
+                                  </button>)}
                                 </div>
                               </div>
                             </article>

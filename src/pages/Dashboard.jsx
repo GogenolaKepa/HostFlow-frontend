@@ -1,4 +1,7 @@
 import { usePermisos } from "../context/PermisosContext";
+import Usuarios from "./Usuarios";
+import MiCuenta from "./MiCuenta";
+import { puedeGestionarUsuarios } from "../services/cuentas";
 import { useEffect, useState } from "react";
 
 
@@ -825,8 +828,12 @@ function IconoSidebarToggle() {
 
 
 
-function Dashboard({ usuario, onLogout }) {
+function Dashboard({ usuario, onLogout, onSesionActualizada }) {
   const tienePermiso = usePermisos();
+  const itemsVisibles = [...ITEMS_NAVEGACION,
+    ...(puedeGestionarUsuarios(usuario) ? [{ id: "usuarios", label: "Usuarios", icono: "huespedes" }] : []),
+    { id: "mi-cuenta", label: "Mi cuenta", icono: "huespedes" },
+  ];
 
 
 
@@ -2842,7 +2849,7 @@ function Dashboard({ usuario, onLogout }) {
 
 
 
-              {ITEMS_NAVEGACION.map(
+              {itemsVisibles.map(
 
 
 
@@ -3362,7 +3369,7 @@ function Dashboard({ usuario, onLogout }) {
 
 
 
-          {ITEMS_NAVEGACION.map(
+          {itemsVisibles.map(
 
 
 
@@ -3703,6 +3710,12 @@ function Dashboard({ usuario, onLogout }) {
 
 
       <main className="main">
+
+        {seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
+          <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
+        ) : seccionActiva === "mi-cuenta" ? (
+          <MiCuenta usuario={usuario} onSesionActualizada={onSesionActualizada} onLogout={onLogout} />
+        ) : (<>
 
 
 
@@ -5992,6 +6005,7 @@ function Dashboard({ usuario, onLogout }) {
 
 
 
+        </>)}
       </main>
 
 

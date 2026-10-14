@@ -2,9 +2,9 @@ import { useState } from "react";
 import api from "../services/api";
 import { guardarSesion } from "../services/session";
 
-function Login({ onLogin }) {
-  const [email, setEmail] = useState("admin@hostflow.com");
-  const [password, setPassword] = useState("123456");
+function Login({ onLogin, aviso }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const iniciarSesion = async (e) => {
@@ -41,6 +41,7 @@ function Login({ onLogin }) {
         onSubmit={iniciarSesion}
       >
         <h2>Iniciar sesión</h2>
+        {aviso && <p role="status">{aviso}</p>}
 
         <label htmlFor="login-email">
           Correo electrónico
@@ -78,9 +79,6 @@ function Login({ onLogin }) {
           Ingresar
         </button>
 
-        <small>
-          Usuario de prueba: admin@hostflow.com / 123456
-        </small>
       </form>
     </div>
   );

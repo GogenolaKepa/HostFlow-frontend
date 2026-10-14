@@ -3,6 +3,9 @@ import { beforeEach, test } from "node:test";
 import axios from "axios";
 import {
   SESION_CERRADA,
+  CAMBIO_PASSWORD_REQUERIDO,
+  aplicarRespuestaSesion,
+  cerrarSesionEnServidor,
   configurarAutenticacion,
   consultarSesion,
   guardarSesion,
@@ -23,11 +26,67 @@ beforeEach(() => {
   window.addEventListener(SESION_CERRADA, () => { cierres += 1; });
 });
 
+test("403 de cambio obligatorio pide restauracion sin borrar token; respuesta vieja no redirige", async () => {
+  guardarSesion("token-sintetico", usuarioServidor);
+  let cambios = 0;
+  window.addEventListener(CAMBIO_PASSWORD_REQUERIDO, () => { cambios++; });
+  const api = crearApi((config) => Promise.reject(new axios.AxiosError("Cambio obligatorio", "ERR_BAD_RESPONSE", config,
+    undefined, responder(config, { codigo: "PASSWORD_CHANGE_REQUIRED" }, 403))));
+  await assert.rejects(api.get("/limpiezas"));
+  assert.equal(cambios, 1);
+  assert.equal(obtenerToken(), "token-sintetico");
+  assert.equal(cierres, 0);
+  let responderVieja;
+  const apiTardia = crearApi((config) => new Promise((_resolve, reject) => {
+    responderVieja = () => reject(new axios.AxiosError("Respuesta vieja", "ERR_BAD_RESPONSE", config,
+      undefined, responder(config, { codigo: "PASSWORD_CHANGE_REQUIRED" }, 403)));
+  }));
+  const pendiente = apiTardia.get("/limpiezas");
+  await new Promise((resolve) => setImmediate(resolve));
+  guardarSesion("token-distinto", usuarioServidor);
+  responderVieja();
+  await assert.rejects(pendiente);
+  assert.equal(cambios, 1);
+});
+
+test("nueva sesion tras password reemplaza token; respuesta antigua no pisa otro login", () => {
+  guardarSesion("token-anterior", usuarioServidor);
+  const expiraEn = Math.floor(Date.now() / 1000) + 7200;
+  const usuarioSQL = { ...usuarioServidor, origenAutenticacion: "sql", gestionCuentasDisponible: true, debeCambiarPassword: false, versionRegistro: "0000000000000001" };
+  const sesion = aplicarRespuestaSesion({ token: "token-nuevo", usuario: usuarioSQL, expiraEn }, "token-anterior");
+  assert.equal(sesion.usuario.debeCambiarPassword, false);
+  assert.equal(obtenerToken(), "token-nuevo");
+  assert.equal(aplicarRespuestaSesion({ token: "token-viejo", usuario: usuarioSQL, expiraEn }, "token-anterior"), null);
+  assert.equal(obtenerToken(), "token-nuevo");
+});
+
+test("logout confirma revocacion y limpia localmente tambien ante fallo del servidor", async () => {
+  for (const falla of [false, true]) {
+    guardarSesion("token-sintetico", usuarioServidor);
+    const api = crearApi((config) => falla ? rechazar(config, 503) : Promise.resolve(responder(config, { revocadaEnServidor: true })));
+    assert.equal(await cerrarSesionEnServidor(api), !falla);
+    assert.equal(obtenerToken(), null);
+  }
+});
+
+test("restauracion SQL exige flag obligatorio, revision y rol permitido", async () => {
+  const expiraEn = Math.floor(Date.now() / 1000) + 7200;
+  const usuarioSQL = { ...usuarioServidor, origenAutenticacion: "sql", gestionCuentasDisponible: true, debeCambiarPassword: true, versionRegistro: "0000000000000001" };
+  const api = crearApi(async (config) => responder(config, { usuario: usuarioSQL, expiraEn }));
+  assert.equal((await consultarSesion(api)).usuario.debeCambiarPassword, true);
+  for (const reemplazo of [{ rol: "Propietario" }, { debeCambiarPassword: undefined }, { versionRegistro: undefined }]) {
+    await assert.rejects(consultarSesion(crearApi(async (config) => responder(config, { usuario: { ...usuarioSQL, ...reemplazo }, expiraEn }))));
+  }
+});
+
 const usuarioServidor = {
   idUsuario: 900001,
   nombre: "Cuenta de prueba",
   email: "prueba@example.invalid",
   rol: "Operador",
+  origenAutenticacion: "mock",
+  gestionCuentasDisponible: false,
+  debeCambiarPassword: false,
   permisos: ["reservas.ver", "reservas.modificar"],
 };
 

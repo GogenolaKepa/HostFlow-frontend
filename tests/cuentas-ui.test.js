@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import { before, after, test } from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createServer } from "vite";
+import react from "@vitejs/plugin-react";
+
+let vite, MiCuenta, Usuarios, Login, PermisosContext;
+before(async () => {
+  // SSR local: sin backend ni peticiones API; los efectos React no se ejecutan.
+  globalThis.window = { location: { protocol: "http:", hostname: "localhost" } };
+  vite = await createServer({ configFile: false, envDir: false, plugins: [react()],
+    server: { middlewareMode: true, ws: false, watch: null } });
+  MiCuenta = (await vite.ssrLoadModule("/src/pages/MiCuenta.jsx")).default;
+  Usuarios = (await vite.ssrLoadModule("/src/pages/Usuarios.jsx")).default;
+  Login = (await vite.ssrLoadModule("/src/pages/Login.jsx")).default;
+  PermisosContext = (await vite.ssrLoadModule("/src/context/PermisosContext.js")).PermisosContext;
+});
+after(async () => { await vite?.close(); delete globalThis.window; });
+const usuario = { idUsuario: 1, nombre: "Prueba aislada", email: "prueba@example.invalid", rol: "Operador", gestionCuentasDisponible: true, debeCambiarPassword: true, versionRegistro: "0000000000000001" };
+
+test("cambio obligatorio renderiza solo password y salida, sin editar nombre", () => {
+  const html = renderToStaticMarkup(createElement(MiCuenta, { usuario, obligatorio: true, onLogout() {}, onSesionActualizada() {} }));
+  assert.equal(html.includes('id="cuenta-actual"'), true);
+  assert.equal(html.includes('id="cuenta-nueva"'), true);
+  assert.equal(html.includes('id="cuenta-nombre"'), false);
+  assert.equal(html.includes('type="password"'), true);
+});
+test("Mi cuenta mock muestra perfil sin formularios de escritura", () => {
+  const html = renderToStaticMarkup(createElement(MiCuenta, { usuario: { ...usuario, gestionCuentasDisponible: false, debeCambiarPassword: false } }));
+  assert.equal(html.includes(usuario.email), true);
+  assert.equal(html.includes("<form"), false);
+});
+test("Usuarios sin permiso no renderiza administracion; Admin ve el alta", () => {
+  const operador = renderToStaticMarkup(createElement(PermisosContext.Provider, { value: [] }, createElement(Usuarios, { usuarioActual: usuario })));
+  assert.equal(operador.includes("Nuevo usuario"), false);
+  const admin = renderToStaticMarkup(createElement(PermisosContext.Provider, { value: ["usuarios.ver", "usuarios.crear"] }, createElement(Usuarios, { usuarioActual: usuario })));
+  assert.equal(admin.includes("Nuevo usuario"), true);
+  assert.equal(admin.includes("Propietario"), false);
+});
+test("Login renderiza campos vacios, sin password o cuenta de demostracion", () => {
+  const html = renderToStaticMarkup(createElement(Login, { onLogin() {} }));
+  assert.equal(html.includes('id="login-password"'), true);
+  assert.equal(html.includes('value=""'), true);
+  assert.equal(html.includes("Usuario de prueba"), false);
+});

@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import MiCuenta from "./pages/MiCuenta";
 import api from "./services/api";
 import { PermisosContext } from "./context/PermisosContext";
 import {
   SESION_CERRADA,
+  CAMBIO_PASSWORD_REQUERIDO,
+  aplicarRespuestaSesion,
+  cerrarSesionEnServidor,
   consultarSesion,
   guardarSesion,
   limpiarSesion,
@@ -16,6 +20,7 @@ function App() {
   const [usuario, setUsuario] = useState(null);
   const [expiraEn, setExpiraEn] = useState(null);
   const [estadoSesion, setEstadoSesion] = useState("validando");
+  const [aviso, setAviso] = useState("");
   const intentoValidacion = useRef(0);
 
   const reiniciarEstado = useCallback(() => {
@@ -29,6 +34,20 @@ function App() {
     limpiarSesion();
     reiniciarEstado();
   }, [reiniciarEstado]);
+
+  const cerrarSesionRemota = useCallback(async () => {
+    const origenSQL = usuario?.gestionCuentasDisponible;
+    if (origenSQL && !window.confirm("Se cerrarán todas tus sesiones de HostFlow. ¿Continuar?")) return;
+    const revocada = await cerrarSesionEnServidor(api);
+    if (origenSQL && !revocada) setAviso("Se cerró la sesión de este navegador, pero no se pudo confirmar la revocación en el servidor.");
+  }, [usuario]);
+
+  const actualizarSesion = useCallback((data, tokenEsperado) => {
+    const sesion = aplicarRespuestaSesion(data, tokenEsperado, expiraEn);
+    if (!sesion) return;
+    setUsuario(sesion.usuario);
+    setExpiraEn(sesion.expiraEn);
+  }, [expiraEn]);
 
   const validarSesion = useCallback(async () => {
     const intento = ++intentoValidacion.current;
@@ -71,12 +90,14 @@ function App() {
     };
 
     window.addEventListener(SESION_CERRADA, reiniciarEstado);
+    window.addEventListener(CAMBIO_PASSWORD_REQUERIDO, validarSesion);
     window.addEventListener("storage", alCambiarAlmacenamiento);
     validarSesion();
 
     return () => {
       intentoValidacion.current += 1;
       window.removeEventListener(SESION_CERRADA, reiniciarEstado);
+      window.removeEventListener(CAMBIO_PASSWORD_REQUERIDO, validarSesion);
       window.removeEventListener("storage", alCambiarAlmacenamiento);
     };
   }, [reiniciarEstado, validarSesion]);
@@ -109,9 +130,11 @@ function App() {
   return (
     <PermisosContext.Provider value={usuario?.permisos || []}>
       {usuario ? (
-        <Dashboard usuario={usuario} onLogout={cerrarSesion} />
+        usuario.debeCambiarPassword ? (
+          <MiCuenta obligatorio usuario={usuario} onSesionActualizada={actualizarSesion} onLogout={cerrarSesionRemota} />
+        ) : <Dashboard usuario={usuario} onLogout={cerrarSesionRemota} onSesionActualizada={actualizarSesion} />
       ) : (
-        <Login onLogin={validarSesion} />
+        <Login aviso={aviso} onLogin={() => { setAviso(""); validarSesion(); }} />
       )}
     </PermisosContext.Provider>
   );

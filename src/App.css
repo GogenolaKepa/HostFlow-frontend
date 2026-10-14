@@ -16320,3 +16320,34 @@ svg {
     max-width: 58%;
   }
 }
+/* Gestion de cuentas: integrada con las tarjetas y botones de HostFlow. */
+.security-page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 18px 0; }
+.security-page--required { min-height: 100vh; max-width: 920px; padding: 48px 24px; }
+.security-eyebrow { color: #14786c; font-size: .78rem; font-weight: 700; letter-spacing: .08em; }
+.security-page h1 { margin: 8px 0; font-size: 1.9rem; }
+.security-page p { color: #526477; line-height: 1.5; }
+.security-profile, .security-card { background: white; border: 1px solid #e0e9ed; border-radius: 16px; padding: 24px; box-shadow: 0 6px 24px #193b4710; }
+.security-profile { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin: 20px 0; }
+.security-profile span { overflow-wrap: anywhere; }
+.security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+.security-card h2 { margin: 0 0 20px; font-size: 1.15rem; }
+.security-card label, .security-filters label { display: flex; flex-direction: column; gap: 8px; color: #273f4f; font-weight: 600; margin-bottom: 16px; }
+.security-card > input, .security-filters input, .security-filters select { width: 100%; border: 1px solid #cbdadd; border-radius: 9px; padding: 11px 12px; margin-bottom: 16px; background: white; font: inherit; }
+.security-card input:focus, .security-filters input:focus, .security-filters select:focus { outline: 2px solid #33b49d; outline-offset: 2px; }
+.security-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.security-actions button, .security-pagination button, .security-feedback button { border: 1px solid #cbdadd; border-radius: 8px; padding: 8px 12px; cursor: pointer; background: white; color: #254653; }
+.security-page button:disabled { opacity: .5; cursor: not-allowed; }
+.security-feedback { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-radius: 10px; padding: 14px; background: #e8f7ef; color: #146849 !important; }
+.security-feedback--error { background: #fff0ef; color: #a52d2a !important; }
+.security-user-form { margin: 20px 0; }
+.security-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 24px 0 10px; }
+.security-filters input, .security-filters select { margin: 0; }
+.security-table-wrap { overflow-x: auto; border: 1px solid #e0e9ed; border-radius: 14px; background: white; }
+.security-table { width: 100%; border-collapse: collapse; text-align: left; }
+.security-table th { background: #f3f8f8; color: #496274; padding: 16px; font-size: .85rem; }
+.security-table td { padding: 16px; border-top: 1px solid #edf2f3; vertical-align: middle; }
+.security-table small { display: block; color: #7a5e25; margin-top: 5px; }
+.security-badge { display: inline-block; font-size: .8rem; border-radius: 20px; background: #e0f5ed; color: #17654b; padding: 5px 10px; }
+.security-badge--inactive { color: #6c6872; background: #efedf1; }
+.security-pagination { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; align-items: center; padding: 20px 0; }
+@media (max-width: 700px) { .security-page .section-header { flex-direction: column; align-items: flex-start; gap: 14px; } .security-page--required { padding: 28px 16px; } .security-card { padding: 18px; } }

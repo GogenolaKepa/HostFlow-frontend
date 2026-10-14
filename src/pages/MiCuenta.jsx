@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../services/api";
 import { mensajeCuenta, validarPasswordNueva } from "../services/cuentas";
+import { AccountAvatar, PasswordField, PasswordRules, RoleBadge, SecurityFeedback, SecurityIcon } from "../components/security/SecurityUI";
 
 function MiCuenta({ usuario, onSesionActualizada, onLogout, obligatorio = false }) {
   const [nombre, setNombre] = useState(usuario.nombre);
@@ -8,25 +9,26 @@ function MiCuenta({ usuario, onSesionActualizada, onLogout, obligatorio = false 
   const [passwordNueva, setPasswordNueva] = useState("");
   const [confirmacion, setConfirmacion] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [operacion, setOperacion] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
 
   async function guardarNombre(event) {
     event.preventDefault();
-    setOcupado(true); setError(""); setMensaje("");
+    setOcupado(true); setOperacion("nombre"); setError(""); setMensaje("");
     try {
       const response = await api.patch("/auth/me", { nombre, versionRegistro: usuario.versionRegistro });
       onSesionActualizada(response.data, response.config.tokenSesion);
       setMensaje("Tu nombre fue actualizado.");
     } catch (fallo) { setError(mensajeCuenta(fallo)); }
-    finally { setOcupado(false); }
+    finally { setOcupado(false); setOperacion(""); }
   }
 
   async function cambiarPassword(event) {
     event.preventDefault();
     const validacion = validarPasswordNueva(passwordNueva, confirmacion);
     if (validacion) { setError(validacion); return; }
-    setOcupado(true); setError(""); setMensaje("");
+    setOcupado(true); setOperacion("password"); setError(""); setMensaje("");
     try {
       const response = await api.post("/auth/cambiar-password", {
         passwordActual, passwordNueva, versionRegistro: usuario.versionRegistro,
@@ -35,42 +37,38 @@ function MiCuenta({ usuario, onSesionActualizada, onLogout, obligatorio = false 
       onSesionActualizada(response.data, response.config.tokenSesion);
       setMensaje("Contraseña actualizada. Tus sesiones anteriores fueron cerradas.");
     } catch (fallo) { setError(mensajeCuenta(fallo)); }
-    finally { setOcupado(false); }
+    finally { setOcupado(false); setOperacion(""); }
   }
 
   return (
-    <section className={`security-page ${obligatorio ? "security-page--required" : ""}`}>
-      <header className="section-header">
-        <div><span className="security-eyebrow">HostFlow · Seguridad</span>
+    <section className={`security-page security-account ${obligatorio ? "security-page--required" : ""}`}>
+      <header className="section-header security-heading">
+        <div><span className="security-eyebrow"><SecurityIcon name="shield" />{obligatorio ? "Protegé tu acceso" : "Tu espacio personal"}</span>
           <h1>{obligatorio ? "Actualizá tu contraseña" : "Mi cuenta"}</h1>
-          <p>{obligatorio ? "Para continuar, reemplazá tu contraseña temporal por una privada." : "Administrá tus datos personales y tu contraseña."}</p>
+          <p>{obligatorio ? "Reemplazá la contraseña temporal para empezar a usar HostFlow." : "Tus datos y la seguridad de tu acceso, en un solo lugar."}</p>
         </div>
         {obligatorio && <button type="button" className="secondary-button" disabled={ocupado} onClick={onLogout}>Cerrar sesión</button>}
       </header>
-      <div className="security-profile"><strong>{usuario.nombre}</strong><span>{usuario.email}</span><span className="security-badge">{usuario.rol}</span></div>
-      {error && <p className="security-feedback security-feedback--error" role="alert">{error}
-        {error.includes("Recarg") && <button type="button" onClick={() => window.location.reload()}>Recargar cuenta</button>}
-      </p>}
-      {mensaje && <p className="security-feedback" role="status">{mensaje}</p>}
-      {!usuario.gestionCuentasDisponible ? <p className="security-card">Los cambios de cuenta estarán disponibles cuando se habilite la gestión de usuarios.</p> : (
-        <div className="security-grid">
-          {!obligatorio && <form className="security-card" onSubmit={guardarNombre}>
-            <h2>Datos personales</h2>
-            <label htmlFor="cuenta-nombre">Nombre</label>
-            <input id="cuenta-nombre" value={nombre} maxLength={120} required autoComplete="name" onChange={(e) => setNombre(e.target.value)} />
-            <p>El correo y el rol los administra un Administrador.</p>
-            <button className="primary-button" disabled={ocupado}>Guardar nombre</button>
+      <div className="security-profile"><AccountAvatar nombre={usuario.nombre} large /><div className="security-profile-identity"><span className="security-profile-label">Tu perfil en HostFlow</span><strong>{usuario.nombre}</strong><span>{usuario.email}</span></div><RoleBadge rol={usuario.rol} /></div>
+      {error && <SecurityFeedback error>{error}{error.includes("Recarg") && <button type="button" disabled={ocupado} onClick={() => window.location.reload()}>Recargar cuenta</button>}</SecurityFeedback>}
+      {mensaje && <SecurityFeedback>{mensaje}</SecurityFeedback>}
+      {!usuario.gestionCuentasDisponible ? <div className="security-card security-notice"><SecurityIcon name="info" /><p>Los cambios de cuenta estarán disponibles cuando se habilite la gestión de usuarios.</p></div> : (
+        <div className={`security-grid ${obligatorio ? "security-grid--required" : ""}`}>
+          {!obligatorio && <form className="security-card security-personal-card" onSubmit={guardarNombre} aria-busy={ocupado && operacion === "nombre"}>
+            <div className="security-card-heading"><span className="security-heading-icon"><SecurityIcon name="person" /></span><div><h2>Datos personales</h2><p>Así te identifica tu equipo.</p></div></div>
+            <div className="security-field"><label htmlFor="cuenta-nombre">Nombre completo</label><input id="cuenta-nombre" value={nombre} maxLength={120} required disabled={ocupado} autoComplete="name" onChange={(e) => setNombre(e.target.value)} /></div>
+            <dl className="security-account-details"><div><dt>Correo electrónico</dt><dd>{usuario.email}</dd></div><div><dt>Rol de acceso</dt><dd><RoleBadge rol={usuario.rol} /></dd></div></dl>
+            <div className="security-notice"><SecurityIcon name="info" /><p>Un Administrador gestiona los cambios de correo y rol.</p></div>
+            <div className="security-card-actions"><button className="primary-button" disabled={ocupado}>{operacion === "nombre" ? "Guardando…" : "Guardar nombre"}</button></div>
           </form>}
-          <form className="security-card" onSubmit={cambiarPassword}>
-            <h2>{obligatorio ? "Nueva contraseña" : "Cambiar contraseña"}</h2>
-            <label htmlFor="cuenta-actual">Contraseña actual</label>
-            <input id="cuenta-actual" type="password" value={passwordActual} required autoComplete="current-password" onChange={(e) => setPasswordActual(e.target.value)} />
-            <label htmlFor="cuenta-nueva">Nueva contraseña</label>
-            <input id="cuenta-nueva" type="password" value={passwordNueva} required autoComplete="new-password" onChange={(e) => setPasswordNueva(e.target.value)} />
-            <label htmlFor="cuenta-confirmacion">Repetir nueva contraseña</label>
-            <input id="cuenta-confirmacion" type="password" value={confirmacion} required autoComplete="new-password" onChange={(e) => setConfirmacion(e.target.value)} />
-            <p>Al menos 12 caracteres y hasta 72 bytes UTF-8. Se cerrarán tus otras sesiones.</p>
-            <button className="primary-button" disabled={ocupado}>{ocupado ? "Guardando…" : "Actualizar contraseña"}</button>
+          <form className="security-card" onSubmit={cambiarPassword} aria-busy={ocupado && operacion === "password"}>
+            <div className="security-card-heading"><span className="security-heading-icon"><SecurityIcon name="lock" /></span><div><h2>{obligatorio ? "Nueva contraseña" : "Cambiar contraseña"}</h2><p>Elegí una contraseña privada que no uses en otros sitios.</p></div></div>
+            <PasswordField id="cuenta-actual" label="Contraseña actual" value={passwordActual} disabled={ocupado} autoComplete="current-password" onChange={(e) => setPasswordActual(e.target.value)} />
+            <PasswordField id="cuenta-nueva" label="Nueva contraseña" value={passwordNueva} disabled={ocupado} describedBy="cuenta-password-ayuda" onChange={(e) => setPasswordNueva(e.target.value)} />
+            <PasswordField id="cuenta-confirmacion" label="Repetir nueva contraseña" value={confirmacion} disabled={ocupado} describedBy="cuenta-password-ayuda" onChange={(e) => setConfirmacion(e.target.value)} />
+            <PasswordRules id="cuenta-password-ayuda" password={passwordNueva} confirmacion={confirmacion} />
+            <div className="security-notice"><SecurityIcon name="shield" /><p>Al actualizarla, se cerrarán tus otras sesiones. Esta sesión continuará con la nueva contraseña.</p></div>
+            <div className="security-card-actions"><button className="primary-button" disabled={ocupado}>{operacion === "password" ? "Guardando…" : "Actualizar contraseña"}</button></div>
           </form>
         </div>
       )}

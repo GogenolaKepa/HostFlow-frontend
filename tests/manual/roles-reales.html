@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <title>HostFlow · Comprobación de sesión</title>
+  <style>
+    body{font:16px system-ui;background:#101827;color:#eef2ff;max-width:850px;margin:40px auto;padding:24px}
+    button,a{font:inherit;color:inherit}button{background:#455be5;border:0;padding:12px;border-radius:8px;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin:24px 0}td,th{padding:10px;text-align:left;border-bottom:1px solid #40506b}
+  </style>
+</head>
+<body>
+  <h1>Comprobar la sesión de HostFlow</h1>
+  <p>Primero iniciá sesión y completá el cambio obligatorio en esta misma ventana. Esta página solo consulta tu sesión, permisos, Usuarios, Roles, reportes e histórico.</p>
+  <p>No crea ni modifica cuentas o datos operativos. Los datos de cuentas, importes y credenciales no se muestran ni guardan en el informe.</p>
+  <button id="comprobar" type="button">Comprobar mi sesión</button>
+  <p><a href="/">Volver a HostFlow</a></p>
+  <p id="estado" role="status"></p>
+  <table><thead><tr><th>Comprobación</th><th>Resultado</th></tr></thead><tbody id="resultados"></tbody></table>
+  <script type="module" src="./roles-reales.js"></script>
+</body>
+</html>

@@ -2529,7 +2529,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-  if (!datos) {
+  if (!datos && seccionActiva === "inicio") {
     if (errorDashboard) return (
       <section className="security-page" role="alert">
         <p>{errorDashboard}</p>
@@ -2584,7 +2584,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-  } = datos;
+  } = datos || {};
 
 
 
@@ -3727,6 +3727,12 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
       <main className="main">
+        {seccionActiva === "inicio" && errorDashboard && (
+          <div className="security-feedback security-feedback--error dashboard-refresh-error" role="alert">
+            <p>No se pudo actualizar el inicio. Los datos mostrados corresponden a la última carga correcta.</p>
+            <button type="button" onClick={obtenerDashboard}>Reintentar actualización</button>
+          </div>
+        )}
 
         {seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
@@ -4602,7 +4608,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-                    <h3>Alertas</h3>
+                    <h3>Alertas registradas</h3>
 
 
 
@@ -4614,7 +4620,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-                      Situaciones operativas que requieren atención.
+                      Se actualizan al sincronizar el Centro de alertas.
 
 
 

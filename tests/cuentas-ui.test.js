@@ -44,3 +44,14 @@ test("Login renderiza campos vacios, sin password o cuenta de demostracion", () 
   assert.equal(html.includes('value=""'), true);
   assert.equal(html.includes("Usuario de prueba"), false);
 });
+
+test("perfil conserva el rol técnico y contraseñas ocultas con controles accesibles", () => {
+  const html = renderToStaticMarkup(createElement(MiCuenta, { usuario: { ...usuario,
+    nombre: "DIRECCIÓN DE PRUEBA", rol: "Administrador", debeCambiarPassword: false } }));
+  assert.ok(html.includes("DIRECCIÓN DE PRUEBA"));
+  assert.ok(html.includes("Administrador"));
+  assert.equal((html.match(/type="password"/g) || []).length, 3);
+  for (const label of ["Mostrar contraseña actual", "Mostrar nueva contraseña", "Mostrar repetir nueva contraseña"]) assert.ok(html.includes(`aria-label="${label}"`));
+  assert.ok(html.includes('aria-describedby="cuenta-password-ayuda"'));
+  assert.equal(html.includes('value="prueba"'), false);
+});

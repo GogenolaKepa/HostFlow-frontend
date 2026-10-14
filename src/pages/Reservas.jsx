@@ -405,7 +405,7 @@ function Reservas() {
       setReservas(
         response.data.reservas
       );
-    } catch (error) {
+    } catch {
       setError(
         "No se pudieron obtener las reservas."
       );

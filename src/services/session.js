@@ -82,7 +82,7 @@ export async function cerrarSesionEnServidor(api) {
   const token = obtenerToken();
   let revocada = false;
   try {
-    const response = await api.post("/auth/logout");
+    const response = await api.post("/auth/logout", undefined, { timeout: 10000 });
     revocada = response.data.revocadaEnServidor === true;
   } catch { /* Cerrar el navegador incluso si el servidor no confirma revocacion. */ }
   if (token === obtenerToken()) limpiarSesion();

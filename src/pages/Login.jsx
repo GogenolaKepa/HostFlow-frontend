@@ -6,9 +6,12 @@ function Login({ onLogin, aviso }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [ocupado, setOcupado] = useState(false);
 
   const iniciarSesion = async (e) => {
     e.preventDefault();
+    if (ocupado) return;
+    setOcupado(true);
     setError("");
 
     try {
@@ -24,7 +27,7 @@ function Login({ onLogin, aviso }) {
         error.response?.data?.mensaje ||
           "Error al iniciar sesión"
       );
-    }
+    } finally { setOcupado(false); }
   };
 
   return (
@@ -75,8 +78,8 @@ function Login({ onLogin, aviso }) {
           </p>
         )}
 
-        <button type="submit">
-          Ingresar
+        <button type="submit" disabled={ocupado}>
+          {ocupado ? "Ingresando…" : "Ingresar"}
         </button>
 
       </form>

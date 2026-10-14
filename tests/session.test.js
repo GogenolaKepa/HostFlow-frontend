@@ -63,7 +63,10 @@ test("nueva sesion tras password reemplaza token; respuesta antigua no pisa otro
 test("logout confirma revocacion y limpia localmente tambien ante fallo del servidor", async () => {
   for (const falla of [false, true]) {
     guardarSesion("token-sintetico", usuarioServidor);
-    const api = crearApi((config) => falla ? rechazar(config, 503) : Promise.resolve(responder(config, { revocadaEnServidor: true })));
+    const api = crearApi((config) => {
+      assert.equal(config.timeout, 10000);
+      return falla ? rechazar(config, 503) : Promise.resolve(responder(config, { revocadaEnServidor: true }));
+    });
     assert.equal(await cerrarSesionEnServidor(api), !falla);
     assert.equal(obtenerToken(), null);
   }

@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import api from "../services/api";
+const RECOMENDACIONES_VACIAS = Object.freeze([]);
 
 
 function formatearFechaHora(
@@ -202,7 +203,7 @@ function FlowIA({
 
   const recomendaciones =
     datos?.recomendaciones ||
-    [];
+    RECOMENDACIONES_VACIAS;
 
   const total =
     Number(

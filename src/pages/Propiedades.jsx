@@ -209,7 +209,7 @@ function Propiedades() {
         setPropiedades(
           response.data.propiedades
         );
-      } catch (error) {
+      } catch {
         setError(
           "No se pudieron obtener las propiedades."
         );

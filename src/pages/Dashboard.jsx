@@ -837,6 +837,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
   const [datos, setDatos] = useState(null);
+  const [errorDashboard, setErrorDashboard] = useState("");
 
 
 
@@ -1433,17 +1434,13 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
   const obtenerDashboard = async () => {
-
-
-
-    const response = await api.get("/dashboard/resumen");
-
-
-
-    setDatos(response.data);
-
-
-
+    try {
+      const response = await api.get("/dashboard/resumen");
+      setDatos(response.data);
+      setErrorDashboard("");
+    } catch {
+      setErrorDashboard("No se pudo cargar el inicio. Comprob\u00e1 la conexi\u00f3n y reintent\u00e1.");
+    }
   };
 
 
@@ -2533,6 +2530,13 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
   if (!datos) {
+    if (errorDashboard) return (
+      <section className="security-page" role="alert">
+        <p>{errorDashboard}</p>
+        <button className="primary-button" onClick={obtenerDashboard}>Reintentar</button>
+        <button className="secondary-button" onClick={onLogout}>Cerrar sesión</button>
+      </section>
+    );
 
 
 

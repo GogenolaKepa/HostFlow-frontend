@@ -65,7 +65,7 @@ function Huespedes({ onVerReserva }) {
       setHuespedes(
         response.data.huespedes
       );
-    } catch (error) {
+    } catch {
       setError(
         "No se pudieron obtener los huéspedes."
       );

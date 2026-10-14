@@ -832,7 +832,6 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
   const tienePermiso = usePermisos();
   const itemsVisibles = [...ITEMS_NAVEGACION,
     ...(puedeGestionarUsuarios(usuario) ? [{ id: "usuarios", label: "Usuarios", icono: "huespedes" }] : []),
-    { id: "mi-cuenta", label: "Mi cuenta", icono: "huespedes" },
   ];
 
 
@@ -3001,11 +3000,18 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-              <div className="mobile-nav-user">
+              <button
+                type="button"
+                className="mobile-nav-user"
+                onClick={() => cambiarSeccion("mi-cuenta")}
+                aria-label={`Abrir Mi cuenta de ${usuario.nombre}`}
+                aria-current={seccionActiva === "mi-cuenta" ? "page" : undefined}
+                title="Mi cuenta"
+              >
 
 
 
-                <span className="mobile-nav-avatar">
+                <span className="mobile-nav-avatar" aria-hidden="true">
 
 
 
@@ -3041,7 +3047,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-                <div>
+                <span className="mobile-nav-user-copy">
 
 
 
@@ -3089,11 +3095,11 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-                </div>
+                </span>
 
 
 
-              </div>
+              </button>
 
 
 
@@ -3541,11 +3547,18 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-          <div className="sidebar-user">
+          <button
+            type="button"
+            className="sidebar-user"
+            onClick={() => cambiarSeccion("mi-cuenta")}
+            aria-label={`Abrir Mi cuenta de ${usuario.nombre}`}
+            aria-current={seccionActiva === "mi-cuenta" ? "page" : undefined}
+            title="Mi cuenta"
+          >
 
 
 
-            <span className="sidebar-user-avatar">
+            <span className="sidebar-user-avatar" aria-hidden="true">
 
 
 
@@ -3581,7 +3594,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-            <div className="sidebar-user-copy">
+            <span className="sidebar-user-copy">
 
 
 
@@ -3613,11 +3626,11 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-            </div>
+            </span>
 
 
 
-          </div>
+          </button>
 
 
 

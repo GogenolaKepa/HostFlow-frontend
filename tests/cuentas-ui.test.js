@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
 
-let vite, MiCuenta, Usuarios, Login, PermisosContext;
+let vite, MiCuenta, Usuarios, Login, PermisosContext, Configuracion, ThemeProvider;
 before(async () => {
   // SSR local: sin backend ni peticiones API; los efectos React no se ejecutan.
   globalThis.window = { location: { protocol: "http:", hostname: "localhost" } };
@@ -15,6 +15,8 @@ before(async () => {
   Usuarios = (await vite.ssrLoadModule("/src/pages/Usuarios.jsx")).default;
   Login = (await vite.ssrLoadModule("/src/pages/Login.jsx")).default;
   PermisosContext = (await vite.ssrLoadModule("/src/context/PermisosContext.js")).PermisosContext;
+  Configuracion = (await vite.ssrLoadModule("/src/pages/Configuracion.jsx")).default;
+  ThemeProvider = (await vite.ssrLoadModule("/src/context/ThemeContext.jsx")).ThemeProvider;
 });
 after(async () => { await vite?.close(); delete globalThis.window; });
 const usuario = { idUsuario: 1, nombre: "Prueba aislada", email: "prueba@example.invalid", rol: "Operador", gestionCuentasDisponible: true, debeCambiarPassword: true, versionRegistro: "0000000000000001" };
@@ -54,4 +56,18 @@ test("perfil conserva el rol técnico y contraseñas ocultas con controles acces
   for (const label of ["Mostrar contraseña actual", "Mostrar nueva contraseña", "Mostrar repetir nueva contraseña"]) assert.ok(html.includes(`aria-label="${label}"`));
   assert.ok(html.includes('aria-describedby="cuenta-password-ayuda"'));
   assert.equal(html.includes('value="prueba"'), false);
+});
+
+test("Configuración personal no agrega administración al Operador ni formularios falsos", () => {
+  const render = permisos => renderToStaticMarkup(createElement(ThemeProvider, null,
+    createElement(PermisosContext.Provider, { value: permisos }, createElement(Configuracion, { onNavegar() {}, gestionCuentasDisponible: true }))));
+  const operador = render([]);
+  assert.ok(operador.includes('name="apariencia"'));
+  assert.ok(operador.includes('value="claro"'));
+  assert.ok(operador.includes('value="oscuro"'));
+  assert.ok(operador.includes('value="automatico"'));
+  assert.equal(operador.includes('Datos de empresa'),false);
+  assert.equal(operador.includes('<form'),false);
+  const admin = render(['usuarios.ver']);
+  assert.ok(admin.includes('Datos de empresa')); assert.ok(admin.includes('Próximamente'));
 });

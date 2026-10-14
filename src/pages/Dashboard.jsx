@@ -1,6 +1,8 @@
 import { usePermisos } from "../context/PermisosContext";
 import Usuarios from "./Usuarios";
 import MiCuenta from "./MiCuenta";
+import Configuracion from "./Configuracion";
+import { SecurityIcon } from "../components/security/SecurityUI";
 import { puedeGestionarUsuarios } from "../services/cuentas";
 import { useEffect, useState } from "react";
 
@@ -219,6 +221,7 @@ function IconoNavegacion({
 
 
 }) {
+  if (nombre === "configuracion") return <SecurityIcon name="settings" />;
 
 
 
@@ -3001,6 +3004,17 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
             <div className="mobile-nav-footer">
+              <button
+                type="button"
+                className={`mobile-nav-item mobile-nav-settings ${seccionActiva === "configuracion" ? "active" : ""}`}
+                onClick={() => cambiarSeccion("configuracion")}
+                aria-label="Configuración"
+                aria-current={seccionActiva === "configuracion" ? "page" : undefined}
+                title="Configuración"
+              >
+                <span className="mobile-nav-icon" aria-hidden="true"><IconoNavegacion nombre="configuracion" /></span>
+                <span>Configuración</span>
+              </button>
 
 
 
@@ -3548,6 +3562,17 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
         <div className="sidebar-footer">
+          <button
+            type="button"
+            className={`sidebar-nav-item sidebar-settings ${seccionActiva === "configuracion" ? "active" : ""}`}
+            onClick={() => cambiarSeccion("configuracion")}
+            aria-label="Configuración"
+            aria-current={seccionActiva === "configuracion" ? "page" : undefined}
+            title="Configuración"
+          >
+            <span className="sidebar-nav-icon" aria-hidden="true"><IconoNavegacion nombre="configuracion" /></span>
+            <span className="sidebar-nav-label">Configuración</span>
+          </button>
 
 
 
@@ -3736,6 +3761,8 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
         {seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
+        ) : seccionActiva === "configuracion" ? (
+          <Configuracion onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />
         ) : seccionActiva === "mi-cuenta" ? (
           <MiCuenta usuario={usuario} onSesionActualizada={onSesionActualizada} onLogout={onLogout} />
         ) : (<>

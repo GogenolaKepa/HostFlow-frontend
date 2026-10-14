@@ -7,6 +7,7 @@ import path from "node:path";
 import os from "node:os";
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
+import { propiedadVisual, reservaVisual, huespedVisual, limpiezaVisual, alertaVisual, calendarioVisual, reportesVisuales, recomendacionVisual } from "../fixtures/visual-modulos.js";
 
 // Browser real ya instalado, sin dependencias nuevas y sin backend/SQL.
 const browserPath = process.env.HOSTFLOW_TEST_BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
@@ -51,6 +52,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let current = users.get(1), token = "token-aislado-1", nonce = 1;
   let obligatorio = false, falloSesion = false, falloInicio = false, caducada = false;
   let falloUsuarios = false;
+  let datosVisuales = false;
   const requests = []; const excepciones = [];
   try {
     vite = await createServer({ configFile: false, envDir: false, plugins: [react()],
@@ -154,15 +156,21 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       }
       if (ruta === "/dashboard/historico") return [200, { historico: [] }];
       if (ruta === "/dashboard/reportes/opciones") return [200, { opciones: { propiedades: [], canales: [], estados: [] } }];
-      if (ruta === "/dashboard/reportes") return [200, { reportes: { periodo: { fechaDesde: "2026-10-01", fechaHasta: "2026-10-31", tipo: "mensual" }, filtros: {}, resumen: { totalReservasPeriodo: 0, totalReservasOperativas: 0, reservasConIngreso: 0, ingresosEstimados: 0, nochesOcupadas: 0, nochesDisponibles: 0, ocupacionPromedio: 0 }, historico: [], porCanal: [], porEstado: [], porPropiedad: [] } }];
-      if (ruta === "/calendario") return [200, { anio: 2026, mes: 10, diasMes: 31, propiedades: [], resumen: { reservas: 0 } }];
-      if (ruta === "/recomendaciones") return [200, { recomendaciones: [], resumen: { total: 0 }, contexto: {} }];
+      if (ruta === "/dashboard/reportes") return [200, { reportes: datosVisuales ? reportesVisuales : { periodo: { fechaDesde: "2026-10-01", fechaHasta: "2026-10-31", tipo: "mensual" }, filtros: {}, resumen: { totalReservasPeriodo: 0, totalReservasOperativas: 0, reservasConIngreso: 0, ingresosEstimados: 0, nochesOcupadas: 0, nochesDisponibles: 0, ocupacionPromedio: 0 }, historico: [], porCanal: [], porEstado: [], porPropiedad: [] } }];
+      if (ruta === "/calendario") return [200, datosVisuales ? calendarioVisual : { anio: 2026, mes: 10, diasMes: 31, propiedades: [], resumen: { reservas: 0 } }];
+      if (ruta === "/recomendaciones") return [200, { recomendaciones: datosVisuales ? [recomendacionVisual] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {} }];
       const modulo = ruta.split("/")[1];
-      if (["propiedades", "reservas", "huespedes", "alertas", "limpiezas"].includes(modulo)) return [200, { [modulo]: [], resumen: { total: 0, pendientes: 0, enProgreso: 0, completadas: 0, canceladas: 0, urgentes: 0 } }];
+      if (["propiedades", "reservas", "huespedes", "alertas", "limpiezas"].includes(modulo)) {
+        const fixtures = { propiedades: propiedadVisual, reservas: reservaVisual, huespedes: huespedVisual, alertas: alertaVisual, limpiezas: limpiezaVisual };
+        return [200, { [modulo]: datosVisuales ? [fixtures[modulo]] : [], resumen: { total: datosVisuales ? 1 : 0, pendientes: datosVisuales ? 1 : 0, enProgreso: 0, completadas: 0, canceladas: 0, urgentes: 0 } }];
+      }
       return [404, { mensaje: "Ruta no prevista en la API aislada" }];
     }
 
-    cdp.on("Runtime.exceptionThrown", () => excepciones.push(fase));
+    cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => {
+      const description = exceptionDetails.exception?.description || "";
+      excepciones.push({ fase, tipo: /^(\w+Error)/.exec(description)?.[1] || "Error", campo: /reading '(\w+)'/.exec(description)?.[1] });
+    });
     cdp.on("Page.javascriptDialogOpening", () => { send("Page.handleJavaScriptDialog", { accept: true }).catch(() => excepciones.push("dialogo")); });
     cdp.on("Fetch.requestPaused", async ({ requestId, request }) => {
       try {
@@ -191,6 +199,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
 
     const capturar = async (nombre) => {
       if (!process.env.HOSTFLOW_TEST_VISUAL_DIR) return;
+      await new Promise(r=>setTimeout(r,220)); // Esperar transiciones para revisar colores finales.
       assert.equal(await evaluate("[...document.querySelectorAll('input[id*=password], input[id*=cuenta-actual], input[id*=cuenta-nueva], input[id*=confirmacion]')].some(i=>i.value)"), false, "No capturar formularios con contraseñas.");
       const folder = path.resolve(process.env.HOSTFLOW_TEST_VISUAL_DIR);
       fs.mkdirSync(folder, { recursive: true });
@@ -202,7 +211,52 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     const recargarInicio = async () => {
       await evaluate("document.body.dataset.beforeReload='1'");
       await send("Page.reload");
-      await esperar(`!document.body.dataset.beforeReload && (${inicioVisible})`);
+      await esperar(`Boolean(document.body) && !document.body.dataset.beforeReload && (${inicioVisible})`);
+    };
+
+    const comprobarUtilidades = async (rol) => {
+      if (await evaluate("document.querySelector('.sidebar').classList.contains('sidebar--collapsed')")) await click('.sidebar-collapse-toggle');
+      const principal = ['Inicio','Propiedades','Reservas','Huéspedes','Calendario','Limpiezas','Reportes','Alertas', ...(rol === 'Administrador' ? ['Usuarios'] : [])];
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.sidebar-nav button')].map(b=>b.textContent.trim())"), principal);
+      assert.deepEqual(await evaluate("[...document.querySelector('.sidebar-footer').children].map(e=>e.classList.contains('sidebar-settings')?'configuracion':e.className)"), ['configuracion','sidebar-user','sidebar-logout']);
+      assert.equal(await evaluate("document.querySelectorAll('.sidebar-settings').length"), 1);
+      assert.equal(await evaluate("document.querySelector('.sidebar-settings').getAttribute('aria-label')"), 'Configuración');
+      assert.equal(await evaluate("document.querySelector('.sidebar-settings').title"), 'Configuración');
+      for (const width of [1280,820]) {
+        await send('Emulation.setDeviceMetricsOverride',{width,height:420,deviceScaleFactor:1,mobile:false});
+        for (const selector of ['.sidebar-nav button:last-child','.sidebar-settings','.sidebar-user','.sidebar-logout']) {
+          await evaluate(`document.querySelector('${selector}').focus()`);
+          assert.equal(await evaluate(`(() => {const e=document.querySelector('${selector}'), r=e.getBoundingClientRect();return document.activeElement===e && r.top>=0 && r.bottom<=innerHeight;})()`), true, `${selector} accesible a ${width}x420.`);
+        }
+        assert.equal(await evaluate("document.querySelector('.sidebar-footer').getBoundingClientRect().top>=document.querySelector('.sidebar-nav').getBoundingClientRect().bottom"), true, 'Las utilidades no se superponen a la navegación.');
+      }
+      await click('.sidebar-collapse-toggle');
+      assert.equal(await evaluate("document.querySelector('.sidebar').classList.contains('sidebar--collapsed')"), true);
+      await evaluate("document.querySelector('.sidebar-settings').focus()");
+      await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r',unmodifiedText:'\r'});
+      await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      await esperar("Boolean(document.querySelector('.theme-options'))");
+      assert.equal(await evaluate("document.querySelector('.sidebar-settings').getAttribute('aria-current')"), 'page');
+      await capturar(`utilidades-colapsadas-${rol.toLowerCase()}`);
+      await click('.sidebar-collapse-toggle');
+      await send('Emulation.setDeviceMetricsOverride',{width:390,height:420,deviceScaleFactor:1,mobile:true});
+      await click('.mobile-menu-toggle'); await esperar("Boolean(document.querySelector('.mobile-nav-settings'))");
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.mobile-nav-list button')].map(b=>b.textContent.trim())"), principal);
+      assert.deepEqual(await evaluate("[...document.querySelector('.mobile-nav-footer').children].map(e=>e.classList.contains('mobile-nav-settings')?'configuracion':e.className)"), ['configuracion','mobile-nav-user','mobile-nav-logout']);
+      assert.equal(await evaluate("document.querySelectorAll('.mobile-nav-settings').length"), 1);
+      assert.equal(await evaluate("document.querySelector('.mobile-nav-settings').getAttribute('aria-current')"), 'page');
+      for(const selector of ['.mobile-nav-settings','.mobile-nav-user','.mobile-nav-logout']) {
+        await evaluate(`document.querySelector('${selector}').focus()`);
+        assert.equal(await evaluate(`(() => {const e=document.querySelector('${selector}'), r=e.getBoundingClientRect(), p=e.closest('.mobile-nav-drawer').getBoundingClientRect();return document.activeElement===e && r.top>=p.top && r.bottom<=innerHeight;})()`), true, `${selector} accesible en menú móvil corto.`);
+        assert.equal(await evaluate(`(() => {const e=document.querySelector('${selector}'), r=e.getBoundingClientRect();return [.1,.5,.9].every(x=>e.contains(document.elementFromPoint(r.left+r.width*x,r.top+r.height/2)));})()`), true, `${selector} libre de superposiciones.`);
+      }
+      await capturar(`utilidades-movil-${rol.toLowerCase()}`);
+      await click('.mobile-nav-user'); await esperar("Boolean(document.querySelector('#cuenta-nombre')) && !document.querySelector('.mobile-nav-settings')");
+      await click('.mobile-menu-toggle'); await esperar("Boolean(document.querySelector('.mobile-nav-settings'))");
+      await click('.mobile-nav-settings'); await esperar("Boolean(document.querySelector('.theme-options')) && !document.querySelector('.mobile-nav-settings')");
+      await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+      assert.equal(await evaluate("document.querySelectorAll('.sidebar-nav button.active').length"), 0);
+      assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
     await t.test("Administrador inicia en Inicio y recarga sin sincronizar otros módulos", async () => {
@@ -213,6 +267,57 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await recargarInicio();
       assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
       await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
+    });
+
+    await t.test("Configuración: temas reales, persistencia, sistema, responsive y logout", async () => {
+      fase = "temas Admin"; await login(); await esperar(inicioVisible);
+      await comprobarUtilidades('Administrador');
+      await esperar("Boolean(document.querySelector('.theme-options'))");
+      assert.equal(await evaluate("document.querySelector('.sidebar-settings').getAttribute('aria-current')"),'page');
+      assert.equal(await evaluate("document.documentElement.dataset.theme"),"light");
+      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),7);
+      await capturar('configuracion-clara');
+      const anteriores = requests.length, tokenPrevio = await evaluate("localStorage.getItem('token')");
+      await click('input[name=apariencia][value=oscuro]');
+      await esperar("document.documentElement.dataset.theme==='dark'");
+      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'oscuro');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.settings-card')).backgroundColor"),'rgb(25, 35, 54)');
+      assert.equal(await evaluate("localStorage.getItem('token')"),tokenPrevio);
+      assert.equal(requests.length,anteriores,"Cambiar apariencia no consulta ni escribe en la API.");
+      await capturar('configuracion-oscura');
+      await evaluate("document.querySelector('input[value=oscuro]').focus()");
+      await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
+      await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
+      await esperar("document.querySelector('input[value=automatico]').checked");
+      await click('input[name=apariencia][value=oscuro]');
+      await recargarInicio();
+      assert.equal(await evaluate("document.documentElement.dataset.theme"),'dark');
+      await click('.sidebar-settings');
+      await esperar("document.querySelector('input[value=oscuro]')?.checked");
+      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'dark'}]});
+      await click('input[name=apariencia][value=automatico]');
+      await esperar("document.documentElement.dataset.theme==='dark'");
+      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'light'}]});
+      await esperar("document.documentElement.dataset.theme==='light'");
+      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'automatico');
+      await click('input[name=apariencia][value=claro]');
+      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'dark'}]});
+      assert.equal(await evaluate("document.documentElement.dataset.theme"),'light');
+      await click('input[name=apariencia][value=oscuro]');
+      for(const width of [320,390,820]) {
+        await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<700});
+        assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"),true,`Configuración sin desborde a ${width}px.`);
+        if(width===390) await capturar('configuracion-oscura-movil');
+      }
+      await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes('Datos de empresa')).click()");
+      assert.equal(await evaluate("document.querySelector('.settings-content').textContent.includes('todavía no está disponible') && !document.querySelector('.settings-content form')"),true);
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes('Seguridad y acceso')).click()");
+      assert.equal(await evaluate("document.querySelector('.settings-links').textContent.includes('Gestionar usuarios')"),true);
+      await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
+      assert.equal(await evaluate("document.documentElement.dataset.theme"),'dark');
+      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'oscuro');
+      await capturar('login-oscuro');
     });
 
     await t.test("login y perfil por teclado; sin opcion duplicada", async () => {
@@ -428,12 +533,32 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     await t.test("Operador navega modulos, no ve Usuarios y cierra sesion", async () => {
       fase = "operador";
       assert.equal(await evaluate("document.querySelector('.sidebar-nav').textContent.includes('Usuarios')"), false);
+      await comprobarUtilidades('Operador');
+      await esperar("Boolean(document.querySelector('.theme-options'))");
+      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),1,"Operador solo ajusta Apariencia.");
+      await click('input[name=apariencia][value=oscuro]');
+      datosVisuales = true;
       for (const label of ["Propiedades", "Reservas", "Huéspedes", "Calendario", "Limpiezas", "Alertas", "Reportes"]) {
+        fase = `visual ${label}`;
         await evaluate(`[...document.querySelectorAll('.sidebar-nav button')].find(b=>b.textContent.trim()===${JSON.stringify(label)}).click()`);
         await new Promise((r) => setTimeout(r, 150));
-        assert.equal(await evaluate("Boolean(document.querySelector('.sidebar'))"), true);
+        assert.equal(await evaluate("Boolean(document.querySelector('.sidebar'))"), true, `${label}: ${JSON.stringify(excepciones)}`);
+        assert.equal(await evaluate("document.documentElement.dataset.theme"),'dark');
+        const whites = await evaluate("[...document.querySelectorAll('.main *')].filter(e=>e.getBoundingClientRect().width>0 && e.getBoundingClientRect().height>0 && getComputedStyle(e).backgroundColor==='rgb(255, 255, 255)').map(e=>e.className).filter(n=>typeof n==='string')");
+        assert.deepEqual(whites,[],`Superficies claras sin tematizar en ${label}.`);
+        await capturar(`oscuro-${label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`);
+        await evaluate("globalThis.HostFlowAppearance.setPreference('claro')");
+        assert.equal(await evaluate("document.documentElement.dataset.theme"),'light');
+        await capturar(`claro-${label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`);
+        await evaluate("globalThis.HostFlowAppearance.setPreference('oscuro')");
+        await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+        assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"),true,`${label} sin desborde en móvil.`);
+        await capturar(`movil-${label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}`);
+        await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
       }
       await click("button[aria-label='Abrir FlowIA']"); await esperar("Boolean(document.querySelector('[aria-label=FlowIA]'))");
+      await esperar("document.querySelector('[aria-label=FlowIA]').textContent.includes('Limpieza ficticia')");
+      await capturar('oscuro-flowia');
       await click(".sidebar-logout"); await esperar("Boolean(document.querySelector('#login-email'))");
       assert.equal(await evaluate("localStorage.getItem('token')"), null);
     });

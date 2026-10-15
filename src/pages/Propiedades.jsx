@@ -1,3 +1,4 @@
+import { desplazarAlInicio } from "../services/navegacion";
 import { usePermisos } from "../context/PermisosContext";
 import {
   useEffect,
@@ -387,10 +388,7 @@ function Propiedades() {
           idPropiedad
         );
 
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
+        desplazarAlInicio();
       } catch (error) {
         setError(
           error.response?.data
@@ -495,10 +493,7 @@ function Propiedades() {
         true
       );
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      desplazarAlInicio();
     };
 
   // =========================================================
@@ -578,10 +573,7 @@ function Propiedades() {
         true
       );
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      desplazarAlInicio();
     };
 
   // =========================================================

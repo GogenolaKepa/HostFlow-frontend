@@ -2,6 +2,7 @@ import { usePermisos } from "../context/PermisosContext";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
+import usePredeterminadosReserva from "../hooks/usePredeterminadosReserva";
 
 const FILTROS_INICIALES_RESERVAS = {
   busqueda: "",
@@ -210,6 +211,7 @@ function Reservas() {
       estado: "",
       montoEstimado: "",
     });
+  const predeterminadosReserva = usePredeterminadosReserva(mostrarFormulario, setFormulario);
 
   // =========================================================
   // AIRBNB
@@ -432,6 +434,7 @@ function Reservas() {
   // =========================================================
 
   const manejarCambio = (e) => {
+    predeterminadosReserva.marcarCambio(e.target.name);
     const { name, value } = e.target;
 
     setFormulario({
@@ -482,6 +485,7 @@ function Reservas() {
       setMensaje(
         "Reserva registrada correctamente."
       );
+      predeterminadosReserva.reiniciar();
 
       setMostrarFormulario(false);
 
@@ -2424,6 +2428,7 @@ function Reservas() {
           className="form-card"
           onSubmit={crearReserva}
         >
+          <p className="settings-defaults-status" role="status">{predeterminadosReserva.estado}</p>
           <h3>
             Registrar nueva reserva
             manual

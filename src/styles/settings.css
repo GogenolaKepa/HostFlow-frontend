@@ -1,4 +1,13 @@
 .settings-page { width: 100%; max-width: 1500px; margin: 0 auto; padding: 10px 0 92px; color: var(--hf-text); }
+/* Los diálogos y mensajes compartidos heredan los mismos tokens de apariencia. */
+.settings-page, .settings-guard {
+  --security-primary: var(--hf-primary); --security-primary-hover: var(--hf-primary-hover); --security-primary-soft: var(--hf-info-soft);
+  --security-surface: var(--hf-surface-raised); --security-soft: var(--hf-surface-soft); --security-border: var(--hf-border-soft);
+  --security-input-border: var(--hf-border); --security-text: var(--hf-text); --security-muted: var(--hf-text-muted);
+  --security-success: var(--hf-success-text); --security-success-soft: var(--hf-success-soft);
+  --security-danger: var(--hf-danger-text); --security-danger-soft: var(--hf-danger-soft);
+  --security-warning: var(--hf-warning-text); --security-warning-soft: var(--hf-warning-soft);
+}
 .settings-heading { display: block; margin-bottom: 26px; }
 .settings-heading h1 { margin: 10px 0 9px; font-size: clamp(25px, 2.3vw, 32px); letter-spacing: -.035em; }
 .settings-heading p { margin: 0; color: var(--hf-text-muted); font-size: 14px; line-height: 1.6; }
@@ -60,6 +69,41 @@
 .settings-links { display: grid; gap: 10px; margin-top: 20px; }
 .settings-links button { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; background: var(--hf-surface-soft); color: var(--hf-info-text); border: 1px solid var(--hf-border); border-radius: 8px; font: inherit; font-size: 12px; cursor: pointer; }
 .settings-links button:hover { background: var(--hf-info-soft); }
-.settings-page button:focus-visible { outline: 3px solid var(--hf-info-text); outline-offset: 3px; }
+.settings-fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px; }
+.settings-field { display: grid; align-content: start; gap: 8px; min-width: 0; }
+.settings-field--full { grid-column: 1 / -1; }
+.settings-field label { color: var(--hf-text-secondary); font-size: 12px; font-weight: 600; }
+.settings-field input, .settings-field textarea { width: 100%; min-width: 0; box-sizing: border-box; margin: 0; padding: 12px; border: 1px solid var(--hf-border); border-radius: 8px; background: var(--hf-surface-raised); color: var(--hf-text); font: inherit; font-size: 13px; }
+.settings-field input { min-height: 44px; }
+.settings-field textarea { resize: vertical; line-height: 1.7; }
+.settings-field [aria-invalid="true"] { border-color: var(--hf-danger-text); }
+.settings-field-error { color: var(--hf-danger-text); font-size: 11px; line-height: 1.6; }
+.settings-card .settings-required { margin-bottom: 20px; }
+.settings-form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 24px; margin-top: 26px; border-top: 1px solid var(--hf-border-soft); }
+.settings-form-actions > span { flex: 1 0 150px; color: var(--hf-text-muted); font-size: 11px; }
+.settings-button { display: inline-flex; justify-content: center; align-items: center; min-height: 42px; padding: 10px 15px; border: 1px solid var(--hf-border); border-radius: 8px; color: var(--hf-text-secondary); background: var(--hf-surface-raised); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.settings-button:hover:not(:disabled) { background: var(--hf-surface-soft); }
+.settings-button--primary { background: var(--hf-primary); color: var(--hf-on-brand); border-color: var(--hf-primary); }
+.settings-button--primary:hover:not(:disabled) { background: var(--hf-primary-hover); }
+.settings-button:disabled, .settings-field :disabled { opacity: .6; cursor: not-allowed; }
+.settings-policy { display: flex; gap: 12px; padding: 17px; margin: 24px 0; background: var(--hf-info-soft); border: 1px solid var(--hf-info-border); border-radius: 10px; }
+.settings-policy > svg { flex: 0 0 18px; color: var(--hf-info-text); }
+.settings-policy h3 { margin: 0; color: var(--hf-info-text); font-size: 13px; }
+.settings-readonly { margin: 0 0 20px; display: grid; gap: 16px; }
+.settings-readonly > div { display: grid; gap: 5px; }
+.settings-readonly dt { color: var(--hf-text-secondary); font-size: 12px; font-weight: 600; }
+.settings-readonly dd { margin: 0; color: var(--hf-text-muted); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.settings-activation { padding: 20px 0; }
+.settings-activation > svg { width: 32px; height: 32px; color: var(--hf-info-text); margin-bottom: 10px; }
+.settings-activation h3 { margin: 0 0 12px; font-size: 16px; color: var(--hf-text); }
+.settings-activation .settings-button { margin-top: 18px; }
+.settings-defaults-status { color: var(--hf-text-muted); font-size: 12px; line-height: 1.6; margin: 0 0 15px; }
+.settings-page input:focus-visible, .settings-page textarea:focus-visible { outline: 3px solid var(--hf-info-text); outline-offset: 3px; }
+@media (max-width: 700px) { .settings-fields { grid-template-columns: 1fr; } .settings-form-actions > span { flex-basis: 100%; } .settings-form-actions .settings-button { flex: 1 0 auto; } }
+.settings-page button:focus-visible, .settings-guard button:focus-visible { outline: 3px solid var(--hf-info-text); outline-offset: 3px; }
 @media (max-width: 1100px) { .settings-layout { grid-template-columns: 1fr; } .settings-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); } .settings-nav > p { grid-column: 1 / -1; } }
 @media (max-width: 700px) { .settings-nav { grid-template-columns: 1fr 1fr; } .settings-nav button { flex-wrap: wrap; font-size: 11px; } .settings-nav button small { flex-basis: 100%; margin-left: 26px; } .settings-card { padding: 21px 18px; } .theme-options { grid-template-columns: 1fr; } .theme-option { gap: 10px; } .theme-preview { height: 100px; } .settings-note { padding: 18px; } }
+.settings-persistence { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; margin: 0 0 22px; border: 1px solid var(--hf-success-border); background: var(--hf-success-soft); border-radius: 12px; color: var(--hf-success-text); }
+.settings-persistence--readonly { border-color: var(--hf-info-border); background: var(--hf-info-soft); color: var(--hf-info-text); }
+.settings-persistence p { margin: 5px 0 0; font-size: 13px; line-height: 1.5; color: var(--hf-text-secondary); }
+.settings-persistence strong { font-size: 14px; }

@@ -2,11 +2,10 @@ import { usePermisos } from "../context/PermisosContext";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import api from "../services/api";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 
 const FILTROS_INICIALES = {
   periodo: "6",
@@ -19,6 +18,8 @@ const FILTROS_INICIALES = {
 
 function Reportes() {
   const tienePermiso = usePermisos();
+  const exportacionEnCurso = useRef(false);
+  const [generandoPdf, setGenerandoPdf] = useState(false);
   const [
     datos,
     setDatos,
@@ -1519,9 +1520,12 @@ function Reportes() {
     };
 
   const generarPdfDirecto =
-    (
+    async (
       nombre
     ) => {
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'), import('jspdf-autotable'),
+      ]);
       const doc =
         new jsPDF({
           orientation:
@@ -2174,7 +2178,8 @@ function Reportes() {
     };
 
   const generarArchivoReporte =
-    () => {
+    async () => {
+      if (exportacionEnCurso.current) return;
       if (!tienePermiso("reportes.exportar")) return;
       if (
         !haySeccionesSeleccionadas
@@ -2230,14 +2235,13 @@ function Reportes() {
         formatoExportacion ===
         "pdf"
       ) {
-        generarPdfDirecto(
-          nombre
-        );
-
-        setMostrarGenerador(
-          false
-        );
-
+        exportacionEnCurso.current = true; setGenerandoPdf(true);
+        try {
+          await generarPdfDirecto(nombre);
+          setMostrarGenerador(false);
+        } catch {
+          setErrorExportacion('No pudimos generar el PDF. Comprobá la conexión y reintentá.');
+        } finally { exportacionEnCurso.current = false; setGenerandoPdf(false); }
         return;
       }
 
@@ -3591,6 +3595,7 @@ function Reportes() {
                 <button
                   type="button"
                   className="reportes-export-cancel"
+                  disabled={generandoPdf}
                   onClick={() =>
                     setMostrarGenerador(
                       false
@@ -3603,11 +3608,12 @@ function Reportes() {
                 <button
                   type="button"
                   className="reportes-export-confirm"
+                  disabled={generandoPdf}
                   onClick={
                     generarArchivoReporte
                   }
                 >
-                  Generar
+                  {generandoPdf ? 'Generando PDF…' : 'Generar'}
                 </button>
               </div>
             </footer>

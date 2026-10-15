@@ -2,9 +2,12 @@ import { usePermisos } from "../context/PermisosContext";
 import Usuarios from "./Usuarios";
 import MiCuenta from "./MiCuenta";
 import Configuracion from "./Configuracion";
+import { BorradoresProvider } from "../context/BorradoresProvider";
+import { useProtectorBorradores } from "../context/BorradoresContext";
 import { SecurityIcon } from "../components/security/SecurityUI";
 import { puedeGestionarUsuarios } from "../services/cuentas";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import AccesoFlowIA from "../components/flowia/AccesoFlowIA";
 
 
 
@@ -831,7 +834,9 @@ function IconoSidebarToggle() {
 
 
 
-function Dashboard({ usuario, onLogout, onSesionActualizada }) {
+function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
+  const { protector } = useProtectorBorradores();
+  const onLogout = () => protector.solicitar(cerrarSesion);
   const tienePermiso = usePermisos();
   const itemsVisibles = [...ITEMS_NAVEGACION,
     ...(puedeGestionarUsuarios(usuario) ? [{ id: "usuarios", label: "Usuarios", icono: "huespedes" }] : []),
@@ -845,6 +850,21 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
   const [seccionActiva, setSeccionActiva] = useState("inicio");
+  const [flowIAAbierta, setFlowIAAbierta] = useState(false);
+  const flowIAPanelId = useId();
+  const flowIAOpener = useRef(null);
+  const establecerFlowIA = useCallback(abierta => {
+    const main = document.querySelector('.main');
+    const posicion = main ? {top:main.scrollTop,left:main.scrollLeft,behavior:'instant'} : null;
+    setFlowIAAbierta(abierta);
+    if (posicion) requestAnimationFrame(() => { if (main.isConnected) main.scrollTo(posicion); });
+  }, []);
+  const cerrarFlowIA = useCallback(() => establecerFlowIA(false), [establecerFlowIA]);
+  const alternarFlowIA = event => {
+    if (!flowIAAbierta) flowIAOpener.current = event.currentTarget;
+    setMenuMovilAbierto(false);
+    establecerFlowIA(!flowIAAbierta);
+  };
 
 
 
@@ -2109,6 +2129,10 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
   const cambiarSeccion = (seccion) => {
+    if (seccion === "configuracion" && seccionActiva === "configuracion") { setMenuMovilAbierto(false); return; }
+    protector.solicitar(() => ejecutarCambioSeccion(seccion));
+  };
+  const ejecutarCambioSeccion = (seccion) => {
 
 
 
@@ -2220,7 +2244,8 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-  const verReserva = (
+  const verReserva = idReserva => protector.solicitar(() => ejecutarVerReserva(idReserva));
+  const ejecutarVerReserva = (
 
 
 
@@ -2280,7 +2305,8 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-  const verLimpieza = (
+  const verLimpieza = idTareaLimpieza => protector.solicitar(() => ejecutarVerLimpieza(idTareaLimpieza));
+  const ejecutarVerLimpieza = (
 
 
 
@@ -2995,6 +3021,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
+              {tienePermiso('flowia.ver') && <AccesoFlowIA movil abierta={flowIAAbierta} panelId={flowIAPanelId} onClick={alternarFlowIA} />}
             </nav>
 
 
@@ -3553,6 +3580,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
+          {tienePermiso('flowia.ver') && <AccesoFlowIA abierta={flowIAAbierta} panelId={flowIAPanelId} onClick={alternarFlowIA} />}
         </nav>
 
 
@@ -3751,7 +3779,7 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-      <main className="main">
+      <main className="main" tabIndex={0} aria-label="Contenido principal">
         {seccionActiva === "inicio" && errorDashboard && (
           <div className="security-feedback security-feedback--error dashboard-refresh-error" role="alert">
             <p>No se pudo actualizar el inicio. Los datos mostrados corresponden a la última carga correcta.</p>
@@ -6064,18 +6092,23 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-      <FlowIA
+      {tienePermiso('flowia.ver') && <FlowIA
+        abierta={flowIAAbierta}
+        onCerrar={cerrarFlowIA}
+        openerRef={flowIAOpener}
+        panelId={flowIAPanelId}
+        menuAbierto={menuMovilAbierto}
         onVerReserva={
           verReserva
         }
         onVerLimpieza={
           verLimpieza
         }
-        onCambiarSeccion={(seccion) => {
+        onCambiarSeccion={seccion => protector.solicitar(() => {
           setSeccionActiva(seccion);
           setMenuMovilAbierto(false);
-        }}
-      />
+        })}
+      />}
 
 
       {modalMetrica && (
@@ -6882,4 +6915,6 @@ function Dashboard({ usuario, onLogout, onSesionActualizada }) {
 
 
 
-export default Dashboard;
+export default function DashboardProtegido(props) {
+  return <BorradoresProvider><Dashboard {...props} /></BorradoresProvider>;
+}

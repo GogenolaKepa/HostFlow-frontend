@@ -1,0 +1,218 @@
+{
+  "repositorio": "frontend",
+  "rama": "main",
+  "head": "11d8df35fd3b2641a8050f4fce1590ff00b7c5f0",
+  "archivosPendientes": 35,
+  "alcance": "Incluye pendientes anteriores y de esta tanda. El propio índice no se auto-hashea.",
+  "resumen": {
+    "previo_preservado": 13,
+    "previo_ampliado": 7,
+    "cambio_nuevo_en_tanda": 14
+  },
+  "archivos": [
+    {
+      "archivo": "docs/configuracion-empresa.md",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "c74808550a34b0e130018f3bd14ba74543125adfab569f4226c42da7f873d1a7"
+    },
+    {
+      "archivo": "docs/tanda-integral.md",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "c96e8859e52af79e65ef462afd6e2d489fa68ee65f11ddbe78533a64cefb9541"
+    },
+    {
+      "archivo": "src/components/configuracion/Apariencia.jsx",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "7466c789fa07f245036c6a607b344e91bc18d50b9b58db628c15897faa84076e"
+    },
+    {
+      "archivo": "src/components/configuracion/CampoConfiguracion.jsx",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "70d33b4adf016a2c82b0f85d2e6923c2c89bb97752763143d5468acaf3f47931"
+    },
+    {
+      "archivo": "src/components/configuracion/FormularioEmpresa.jsx",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "84cac5c0f8bd9e42d5da3a400f53d55e90f0fcbcaa7e221d14e2e85068bd4f60"
+    },
+    {
+      "archivo": "src/components/configuracion/FormularioOperativas.jsx",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "572425f2f37f797facc9fee7f7a398b13f4b830c2d99d0185bda8bf51f6503db"
+    },
+    {
+      "archivo": "src/components/configuracion/PanelConfiguracion.jsx",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "4f9f40ebd879827708af824adc722189d8f182186a02a4104279f2ee769eb498"
+    },
+    {
+      "archivo": "src/components/huespedes/DetalleHuesped.jsx",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "99e55b35863ce86605acb24de5f1a25482864ee26486b2c42939f2bbde7a7bce"
+    },
+    {
+      "archivo": "src/components/security/SecurityUI.jsx",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "20930007899438134ae42ff5bc003fdf8b78d5fd2e6797418dab9ab1c50d6650"
+    },
+    {
+      "archivo": "src/context/BorradoresContext.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "b084276e14cc66c22568f98b911f58499e780888eab90ba81641bb0dc0f16aea"
+    },
+    {
+      "archivo": "src/context/BorradoresProvider.jsx",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "8ab064d5ff139304a92f6af7eaf69fdbc2f69fe56e03dff95b0c3182240d8431"
+    },
+    {
+      "archivo": "src/hooks/useOverlayPresence.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "f490273ae29059da835b004aa7f7d04389fe25e2da96d041909bb4a7ec9e31e7"
+    },
+    {
+      "archivo": "src/hooks/usePredeterminadosReserva.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "f0d402faf54d132824f4cb3336c6054ea9a4d084aedb79c1327b860cb5e4724a"
+    },
+    {
+      "archivo": "src/hooks/useScrollLock.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "37288fd7adfd84dea9394f314b7d46dd57a415f3a0d076b2337449a3464fa465"
+    },
+    {
+      "archivo": "src/main.jsx",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "71ba275d422892c9de97eb0f75791386ad9a316e39db273cd9bb7bd7ab16c4d7"
+    },
+    {
+      "archivo": "src/pages/Configuracion.jsx",
+      "versionado": true,
+      "estado": "previo_ampliado",
+      "sha256": "1611a508c63a9b11450940c958005de193b2ac71f395f5a6404369acd8ac5dfe"
+    },
+    {
+      "archivo": "src/pages/Dashboard.jsx",
+      "versionado": true,
+      "estado": "previo_ampliado",
+      "sha256": "c81f7edbdcf4692530d88fd0f8dff14475ad21d90ac2e2a06be291f6303bc3c1"
+    },
+    {
+      "archivo": "src/pages/FlowIA.jsx",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "bc3d8a6144a89522a56cf042079da0a81729f62489b86828e5fd6d799535a4f5"
+    },
+    {
+      "archivo": "src/pages/Huespedes.jsx",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "52b6a45b4ab30fd8941a9e6c90ffa17c1538c837f745249d24cf8010491e3589"
+    },
+    {
+      "archivo": "src/pages/Propiedades.jsx",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "14268c998629e0eaff433531f294e662478990e19d6c4d3bc068d5f8ef717145"
+    },
+    {
+      "archivo": "src/pages/Reportes.jsx",
+      "versionado": true,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "55c9173dc11bf4b442bcbcc62c00a7d06f045697142bfd74be10706c72c36e13"
+    },
+    {
+      "archivo": "src/pages/Reservas.jsx",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "0504695ec5aca2a86acd231afb090a1e107cfe03b73686cf201b194944f3bdd0"
+    },
+    {
+      "archivo": "src/services/borradores.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "a4f66bc5a5b48a710a8794085039af24b5a0e4a3342c05d947b66af11b251ef1"
+    },
+    {
+      "archivo": "src/services/configuracion.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "dbd8a690da8eada4e6895800059fa4df02e0ba1268a15042db4171b54747e2a8"
+    },
+    {
+      "archivo": "src/services/navegacion.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "1b93be880c5af4eabb194340abde37bb79bc9d30e5fe63bda9b573c65807f30c"
+    },
+    {
+      "archivo": "src/styles/guests.css",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "5b905984923544eca0c2da2140e3aec83864e95b071466f891188ad7293bff5d"
+    },
+    {
+      "archivo": "src/styles/settings.css",
+      "versionado": true,
+      "estado": "previo_ampliado",
+      "sha256": "b0223ff7c06ae6d409f2a6d9615f590cea997e2e84b8fa9ba5e64bb99d243095"
+    },
+    {
+      "archivo": "src/styles/workspace.css",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "5825596580de5f73b509d003d1388182fc0c554257428febb6fb383741c64c12"
+    },
+    {
+      "archivo": "tests/borradores.test.js",
+      "versionado": false,
+      "estado": "previo_preservado",
+      "sha256": "332b2d48438f206204cbcacc6029024dd7873325bfb20dcb9c6788045855d2c1"
+    },
+    {
+      "archivo": "tests/browser/casos-prioritarios.js",
+      "versionado": false,
+      "estado": "cambio_nuevo_en_tanda",
+      "sha256": "c2b7f4f47622e0bd2b0bef3b4773d152ba81474528800a10b7328853e0a2ecbb"
+    },
+    {
+      "archivo": "tests/browser/hostflow-browser.test.js",
+      "versionado": true,
+      "estado": "previo_ampliado",
+      "sha256": "e9d7aa0b0c5870bbd818f6a14cf4f4eaca170ab3b77328bfbabdabe1f26367a2"
+    },
+    {
+      "archivo": "tests/configuracion.test.js",
+      "versionado": false,
+      "estado": "previo_ampliado",
+      "sha256": "27ac34816a5dfaab5a722f7bf9eb5f65d821dbcc496fad001395c35d2fe99cfd"
+    },
+    {
+      "archivo": "tests/cuentas-ui.test.js",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "40ab3d693bbc5398fe72a26daad1d440d231eb7603fff27fb0757faf500780b9"
+    },
+    {
+      "archivo": "tests/fixtures/permisos.json",
+      "versionado": true,
+      "estado": "previo_preservado",
+      "sha256": "e5077206479a8be9480d1e8a63a7076a279b2e41cd2b304ada0d56cbc58651c3"
+    }
+  ]
+}

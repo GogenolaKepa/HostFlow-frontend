@@ -1,0 +1,25 @@
+.security-dialog.guest-dialog { --security-border: var(--hf-border); --security-surface: var(--hf-surface); --security-text: var(--hf-text); --security-muted: var(--hf-text-secondary); --security-soft: var(--hf-surface-raised); width: min(900px, calc(100% - 24px)); overflow: hidden; max-height: calc(100dvh - 24px); }
+.guest-dialog[open] { display: flex; flex-direction: column; }
+.guest-dialog > .security-dialog-header { flex: none; }
+.guest-dialog-body { overflow: auto; overscroll-behavior: contain; padding: 24px 26px; min-height: 0; }
+.guest-identity { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.guest-dialog .security-avatar { background: var(--hf-info-soft); }
+.guest-identity p, .guest-history > p { color: var(--hf-text-secondary); font-size: 13px; }
+.guest-profile-data { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 28px; }
+.guest-profile-data > div { padding: 14px; background: var(--hf-surface-raised); border: 1px solid var(--hf-border); border-radius: 12px; min-width: 0; }
+.guest-dialog dt { color: var(--hf-text-secondary); font-size: 12px; margin-bottom: 5px; }
+.guest-dialog dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; color: var(--hf-text); }
+.guest-history h3 { margin: 0; font-size: 18px; }
+.guest-state { padding: 24px 0; color: var(--hf-text-secondary); }
+.guest-reservations { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 14px; }
+.guest-reservation { border: 1px solid var(--hf-border); border-radius: 14px; padding: 18px; }
+.guest-reservation-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.guest-reservation dl { display: flex; flex-wrap: wrap; gap: 18px 32px; margin: 16px 0; }
+.guest-reservation .secondary-button { min-height: 40px; }
+@media (max-width: 600px) {
+  .guest-profile-data { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .guest-dialog-body { padding: 18px; }
+  .guest-reservation { padding: 14px; }
+  .guest-reservation > button { width: 100%; }
+}
+@media (max-width: 350px) { .guest-profile-data { grid-template-columns: 1fr; } }

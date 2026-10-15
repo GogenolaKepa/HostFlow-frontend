@@ -1,10 +1,14 @@
 import {
   useEffect,
+  useCallback,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import api from "../services/api";
+import { useOverlayPresence } from "../hooks/useOverlayPresence";
+import PanelFlowIA from "../components/flowia/PanelFlowIA";
 const RECOMENDACIONES_VACIAS = Object.freeze([]);
 
 
@@ -176,15 +180,11 @@ function obtenerEtiquetaAccion(
 
 
 function FlowIA({
+  abierta, onCerrar, openerRef, panelId, menuAbierto,
   onCambiarSeccion,
   onVerReserva,
   onVerLimpieza,
 }) {
-  const [
-    abierta,
-    setAbierta,
-  ] = useState(false);
-
   const [
     datos,
     setDatos,
@@ -201,6 +201,10 @@ function FlowIA({
   ] = useState("");
 
 
+  const overlay = useOverlayPresence({ incluirMenu: false });
+  const aperturaConsultada = useRef(false);
+  useEffect(() => { if (abierta && (overlay || menuAbierto)) onCerrar(); }, [abierta, overlay, menuAbierto, onCerrar]);
+
   const recomendaciones =
     datos?.recomendaciones ||
     RECOMENDACIONES_VACIAS;
@@ -209,12 +213,6 @@ function FlowIA({
     Number(
       datos?.resumen?.total ||
       recomendaciones.length ||
-      0
-    );
-
-  const altas =
-    Number(
-      datos?.resumen?.altas ||
       0
     );
 
@@ -260,7 +258,7 @@ function FlowIA({
 
 
   const cargarRecomendaciones =
-    async () => {
+    useCallback(async () => {
       try {
         setCargando(true);
         setError("");
@@ -283,32 +281,29 @@ function FlowIA({
       } finally {
         setCargando(false);
       }
-    };
+    }, []);
 
 
-  const abrirFlowIA = () => {
-    setAbierta(true);
-
-    /*
-     * Para no consumir cuota innecesariamente,
-     * FlowIA consulta la IA solamente la primera
-     * vez que se abre durante la sesión.
-     *
-     * Luego el usuario puede refrescar manualmente.
-     */
-    if (
-      !datos &&
-      !cargando
-    ) {
-      cargarRecomendaciones();
+  // Solo el cambio de cerrado a abierto inicia la consulta, igual que el acceso
+  // anterior. Un error no reintenta en bucle; el último análisis queda en memoria.
+  useEffect(() => {
+    if (!abierta) { aperturaConsultada.current = false; return; }
+    if (!aperturaConsultada.current) {
+      aperturaConsultada.current = true;
+      if (!datos && !cargando) cargarRecomendaciones();
     }
-  };
+  }, [abierta, datos, cargando, cargarRecomendaciones]);
 
-
-  const cerrarFlowIA = () => {
-    setAbierta(false);
-  };
-
+  const cerrarFlowIA = useCallback(() => {
+    onCerrar();
+    requestAnimationFrame(() => {
+      if (document.querySelector('[data-flowia-panel], dialog[open], [aria-modal="true"]')) return;
+      const origen = openerRef.current;
+      const target = [origen, document.querySelector('.sidebar-flowia'), document.querySelector('.mobile-menu-toggle')]
+        .find(el => el?.isConnected && el.getClientRects().length);
+      target?.focus({ preventScroll: true });
+    });
+  }, [onCerrar, openerRef]);
 
   const navegarARecomendacion =
     (recomendacion) => {
@@ -359,128 +354,8 @@ function FlowIA({
     };
 
 
-  useEffect(
-    () => {
-      if (!abierta) {
-        return undefined;
-      }
-
-      const overflowAnterior =
-        document.body.style
-          .overflow;
-
-      document.body.style
-        .overflow =
-        "hidden";
-
-      const manejarEscape =
-        (event) => {
-          if (
-            event.key ===
-            "Escape"
-          ) {
-            cerrarFlowIA();
-          }
-        };
-
-      window.addEventListener(
-        "keydown",
-        manejarEscape
-      );
-
-      return () => {
-        document.body.style
-          .overflow =
-          overflowAnterior;
-
-        window.removeEventListener(
-          "keydown",
-          manejarEscape
-        );
-      };
-    },
-    [abierta]
-  );
-
-
-  return (
-    <>
-      <button
-        type="button"
-        className={`flowia-fab ${
-          altas > 0
-            ? "flowia-fab--attention"
-            : ""
-        }`}
-        onClick={abrirFlowIA}
-        aria-label="Abrir FlowIA"
-        title="Abrir FlowIA"
-      >
-        <span className="flowia-fab-icon">
-          ✦
-        </span>
-
-        <span className="flowia-fab-copy">
-          <strong>
-            FlowIA
-          </strong>
-
-          <small>
-            Asistente inteligente
-          </small>
-        </span>
-
-        {total > 0 && (
-          <span className="flowia-fab-count">
-            {total}
-          </span>
-        )}
-      </button>
-
-
-      {abierta && (
-        <>
-          <button
-            type="button"
-            className="flowia-backdrop"
-            onClick={cerrarFlowIA}
-            aria-label="Cerrar FlowIA"
-          />
-
-          <aside
-            className="flowia-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="FlowIA"
-          >
-            <div className="flowia-panel-header">
-              <div className="flowia-brand">
-                <span className="flowia-brand-icon">
-                  ✦
-                </span>
-
-                <div>
-                  <strong>
-                    FlowIA
-                  </strong>
-
-                  <span>
-                    Asistente inteligente de HostFlow
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="flowia-close"
-                onClick={cerrarFlowIA}
-                aria-label="Cerrar FlowIA"
-              >
-                ×
-              </button>
-            </div>
-
-
+  return abierta && !overlay && !menuAbierto ? (
+    <PanelFlowIA id={panelId} onClose={cerrarFlowIA}>
             <div className="flowia-panel-statusbar">
               <span
                 className={`flowia-mode ${
@@ -701,12 +576,8 @@ function FlowIA({
                 señales operativas. Revisá la información antes de actuar.
               </span>
             </div>
-          </aside>
-        </>
-      )}
-    </>
-  );
+    </PanelFlowIA>
+  ) : null;
 }
-
 
 export default FlowIA;

@@ -8,6 +8,7 @@ import os from "node:os";
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
 import { propiedadVisual, reservaVisual, huespedVisual, limpiezaVisual, alertaVisual, calendarioVisual, reportesVisuales, recomendacionVisual } from "../fixtures/visual-modulos.js";
+import { probarPrioridades } from './casos-prioritarios.js';
 
 // Browser real ya instalado, sin dependencias nuevas y sin backend/SQL.
 const browserPath = process.env.HOSTFLOW_TEST_BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
@@ -40,7 +41,7 @@ class CDP {
 }
 
 test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aislada", {
-  skip: !fs.existsSync(browserPath), timeout: 120000,
+  skip: !fs.existsSync(browserPath), timeout: 240000,
 }, async (t) => {
   let vite, child, socket, cdp;
   let fase = "inicio";
@@ -51,9 +52,23 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   const users = new Map([[1, cuenta(1, "Administrador")], [2, cuenta(2, "Operador")]]);
   let current = users.get(1), token = "token-aislado-1", nonce = 1;
   let obligatorio = false, falloSesion = false, falloInicio = false, caducada = false;
+  let aceptarDialogo = true;
+  const dialogosNativos = [];
   let falloUsuarios = false;
   let datosVisuales = false;
-  const requests = []; const excepciones = [];
+  let configuracionActivada = true, falloGuardarConfiguracion = false, conflictoConfiguracion = false, demoraPredeterminados = 0;
+  let demoraGuardarConfiguracion = 0, respuestaConfiguracionIncompleta = false;
+  let predeterminadosInvalidos = false, falloCargaConfiguracion = false, caducaEn = null;
+  let soloLecturaConfiguracion = false, estadoConfiguracionAusente = false;
+  let modoDetalleHuesped = 'normal', demoraDetalleHuesped = 0, listaHuespedesLarga = false;
+  let falloRedPredeterminados = false;
+  let falloFlowIA = false, demoraFlowIA = 0;
+  let destinoFlowIA = null;
+  const solicitudesAbortadas = new Set();
+  let revisionConfiguracion = 2;
+  let empresaConfiguracion = {nombreComercial:'Alojamientos ficticios',razonSocial:'',correoContacto:'contacto@example.invalid',telefono:'',pais:'',provincia:'',ciudad:'',direccion:'',informacionAdicional:'',versionRegistro:'0000000000000001'};
+  let operativasConfiguracion = {horaIngreso:'15:00',horaEgreso:'10:00',zonaHoraria:'America/Argentina/Buenos_Aires',versionRegistro:'0000000000000002'};
+  const requests = []; const excepciones = []; const modulosCliente = [];
   try {
     vite = await createServer({ configFile: false, envDir: false, plugins: [react()],
       server: { host: "127.0.0.1", port: 0, ws: false, watch: null } });
@@ -100,12 +115,30 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     };
     const click = (selector) => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
     const fill = (selector, value) => evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)});
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});
+      Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});
       el.dispatchEvent(new Event('input',{bubbles:true})); })()`);
-    const expiry = () => Math.floor(Date.now() / 1000) + 7200;
+    const expiry = () => caducaEn ?? Math.floor(Date.now() / 1000) + 7200;
     const sesion = () => ({ token, usuario: { ...current, debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if(ruta.startsWith('/configuracion/')) {
+        if(obligatorio)return [403,{codigo:'PASSWORD_CHANGE_REQUIRED',mensaje:'Debe cambiar su contraseña para continuar.'}];
+        if(!configuracionActivada)return [503,{codigo:'CONFIGURACION_PENDIENTE',mensaje:'La persistencia empresarial todavía no está activada.'}];
+        if(ruta==='/configuracion/predeterminados-reserva')return [200,{predeterminados:{horaIngreso:predeterminadosInvalidos?'24:00':operativasConfiguracion.horaIngreso,horaEgreso:operativasConfiguracion.horaEgreso,zonaHoraria:operativasConfiguracion.zonaHoraria}}];
+        if(current.rol!=='Administrador')return [403,{mensaje:'Sin permiso.'}];
+        if(method==='GET' && falloCargaConfiguracion)return [503,{mensaje:'Carga temporalmente no disponible.'}];
+        const empresa=ruta.endsWith('/empresa'), actual=empresa?empresaConfiguracion:operativasConfiguracion, key=empresa?'empresa':'preferencias';
+        if(method==='PUT') {
+          if(soloLecturaConfiguracion)return [503,{codigo:'CONFIGURACION_SOLO_LECTURA',mensaje:'La configuración empresarial está en modo de solo lectura.'}];
+          if(falloGuardarConfiguracion)return [503,{mensaje:'Error temporal de persistencia.'}];
+          if(conflictoConfiguracion||body.versionRegistro!==actual.versionRegistro)return [409,{codigo:'CONFIGURACION_CONFLICTO',mensaje:'Otra sesión cambió la configuración. Recargá los datos.'}];
+          if(respuestaConfiguracionIncompleta)return [200,{[key]:{nombreComercial:'Respuesta incompleta'}}];
+          const saved={...actual,...body,versionRegistro:(++revisionConfiguracion).toString(16).padStart(16,'0')};
+          if(empresa)empresaConfiguracion=saved;else operativasConfiguracion=saved;
+          return [200,{[key]:saved}];
+        }
+        return [200,{[key]:actual,...(estadoConfiguracionAusente?{}:{estado:{persistencia:'sql',soloLectura:soloLecturaConfiguracion}})}];
+      }
       if (ruta === "/auth/login") {
         if (body.email !== current.email || body.password !== password) return [401, { mensaje: "El correo o la contraseña no son válidos." }];
         token = `token-aislado-${++nonce}`; caducada = false; return [200, sesion()];
@@ -158,10 +191,18 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if (ruta === "/dashboard/reportes/opciones") return [200, { opciones: { propiedades: [], canales: [], estados: [] } }];
       if (ruta === "/dashboard/reportes") return [200, { reportes: datosVisuales ? reportesVisuales : { periodo: { fechaDesde: "2026-10-01", fechaHasta: "2026-10-31", tipo: "mensual" }, filtros: {}, resumen: { totalReservasPeriodo: 0, totalReservasOperativas: 0, reservasConIngreso: 0, ingresosEstimados: 0, nochesOcupadas: 0, nochesDisponibles: 0, ocupacionPromedio: 0 }, historico: [], porCanal: [], porEstado: [], porPropiedad: [] } }];
       if (ruta === "/calendario") return [200, datosVisuales ? calendarioVisual : { anio: 2026, mes: 10, diasMes: 31, propiedades: [], resumen: { reservas: 0 } }];
-      if (ruta === "/recomendaciones") return [200, { recomendaciones: datosVisuales ? [recomendacionVisual] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {} }];
+      if (ruta === "/recomendaciones") return falloFlowIA ? [503, { mensaje: 'Análisis ficticio no disponible' }] : [200, { recomendaciones: datosVisuales ? [{ ...recomendacionVisual, ...(destinoFlowIA ? { destino: destinoFlowIA } : {}) }] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {} }];
       const modulo = ruta.split("/")[1];
+      if(method==='GET' && /^\/huespedes\/\d+$/.test(ruta)) {
+        if(modoDetalleHuesped==='inexistente')return [404,{mensaje:'El huésped no existe.'}];
+        if(modoDetalleHuesped==='error')return [503,{mensaje:'Error temporal simulado.'}];
+        const id=Number(ruta.split('/')[2]);
+        return [200,{huesped:{...huespedVisual,idHuesped:id,dni:'Documento ficticio',nacionalidad:'Argentina',
+          historialReservas:modoDetalleHuesped==='vacio'?[]:Array.from({length:12},(_,i)=>({...reservaVisual,idReserva:i+1,montoEstimado:120000}))}}];
+      }
       if (["propiedades", "reservas", "huespedes", "alertas", "limpiezas"].includes(modulo)) {
         const fixtures = { propiedades: propiedadVisual, reservas: reservaVisual, huespedes: huespedVisual, alertas: alertaVisual, limpiezas: limpiezaVisual };
+        if(modulo==='huespedes'&&listaHuespedesLarga)return [200,{huespedes:Array.from({length:24},(_,i)=>({...huespedVisual,idHuesped:i+1}))}];
         return [200, { [modulo]: datosVisuales ? [fixtures[modulo]] : [], resumen: { total: datosVisuales ? 1 : 0, pendientes: datosVisuales ? 1 : 0, enProgreso: 0, completadas: 0, canceladas: 0, urgentes: 0 } }];
       }
       return [404, { mensaje: "Ruta no prevista en la API aislada" }];
@@ -171,23 +212,35 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       const description = exceptionDetails.exception?.description || "";
       excepciones.push({ fase, tipo: /^(\w+Error)/.exec(description)?.[1] || "Error", campo: /reading '(\w+)'/.exec(description)?.[1] });
     });
-    cdp.on("Page.javascriptDialogOpening", () => { send("Page.handleJavaScriptDialog", { accept: true }).catch(() => excepciones.push("dialogo")); });
-    cdp.on("Fetch.requestPaused", async ({ requestId, request }) => {
+    cdp.on("Page.javascriptDialogOpening", ({ type }) => {
+      dialogosNativos.push(type);
+      send("Page.handleJavaScriptDialog", { accept: aceptarDialogo }).catch(() => excepciones.push("dialogo"));
+    });
+    cdp.on('Network.loadingFailed', ({ requestId, canceled }) => { if(canceled) solicitudesAbortadas.add(requestId); });
+    cdp.on("Fetch.requestPaused", async ({ requestId, request, networkId }) => {
       try {
         const url = new URL(request.url);
-        if (url.origin === base) { await send("Fetch.continueRequest", { requestId }); return; }
+        if (url.origin === base) { modulosCliente.push(url.pathname);await send("Fetch.continueRequest", { requestId }); return; }
         if (url.hostname !== "127.0.0.1" || !url.pathname.startsWith("/api/")) {
           await send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" }); return;
         }
         const ruta = url.pathname.slice(4); requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams) });
+        if(ruta==='/configuracion/predeterminados-reserva' && falloRedPredeterminados) {
+          await send('Fetch.failRequest',{requestId,errorReason:'ConnectionFailed'});return;
+        }
+        if(ruta==='/configuracion/predeterminados-reserva' && request.method==='GET' && demoraPredeterminados) await new Promise(r=>setTimeout(r,demoraPredeterminados));
+        if(/^\/huespedes\/\d+$/.test(ruta) && demoraDetalleHuesped) await new Promise(r=>setTimeout(r,demoraDetalleHuesped));
+        if(ruta==='/recomendaciones' && demoraFlowIA) await new Promise(r=>setTimeout(r,demoraFlowIA));
+        if(solicitudesAbortadas.has(networkId)) return;
+        if(ruta.startsWith('/configuracion/') && request.method==='PUT' && demoraGuardarConfiguracion) await new Promise(r=>setTimeout(r,demoraGuardarConfiguracion));
         const [status, data] = request.method === "OPTIONS" ? [204, {}] : api(request.method, ruta, request.postData ? JSON.parse(request.postData) : {}, url.searchParams);
         await send("Fetch.fulfillRequest", { requestId, responseCode: status,
           responseHeaders: [{ name: "Content-Type", value: "application/json" }, { name: "Access-Control-Allow-Origin", value: base },
             { name: "Access-Control-Allow-Headers", value: "authorization,content-type" }, { name: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,OPTIONS" }],
           body: Buffer.from(status === 204 ? "" : JSON.stringify(data)).toString("base64") });
-      } catch { excepciones.push("API aislada"); }
+      } catch { if(!solicitudesAbortadas.has(networkId)) excepciones.push("API aislada"); }
     });
-    await send("Runtime.enable"); await send("Page.enable"); await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
+    await send("Runtime.enable"); await send("Page.enable"); await send('Network.enable'); await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
     await send("Page.bringToFront");
     await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     await send("Page.navigate", { url: base });
@@ -216,7 +269,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
 
     const comprobarUtilidades = async (rol) => {
       if (await evaluate("document.querySelector('.sidebar').classList.contains('sidebar--collapsed')")) await click('.sidebar-collapse-toggle');
-      const principal = ['Inicio','Propiedades','Reservas','Huéspedes','Calendario','Limpiezas','Reportes','Alertas', ...(rol === 'Administrador' ? ['Usuarios'] : [])];
+      const principal = ['Inicio','Propiedades','Reservas','Huéspedes','Calendario','Limpiezas','Reportes','Alertas', ...(rol === 'Administrador' ? ['Usuarios'] : []), 'FlowIA'];
       assert.deepEqual(await evaluate("[...document.querySelectorAll('.sidebar-nav button')].map(b=>b.textContent.trim())"), principal);
       assert.deepEqual(await evaluate("[...document.querySelector('.sidebar-footer').children].map(e=>e.classList.contains('sidebar-settings')?'configuracion':e.className)"), ['configuracion','sidebar-user','sidebar-logout']);
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-settings').length"), 1);
@@ -259,6 +312,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
+    if (process.env.HOSTFLOW_TEST_PRIORITY_ONLY !== '1') {
     await t.test("Administrador inicia en Inicio y recarga sin sincronizar otros módulos", async () => {
       fase = "inicio Admin"; await login(); await esperar(inicioVisible);
       assert.equal(await evaluate("document.querySelector('.sidebar-nav').textContent.includes('Usuarios')"),true);
@@ -311,13 +365,237 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       }
       await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
       await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes('Datos de empresa')).click()");
-      assert.equal(await evaluate("document.querySelector('.settings-content').textContent.includes('todavía no está disponible') && !document.querySelector('.settings-content form')"),true);
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').value"),'Alojamientos ficticios');
       await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes('Seguridad y acceso')).click()");
       assert.equal(await evaluate("document.querySelector('.settings-links').textContent.includes('Gestionar usuarios')"),true);
       await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
       assert.equal(await evaluate("document.documentElement.dataset.theme"),'dark');
       assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'oscuro');
       await capturar('login-oscuro');
+    });
+
+    await t.test('Datos de empresa y operativas: guardar real aislado, errores, conflictos, temas y activación pendiente',async()=>{
+      fase='configuración empresarial';await login();await esperar(inicioVisible);await click('.sidebar-settings');
+      const seccion=async label=>evaluate(`[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes(${JSON.stringify(label)})).click()`);
+      const submit=()=>evaluate("document.querySelector('.settings-editor form').requestSubmit()");
+      const confirmar=()=>evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Confirmar guardado').click()");
+      const cancelar=()=>evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Cancelar').click()");
+      const puts=()=>requests.filter(r=>r.method==='PUT'&&r.ruta.startsWith('/configuracion/')).length;
+      await seccion('Datos de empresa');await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      const previos=puts();
+      await fill('#config-nombreComercial',' ');await submit();await esperar("document.querySelector('#config-nombreComercial').getAttribute('aria-invalid')==='true'");assert.equal(puts(),previos);
+      await fill('#config-nombreComercial','Alojamientos editados');await fill('#config-correoContacto','correo incorrecto');await submit();assert.equal(puts(),previos);
+      await fill('#config-correoContacto','nuevo@example.invalid');await fill('#config-informacionAdicional','Información ficticia\nSegunda línea');
+      await submit();await esperar("Boolean(document.querySelector('dialog'))");await cancelar();assert.equal(puts(),previos);
+      falloGuardarConfiguracion=true;await submit();await esperar("Boolean(document.querySelector('dialog'))");await confirmar();await esperar("document.querySelector('.settings-editor [role=alert]')?.textContent.includes('Error temporal')");
+      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').value"),'Alojamientos editados');assert.equal(await evaluate("document.querySelector('.settings-editor').textContent.includes('Cambios guardados correctamente')"),false);
+      falloGuardarConfiguracion=false;await submit();await esperar("Boolean(document.querySelector('dialog'))");await confirmar();await esperar("document.querySelector('.settings-editor').textContent.includes('Cambios guardados correctamente')");
+      assert.equal(empresaConfiguracion.nombreComercial,'Alojamientos editados');
+      await capturar('datos-empresa-oscuro');
+      conflictoConfiguracion=true;await fill('#config-direccion','Dirección del borrador');await submit();await esperar("Boolean(document.querySelector('dialog'))");await confirmar();await esperar("document.querySelector('.settings-editor').textContent.includes('Tu borrador se conserva')");
+      assert.equal(await evaluate("document.querySelector('#config-direccion').value"),'Dirección del borrador');assert.equal(await evaluate("document.querySelector('.settings-editor button[type=submit]').disabled"),true);
+      await evaluate("[...document.querySelectorAll('.settings-editor button')].find(b=>b.textContent==='Recargar datos').click()");await esperar("Boolean(document.querySelector('dialog'))");await cancelar();assert.equal(await evaluate("document.querySelector('#config-direccion').value"),'Dirección del borrador');
+      conflictoConfiguracion=false;
+      await evaluate("[...document.querySelectorAll('.settings-editor button')].find(b=>b.textContent==='Recargar datos').click()");await esperar("Boolean(document.querySelector('dialog'))");
+      await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Descartar cambios').click()");await esperar("document.querySelector('#config-direccion')?.value===''");
+      await seccion('Preferencias operativas');await esperar("Boolean(document.querySelector('#config-horaIngreso'))");
+      await fill('#config-horaIngreso','18:15');await fill('#config-horaEgreso','08:45');
+      await seccion('Apariencia');await esperar("Boolean(document.querySelector('dialog'))");
+      await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Seguir editando').click()");assert.equal(await evaluate("document.querySelector('#config-horaIngreso').value"),'18:15');
+      await submit();await esperar("Boolean(document.querySelector('dialog'))");await confirmar();await esperar("document.querySelector('.settings-editor').textContent.includes('Cambios guardados correctamente')");
+      assert.equal(operativasConfiguracion.horaIngreso,'18:15');assert.equal(operativasConfiguracion.horaEgreso,'08:45');
+      assert.equal(await evaluate("document.querySelectorAll('input[name=zonaHoraria],select[name=zonaHoraria]').length"),0);
+      for(const modo of ['claro','oscuro','automatico']) {
+        await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'dark'}]});await evaluate(`globalThis.HostFlowAppearance.setPreference('${modo}')`);
+        await fill('#config-horaIngreso','18:16');await submit();await esperar("Boolean(document.querySelector('dialog'))");
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('dialog')).backgroundColor===getComputedStyle(document.querySelector('.settings-editor')).backgroundColor"),true,`${modo}: diálogo con la superficie del tema.`);
+        await cancelar();await fill('#config-horaIngreso','18:15');
+        for(const width of [1280,820,390,320]) {
+          await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<700});
+          assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"),true,`${modo}: formulario sin desborde a ${width}px.`);
+          if(width===390)await capturar(`preferencias-${modo}-movil`);
+        }
+      }
+      await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});await evaluate("globalThis.HostFlowAppearance.setPreference('oscuro')");
+      configuracionActivada=false;await seccion('Datos de empresa');await esperar("document.querySelector('.settings-activation')?.textContent.includes('Pendiente de activar persistencia')");
+      assert.equal(await evaluate("Boolean(document.querySelector('.settings-editor form'))"),false);assert.equal(await evaluate("document.querySelector('.settings-editor').textContent.includes('Guardar cambios')"),false);
+      configuracionActivada=true;await click('.settings-activation button');await esperar("document.querySelector('#config-nombreComercial')?.value==='Alojamientos editados'");
+      await click('.sidebar-logout');await esperar("Boolean(document.querySelector('#login-email'))");
+    });
+
+    await t.test('Borradores: navegación principal, perfil, subsecciones, sidebar colapsada, móvil y logout', async () => {
+      fase = 'borradores protegidos'; await login(); await esperar(inicioVisible); await click('.sidebar-settings');
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Datos de empresa').click()");
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      await fill('#config-nombreComercial', 'Borrador que debe conservarse');
+      await fill('#config-correoContacto', 'correo inválido');
+      await evaluate("document.querySelector('.settings-editor form').requestSubmit()");
+      const snapshot = () => evaluate("JSON.stringify([...document.querySelectorAll('.settings-editor input,.settings-editor textarea')].map(i=>[i.name,i.value,i.getAttribute('aria-invalid')]))");
+      const antes = await snapshot();
+      const cancelarSalida = async () => {
+        await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+        await evaluate("[...document.querySelectorAll('.settings-guard button')].find(b=>b.textContent==='Seguir editando').click()");
+        assert.equal(await snapshot(), antes);
+        assert.equal(await evaluate("document.querySelector('#config-correoContacto').getAttribute('aria-invalid')"), 'true');
+      };
+      const peticiones = requests.length;
+      for (const label of ['Inicio', 'Propiedades', 'Reservas', 'Usuarios']) {
+        await evaluate(`[...document.querySelectorAll('.sidebar-nav button')].find(b=>b.textContent.trim()===${JSON.stringify(label)}).click()`);
+        await cancelarSalida();
+      }
+      await click('.sidebar-user'); await cancelarSalida();
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Preferencias operativas').click()");
+      await cancelarSalida();
+      await click('.sidebar-settings');
+      assert.equal(await evaluate("Boolean(document.querySelector('dialog[open]'))"), false, 'Configuración activa conserva su apartado sin reiniciarlo.');
+      assert.equal(await snapshot(), antes);
+      assert.equal(requests.length, peticiones, 'Cancelar no consulta ni monta otros módulos.');
+      for(const modo of ['claro','oscuro','automatico']) {
+        await evaluate(`globalThis.HostFlowAppearance.setPreference('${modo}')`);
+        await click('.sidebar-user');await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.settings-guard dialog')).backgroundColor===getComputedStyle(document.querySelector('.settings-editor')).backgroundColor"),true,`${modo}: aviso de salida tematizado.`);
+        for(const width of [1280,820,390,320]) {
+          await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<700});
+          assert.equal(await evaluate("(()=>{const d=document.querySelector('.settings-guard dialog');return d.scrollWidth<=d.clientWidth && d.getBoundingClientRect().width<=innerWidth})()"),true,`${modo}: aviso sin desbordes a ${width}px.`);
+          if(width===390)await capturar(`borrador-${modo}-movil`);
+        }
+        await cancelarSalida();
+      }
+      await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+      await evaluate("globalThis.HostFlowAppearance.setPreference('oscuro')");
+      await evaluate("document.querySelector('.sidebar-user').focus()");
+      await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+      await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+      await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+      await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+      await esperar("!document.querySelector('dialog[open]')");
+      assert.equal(await evaluate("document.activeElement===document.querySelector('.sidebar-user')"),true,'Escape devuelve el foco al perfil.');
+      assert.equal(await snapshot(),antes);
+      await click('.sidebar-collapse-toggle');
+      await click('.sidebar-user'); await cancelarSalida();
+      await click('.sidebar-settings'); assert.equal(await snapshot(), antes);
+      await click('.sidebar-collapse-toggle');
+      await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+      await click('.mobile-menu-toggle');
+      await click('.mobile-nav-user'); await cancelarSalida();
+      assert.equal(await evaluate("Boolean(document.querySelector('.mobile-nav-user'))"), true, 'Cancelar mantiene el menú móvil.');
+      await click('.mobile-nav-settings'); assert.equal(await snapshot(), antes);
+      await click('.mobile-menu-toggle');
+      await click('.mobile-nav-logout'); await cancelarSalida();
+      await click('.mobile-menu-toggle');
+      await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+      const logoutPrevios = requests.filter(r=>r.ruta==='/auth/logout').length;
+      await click('.sidebar-logout'); await cancelarSalida();
+      assert.equal(requests.filter(r=>r.ruta==='/auth/logout').length, logoutPrevios);
+      await click('.sidebar-user'); await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+      await evaluate("[...document.querySelectorAll('.settings-guard button')].find(b=>b.textContent==='Descartar y continuar').click()");
+      await esperar("Boolean(document.querySelector('#cuenta-nombre'))");
+      await click('.sidebar-settings');
+      assert.equal(await evaluate("Boolean(document.querySelector('dialog[open]'))"), false, 'El formulario desmontado no deja una protección residual.');
+      await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
+    });
+
+    await t.test('Borradores: recargar/cerrar pestaña advierte; cancelar conserva y aceptar recarga descarta', async () => {
+      fase = 'recarga protegida'; await login(); await esperar(inicioVisible); await click('.sidebar-settings');
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Datos de empresa').click()");
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      await evaluate("document.querySelector('#config-nombreComercial').focus()");
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'x', code: 'KeyX', windowsVirtualKeyCode: 88, text: 'x' });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'x', code: 'KeyX', windowsVirtualKeyCode: 88 });
+      await fill('#config-nombreComercial', 'Borrador privado ficticio');
+      const valor = await evaluate("document.querySelector('#config-nombreComercial').value");
+      assert.equal(await evaluate("(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;})()"), true);
+      assert.equal(await evaluate("Object.values(localStorage).some(v=>v.includes('Borrador privado ficticio'))"), false, 'El borrador no se persiste.');
+      aceptarDialogo = false;
+      let previos = dialogosNativos.length;
+      await send('Page.reload');
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      assert.equal(dialogosNativos.slice(previos).includes('beforeunload'), true);
+      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').value"), valor);
+      previos = dialogosNativos.length;
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37 });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37 });
+      await send('Page.close');
+      for (let n=0;n<50 && dialogosNativos.length===previos;n++) await new Promise(r=>setTimeout(r,20));
+      assert.equal(dialogosNativos.slice(previos).includes('beforeunload'), true);
+      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').value"), valor);
+      aceptarDialogo = true; await send('Page.reload'); await esperar(inicioVisible);
+      assert.equal(await evaluate("(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;})()"), false);
+      await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
+    });
+
+    await t.test('Borradores: una revocación 401 cierra la sesión incluso con confirmación abierta', async () => {
+      fase = 'revocación con borrador'; await login(); await esperar(inicioVisible); await click('.sidebar-settings');
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Datos de empresa').click()");
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      await fill('#config-nombreComercial', 'Borrador revocado'); await click('.sidebar-user');
+      await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+      caducada = true;
+      await evaluate("import('/src/services/api.js').then(m=>m.default.get('/auth/me').catch(()=>{}))");
+      await esperar("Boolean(document.querySelector('#login-email'))");
+      assert.equal(await evaluate("Boolean(document.querySelector('dialog[open]'))"), false);
+      assert.equal(await evaluate("(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;})()"), false);
+      assert.equal(await evaluate("localStorage.getItem('token')"), null);
+    });
+
+    await t.test('Borradores: el cambio obligatorio informado por 403 prevalece sobre la navegación pendiente',async()=>{
+      fase='cambio obligatorio con borrador';await login();await esperar(inicioVisible);await click('.sidebar-settings');
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Datos de empresa').click()");
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");await fill('#config-nombreComercial','Borrador que no bloquea seguridad');
+      await click('.sidebar-user');await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+      obligatorio=true;
+      await evaluate("import('/src/services/api.js').then(m=>m.default.get('/configuracion/empresa').catch(()=>{}))");
+      await esperar("Boolean(document.querySelector('#cuenta-actual')) && !document.querySelector('.sidebar')");
+      assert.equal(await evaluate("Boolean(document.querySelector('dialog[open]'))"),false);
+      assert.equal(await evaluate("(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;})()"),false);
+      await click('.security-page--required header button');await esperar("Boolean(document.querySelector('#login-email'))");obligatorio=false;
+    });
+
+    await t.test('Borradores: el vencimiento automático de la sesión no espera confirmaciones',async()=>{
+      fase='vencimiento con borrador';caducaEn=Math.floor(Date.now()/1000)+3;
+      await login();await esperar(inicioVisible);await click('.sidebar-settings');
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Datos de empresa').click()");
+      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");await fill('#config-nombreComercial','Borrador vencido');
+      await click('.sidebar-user');await esperar("Boolean(document.querySelector('.settings-guard dialog[open]'))");
+      await esperar("Boolean(document.querySelector('#login-email'))");caducaEn=null;
+      assert.equal(await evaluate("localStorage.getItem('token')"),null);
+      assert.equal(await evaluate("Boolean(document.querySelector('dialog[open]'))"),false);
+    });
+
+    await t.test('Configuración: carga fallida, respuesta incompleta, bloqueo durante guardado y un solo envío',async()=>{
+      fase='confirmación de persistencia';await login();await esperar(inicioVisible);await click('.sidebar-settings');
+      falloCargaConfiguracion=true;
+      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent==='Datos de empresa').click()");
+      await esperar("document.querySelector('.settings-activation')?.textContent.includes('Carga temporalmente')");
+      assert.equal(await evaluate("Boolean(document.querySelector('.settings-editor form'))"),false);
+      falloCargaConfiguracion=false;await click('.settings-activation button');await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
+      await fill('#config-nombreComercial','Nombre con confirmación controlada');
+      respuestaConfiguracionIncompleta=true;
+      await evaluate("document.querySelector('.settings-editor form').requestSubmit()");await esperar("Boolean(document.querySelector('dialog[open]'))");
+      await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Confirmar guardado').click()");
+      await esperar("document.querySelector('.settings-editor [role=alert]')?.textContent.includes('No recibimos una confirmación válida')");
+      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').value"),'Nombre con confirmación controlada');
+      assert.equal(await evaluate("document.querySelector('.settings-editor button[type=submit]').disabled"),true);
+      assert.equal(await evaluate("document.querySelector('.settings-editor').textContent.includes('Cambios guardados correctamente')"),false);
+      respuestaConfiguracionIncompleta=false;
+      await evaluate("[...document.querySelectorAll('.settings-editor button')].find(b=>b.textContent==='Recargar datos').click()");await esperar("Boolean(document.querySelector('dialog[open]'))");
+      await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Descartar cambios').click()");
+      await esperar("document.querySelector('#config-nombreComercial')?.value==='Alojamientos editados'");
+      await fill('#config-nombreComercial','Guardado único');
+      demoraGuardarConfiguracion=800;
+      const previos=requests.filter(r=>r.method==='PUT'&&r.ruta==='/configuracion/empresa').length;
+      await evaluate("document.querySelector('.settings-editor form').requestSubmit()");await esperar("Boolean(document.querySelector('dialog[open]'))");
+      await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Confirmar guardado').click()");
+      await esperar("document.querySelector('.settings-form-actions [role=status]')?.textContent==='Guardando…'");
+      await evaluate("document.querySelector('.settings-editor form').requestSubmit();document.querySelector('.settings-editor form').requestSubmit()");
+      await click('.sidebar-user');
+      assert.equal(await evaluate("Boolean(document.querySelector('#config-nombreComercial'))"),true);
+      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').disabled"),true);
+      await esperar("document.querySelector('.settings-editor').textContent.includes('Cambios guardados correctamente')");demoraGuardarConfiguracion=0;
+      assert.equal(requests.filter(r=>r.method==='PUT'&&r.ruta==='/configuracion/empresa').length,previos+1);
+      await click('.sidebar-logout');await esperar("Boolean(document.querySelector('#login-email'))");
     });
 
     await t.test("login y perfil por teclado; sin opcion duplicada", async () => {
@@ -534,10 +812,44 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       fase = "operador";
       assert.equal(await evaluate("document.querySelector('.sidebar-nav').textContent.includes('Usuarios')"), false);
       await comprobarUtilidades('Operador');
+      assert.equal(await evaluate("document.querySelector('.settings-nav').textContent.includes('Datos de empresa') || document.querySelector('.settings-nav').textContent.includes('Preferencias operativas')"),false);
       await esperar("Boolean(document.querySelector('.theme-options'))");
       assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),1,"Operador solo ajusta Apariencia.");
       await click('input[name=apariencia][value=oscuro]');
       datosVisuales = true;
+      await evaluate("[...document.querySelectorAll('.sidebar-nav button')].find(b=>b.textContent.trim()==='Reservas').click()");
+      demoraPredeterminados=350;
+      await esperar("[...document.querySelectorAll('.main button')].some(b=>b.textContent.trim()==='Nueva reserva')");
+      await evaluate("[...document.querySelectorAll('.main button')].find(b=>b.textContent.trim()==='Nueva reserva').click()");
+      await esperar("Boolean(document.querySelector('input[name=horaIngreso]'))");await fill('input[name=horaIngreso]','17:10');
+      await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('Horarios iniciales de la empresa')");
+      assert.equal(await evaluate("document.querySelector('input[name=horaIngreso]').value"),'17:10');assert.equal(await evaluate("document.querySelector('input[name=horaEgreso]').value"),'08:45');
+      await evaluate("[...document.querySelectorAll('.main button')].find(b=>b.textContent.trim()==='Cerrar formulario').click()");
+      await evaluate("[...document.querySelectorAll('.main button')].find(b=>b.textContent.trim()==='Nueva reserva').click()");
+      await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('Horarios iniciales de la empresa')");
+      assert.equal(await evaluate("document.querySelector('input[name=horaIngreso]').value"),'17:10','Reabrir conserva el horario del borrador editado.');
+      await evaluate("[...document.querySelectorAll('.main button')].find(b=>b.textContent.trim()==='Cerrar formulario').click()");demoraPredeterminados=0;
+      const abrirReserva=()=>evaluate("[...document.querySelectorAll('.main button')].find(b=>b.textContent.trim()==='Nueva reserva').click()");
+      const cerrarReserva=()=>evaluate("[...document.querySelectorAll('.main button')].find(b=>b.textContent.trim()==='Cerrar formulario').click()");
+      for(const fallo of ['desactivada','inválida','red']) {
+        configuracionActivada=fallo!=='desactivada';predeterminadosInvalidos=fallo==='inválida';falloRedPredeterminados=fallo==='red';
+        await abrirReserva();await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('no disponible')");
+        assert.equal(await evaluate("document.querySelector('input[name=horaIngreso]').value"),'17:10',`${fallo}: no cambia el borrador.`);
+        await cerrarReserva();
+      }
+      configuracionActivada=true;predeterminadosInvalidos=false;falloRedPredeterminados=false;
+      demoraPredeterminados=500;
+      await abrirReserva();await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('Consultando')");
+      await cerrarReserva();await new Promise(r=>setTimeout(r,600));
+      assert.equal(await evaluate("Boolean(document.querySelector('input[name=horaIngreso]'))"),false,'La respuesta cancelada no reabre ni modifica formularios.');
+      demoraPredeterminados=0;await abrirReserva();await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('Horarios iniciales')");
+      const altas=requests.filter(r=>r.ruta==='/reservas'&&r.method==='POST').length;
+      await evaluate("document.querySelector('input[name=horaIngreso]').form.requestSubmit()");
+      await esperar("!document.querySelector('input[name=horaIngreso]')");
+      assert.equal(requests.filter(r=>r.ruta==='/reservas'&&r.method==='POST').length,altas+1,'Alta exclusivamente ficticia con API interceptada.');
+      await abrirReserva();await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('Horarios iniciales')");
+      assert.equal(await evaluate("document.querySelector('input[name=horaIngreso]').value"),'18:15','Alta exitosa limpia las horas modificadas del borrador anterior.');
+      await cerrarReserva();
       for (const label of ["Propiedades", "Reservas", "Huéspedes", "Calendario", "Limpiezas", "Alertas", "Reportes"]) {
         fase = `visual ${label}`;
         await evaluate(`[...document.querySelectorAll('.sidebar-nav button')].find(b=>b.textContent.trim()===${JSON.stringify(label)}).click()`);
@@ -559,9 +871,23 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await click("button[aria-label='Abrir FlowIA']"); await esperar("Boolean(document.querySelector('[aria-label=FlowIA]'))");
       await esperar("document.querySelector('[aria-label=FlowIA]').textContent.includes('Limpieza ficticia')");
       await capturar('oscuro-flowia');
+      await click('.flowia-close');await esperar("!document.querySelector('.flowia-panel')");
       await click(".sidebar-logout"); await esperar("Boolean(document.querySelector('#login-email'))");
       assert.equal(await evaluate("localStorage.getItem('token')"), null);
     });
+    }
+    await probarPrioridades({t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
+      if(Object.hasOwn(valores,'rol'))current=[...users.values()].find(u=>u.rol===valores.rol&&u.estado==='Activo');
+      if(Object.hasOwn(valores,'datosVisuales'))datosVisuales=valores.datosVisuales;
+      if(Object.hasOwn(valores,'listaLarga'))listaHuespedesLarga=valores.listaLarga;
+      if(Object.hasOwn(valores,'demoraDetalle'))demoraDetalleHuesped=valores.demoraDetalle;
+      if(Object.hasOwn(valores,'modoDetalle'))modoDetalleHuesped=valores.modoDetalle;
+      if(Object.hasOwn(valores,'soloLectura'))soloLecturaConfiguracion=valores.soloLectura;
+      if(Object.hasOwn(valores,'estadoAusente'))estadoConfiguracionAusente=valores.estadoAusente;
+      if(Object.hasOwn(valores,'falloFlowIA'))falloFlowIA=valores.falloFlowIA;
+      if(Object.hasOwn(valores,'demoraFlowIA'))demoraFlowIA=valores.demoraFlowIA;
+      if(Object.hasOwn(valores,'destinoFlowIA'))destinoFlowIA=valores.destinoFlowIA;
+    }});
     assert.equal(excepciones.length, 0, "El navegador no debe tener excepciones en los flujos probados.");
   } catch { throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
   finally {

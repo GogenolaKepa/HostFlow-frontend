@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { validarPasswordNueva } from "../../services/cuentas";
+import { useScrollLock } from "../../hooks/useScrollLock";
 
 const paths = {
   settings: <><path d="m9 3-1 3-3 1-2 5 2 5 3 1 1 3h6l1-3 3-1 2-5-2-5-3-1-1-3Z" /><circle cx="12" cy="12" r="3" /></>,
@@ -68,15 +69,25 @@ export function PasswordRules({ password, confirmacion, id }) {
 }
 
 // El dialogo nativo contiene el foco; devolverlo explicitamente al desmontar React.
-export function SecurityDialog({ title, description, children, onClose, busy = false, compact = false }) {
+export function SecurityDialog({ title, description, children, onClose, busy = false, compact = false, className = '' }) {
   const ref = useRef(null);
+  useScrollLock();
   const titleId = useId(), descriptionId = useId();
   useLayoutEffect(() => {
     const dialog = ref.current, opener = document.activeElement;
     if (!dialog.open) dialog.showModal();
-    return () => { dialog.close(); if (opener?.isConnected) opener.focus(); };
+    return () => { dialog.close(); if (opener?.isConnected) opener.focus({ preventScroll: true }); };
   }, []);
-  return <dialog ref={ref} className={`security-dialog ${compact ? "security-dialog--compact" : ""}`} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={e => { e.preventDefault(); if (!busy) onClose(); }}>
+  const contenerTab = event => {
+    if (event.key !== 'Tab' || event.target.closest('dialog') !== ref.current) return;
+    const focusables = [...ref.current.querySelectorAll('button, a[href], input, select, textarea, [tabindex]')]
+      .filter(el => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+    const first = focusables[0], last = focusables.at(-1);
+    if (!first) { event.preventDefault(); return; }
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  };
+  return <dialog ref={ref} className={`security-dialog ${compact ? "security-dialog--compact" : ""} ${className}`} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onKeyDown={contenerTab} onCancel={e => { e.preventDefault(); if (!busy) onClose(); }}>
     <header className="security-dialog-header"><div><h2 id={titleId}>{title}</h2>{description && <p id={descriptionId}>{description}</p>}</div><button type="button" className="security-close" aria-label="Cerrar diálogo" disabled={busy} onClick={onClose}><SecurityIcon name="close" /></button></header>
     {children}
   </dialog>;

@@ -1,0 +1,136 @@
+/* FlowIA vive en la capa modal nativa: nunca reserva ancho o altura al contenido. */
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  height: 100dvh;
+  min-height: 0;
+  padding-left: var(--hostflow-sidebar-expanded);
+  overflow: hidden;
+}
+.dashboard.dashboard--sidebar-collapsed { padding-left: var(--hostflow-sidebar-collapsed); }
+.dashboard > .main {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  margin-left: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 24px;
+  scrollbar-gutter: stable;
+}
+body:has(dialog[open], [aria-modal="true"], .reservation-detail-backdrop, .calendar-day-modal-backdrop, .property-image-preview-backdrop, .reportes-export-overlay, .dashboard-metric-overlay, .mobile-nav-drawer) .dashboard > .main { overflow: hidden; }
+.sidebar-nav .sidebar-flowia, .mobile-nav-list .mobile-flowia { margin-top: 4px; }
+.sidebar-flowia.is-open, .mobile-flowia.is-open { background: var(--hf-primary); color: var(--hf-on-brand); }
+.sidebar-flowia .sidebar-nav-icon, .mobile-flowia .mobile-nav-icon { font-size: 21px; }
+.sidebar-flowia:focus-visible, .mobile-flowia:focus-visible { outline: 2px solid var(--hf-on-brand); outline-offset: -3px; }
+.dashboard > dialog.flowia-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+  grid-area: auto;
+  width: min(460px, 100%);
+  max-width: none;
+  height: 100dvh;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--hf-border);
+  border-radius: 0;
+  color: var(--hf-text);
+  background: var(--hf-surface);
+  box-shadow: -16px 0 64px rgb(0 0 0 / 22%);
+  animation: flowia-drawer-in 180ms ease-out both;
+}
+.dashboard > dialog.flowia-panel[open] { display: flex; }
+.dashboard > dialog.flowia-panel::backdrop {
+  background: rgb(8 15 30 / 44%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: flowia-backdrop-in 180ms ease-out both;
+}
+.dashboard > dialog.flowia-panel--closing { animation: flowia-drawer-out 180ms ease-in both; }
+.dashboard > dialog.flowia-panel--closing::backdrop { animation: flowia-backdrop-out 180ms ease-in both; }
+@keyframes flowia-drawer-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes flowia-drawer-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(24px); } }
+@keyframes flowia-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes flowia-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+.flowia-panel .flowia-panel-header {
+  padding: max(22px, env(safe-area-inset-top)) 24px 22px;
+  gap: 12px;
+}
+.flowia-panel .flowia-brand strong { font-size: 19px; }
+.flowia-panel .flowia-brand span:not(.flowia-brand-icon) { font-size: 11px; line-height: 1.5; color: var(--hf-on-brand-muted); }
+.flowia-panel .flowia-close { width: 40px; height: 40px; }
+.flowia-panel .flowia-brand-icon {
+  width: 42px;
+  height: 42px;
+  color: var(--hf-on-brand);
+  background: color-mix(in srgb, var(--hf-on-brand) 12%, transparent);
+}
+.flowia-panel .flowia-panel-statusbar {
+  padding: 14px 24px;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--hf-surface);
+}
+.flowia-panel .flowia-mode, .flowia-panel .flowia-refresh { font-size: 11px; }
+.flowia-panel .flowia-mode--rules > span { background: var(--hf-primary); }
+.flowia-panel .flowia-refresh { min-height: 36px; padding: 7px 10px; background: transparent; }
+.flowia-panel .flowia-panel-body {
+  min-height: 0;
+  padding: 24px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: var(--hf-surface);
+}
+.flowia-panel .flowia-summary { margin-bottom: 24px; }
+.flowia-panel .flowia-summary-eyebrow { font-size: 10px; }
+.flowia-panel .flowia-summary h2 { margin-block: 8px; font-size: 22px; line-height: 1.35; }
+.flowia-panel .flowia-summary p { font-size: 12px; }
+.flowia-panel .flowia-list { gap: 16px; }
+.flowia-panel .flowia-card { padding: 20px; border-radius: 16px; box-shadow: var(--hf-shadow-card); }
+.flowia-panel .flowia-card h3 { font-size: 16px; line-height: 1.4; }
+.flowia-panel .flowia-priority, .flowia-panel .flowia-evidence-chip { font-size: 10px; }
+.flowia-panel .flowia-evidence-chip { background: var(--hf-surface-muted); }
+.flowia-panel .flowia-description { font-size: 13px; line-height: 1.6; }
+.flowia-panel .flowia-action-copy { margin-top: 16px; padding: 0; border: 0; background: transparent; }
+.flowia-panel .flowia-action-copy > span { font-size: 10px; color: var(--hf-text-muted); }
+.flowia-panel .flowia-action-copy p, .flowia-panel .flowia-reason p { font-size: 12px; }
+.flowia-panel .flowia-reason strong { font-size: 11px; }
+.flowia-panel .flowia-card-action { min-height: 42px; margin-top: 18px; font-size: 12px; }
+.flowia-panel .flowia-loading, .flowia-panel .flowia-state { background: transparent; border-color: var(--hf-border); }
+.flowia-panel .flowia-loading strong, .flowia-panel .flowia-state strong { font-size: 15px; }
+.flowia-panel .flowia-loading p, .flowia-panel .flowia-state span, .flowia-panel .flowia-state--error button, .flowia-panel .flowia-inline-warning { font-size: 12px; }
+.flowia-panel .flowia-panel-footer {
+  padding: 14px 24px max(14px, env(safe-area-inset-bottom));
+  background: var(--hf-surface);
+}
+.flowia-panel .flowia-panel-footer span { font-size: 11px; line-height: 1.5; color: var(--hf-text-muted); }
+.flowia-panel button:focus-visible { outline: 3px solid var(--hf-primary); outline-offset: 3px; }
+.flowia-close:focus-visible { outline: 3px solid var(--hf-on-brand); outline-offset: 3px; }
+.flowia-panel .flowia-close:focus-visible { outline-color: var(--hf-on-brand); }
+@media (max-width: 700px) {
+  .dashboard > dialog.flowia-panel {
+    inset: 0;
+    width: 100%;
+    border: 0;
+  }
+  .flowia-panel .flowia-panel-header { padding-inline: 20px; }
+  .flowia-panel .flowia-panel-body, .flowia-panel .flowia-panel-statusbar, .flowia-panel .flowia-panel-footer { padding-inline: 20px; }
+  .dashboard, .dashboard.dashboard--sidebar-collapsed {
+    padding-left: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .dashboard > .mobile-appbar { position: relative; grid-area: 1 / 1 / 2 / -1; }
+  .dashboard > .main { grid-area: 2 / 1; }
+}
+@media (max-height: 500px) {
+  .flowia-panel .flowia-panel-header, .flowia-panel .flowia-panel-statusbar { padding-block: 8px; }
+  .flowia-panel .flowia-panel-footer { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard > dialog.flowia-panel, .dashboard > dialog.flowia-panel::backdrop { animation: none; }
+  .flowia-panel *, .flowia-panel *::before, .flowia-panel *::after { animation: none !important; transition: none !important; }
+}

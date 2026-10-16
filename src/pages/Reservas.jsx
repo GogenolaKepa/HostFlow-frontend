@@ -1,7 +1,8 @@
 import { usePermisos } from "../context/PermisosContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
+import { leerListaDetalle } from "../services/contratosOperativos";
 import usePredeterminadosReserva from "../hooks/usePredeterminadosReserva";
 
 const FILTROS_INICIALES_RESERVAS = {
@@ -27,6 +28,8 @@ const OBSERVACION_INICIAL = {
 };
 
 function Reservas() {
+  const consultaDetalle = useRef(null);
+  useEffect(() => () => consultaDetalle.current?.abort(), []);
   const tienePermiso = usePermisos();
   const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -379,6 +382,8 @@ function Reservas() {
 
     const manejarEscape = (e) => {
       if (e.key === "Escape") {
+        consultaDetalle.current?.abort();
+        consultaDetalle.current = null;
         setReservaDetalle(null);
       }
     };
@@ -1199,6 +1204,9 @@ function Reservas() {
   const abrirDetalleReserva = async (
     reserva
   ) => {
+    consultaDetalle.current?.abort();
+    const consulta = new AbortController();
+    consultaDetalle.current = consulta;
     setMostrarFormulario(false);
     setReservaEditando(null);
 
@@ -1251,26 +1259,27 @@ function Reservas() {
       resultadoObservaciones,
     ] = await Promise.allSettled([
       api.get(
-        `/reservas/${reserva.idReserva}/eventos`
-      ),
+        `/reservas/${reserva.idReserva}/eventos`, { signal: consulta.signal }
+      ).then(respuesta => leerListaDetalle(respuesta, 'eventos')),
       api.get(
-        `/reservas/${reserva.idReserva}/mensajes`
-      ),
+        `/reservas/${reserva.idReserva}/mensajes`, { signal: consulta.signal }
+      ).then(respuesta => leerListaDetalle(respuesta, 'mensajes')),
       api.get(
-        `/reservas/${reserva.idReserva}/incidencias`
-      ),
+        `/reservas/${reserva.idReserva}/incidencias`, { signal: consulta.signal }
+      ).then(respuesta => leerListaDetalle(respuesta, 'incidencias')),
       api.get(
-        `/reservas/${reserva.idReserva}/observaciones`
-      ),
+        `/reservas/${reserva.idReserva}/observaciones`, { signal: consulta.signal }
+      ).then(respuesta => leerListaDetalle(respuesta, 'observaciones')),
     ]);
+
+    if (consulta.signal.aborted || consultaDetalle.current !== consulta) return;
 
     if (
       resultadoEventos.status ===
       "fulfilled"
     ) {
       setEventosDetalle(
-        resultadoEventos.value.data
-          .eventos || []
+        resultadoEventos.value
       );
     } else {
       setErrorEventosDetalle(
@@ -1285,8 +1294,7 @@ function Reservas() {
       "fulfilled"
     ) {
       setMensajesDetalle(
-        resultadoMensajes.value.data
-          .mensajes || []
+        resultadoMensajes.value
       );
     } else {
       setErrorMensajesDetalle(
@@ -1301,8 +1309,7 @@ function Reservas() {
       "fulfilled"
     ) {
       setIncidenciasDetalle(
-        resultadoIncidencias.value.data
-          .incidencias || []
+        resultadoIncidencias.value
       );
     } else {
       setErrorIncidenciasDetalle(
@@ -1317,8 +1324,7 @@ function Reservas() {
       "fulfilled"
     ) {
       setObservacionesDetalle(
-        resultadoObservaciones.value.data
-          .observaciones || []
+        resultadoObservaciones.value
       );
     } else {
       setErrorObservacionesDetalle(
@@ -1335,6 +1341,8 @@ function Reservas() {
   };
 
   const cerrarDetalleReserva = () => {
+    consultaDetalle.current?.abort();
+    consultaDetalle.current = null;
     setReservaDetalle(null);
 
     setEventosDetalle([]);

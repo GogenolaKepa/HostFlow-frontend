@@ -63,6 +63,7 @@ export async function probarNotificaciones({t,evaluate,send,click,esperar,inicio
     await click('.sidebar-flowia');await esperar("Boolean(document.querySelector('dialog.flowia-panel[open]'))");
     assert.equal(await evaluate("document.querySelector('.main').getBoundingClientRect().width"),ancho);
     await send('Input.dispatchKeyEvent',{type:'rawKeyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await esperar("!document.querySelector('.flowia-panel')");
+    await esperar("document.activeElement.classList.contains('sidebar-flowia')");
     assert.equal(await evaluate("document.activeElement.classList.contains('sidebar-flowia')"),true);
   });
   await t.test('Preferencias: apagadas informan sin simular persistencia ni ofrecer guardado',async()=>{

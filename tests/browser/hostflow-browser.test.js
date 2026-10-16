@@ -10,7 +10,9 @@ import react from "@vitejs/plugin-react";
 import { propiedadVisual, reservaVisual, huespedVisual, limpiezaVisual, alertaVisual, calendarioVisual, reportesVisuales, recomendacionVisual } from "../fixtures/visual-modulos.js";
 import { probarPrioridades } from './casos-prioritarios.js';
 import { probarNotificaciones } from './casos-notificaciones.js';
+import { probarRegresionIntegral } from './casos-integrales.js';
 import { TIPOS_NOTIFICACION } from '../../src/services/notificaciones.js';
+import { cacheViteAislada } from '../helpers/cacheVite.js';
 
 // Browser real ya instalado, sin dependencias nuevas y sin backend/SQL.
 const browserPath = process.env.HOSTFLOW_TEST_BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
@@ -46,6 +48,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   skip: !fs.existsSync(browserPath), timeout: 240000,
 }, async (t) => {
   let vite, child, socket, cdp;
+  const cache = cacheViteAislada();
   let fase = "inicio";
   const password = randomBytes(20).toString("hex");
   const cuenta = (id, rol) => ({ idUsuario: id, nombre: `${rol} aislado`, email: `${rol.toLowerCase()}@example.invalid`,
@@ -66,6 +69,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloRedPredeterminados = false;
   let falloFlowIA = false, demoraFlowIA = 0;
   let destinoFlowIA = null;
+  let modoFlowIA = 'normal', demoraReservaAnterior = 0, detalleReservaIncompleto = false, dosReservas = false;
   let modoAvisos='datos',demoraAvisos=0,modoPreferencias='pendiente',conflictoPreferencias=false,demoraPreferencias=0,sinNotificaciones=false,revisionPreferencias=100;
   const preferenciasPorUsuario=new Map();
   const solicitudesAbortadas = new Set();
@@ -74,7 +78,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let operativasConfiguracion = {horaIngreso:'15:00',horaEgreso:'10:00',zonaHoraria:'America/Argentina/Buenos_Aires',versionRegistro:'0000000000000002'};
   const requests = []; const excepciones = []; const modulosCliente = [];
   try {
-    vite = await createServer({ configFile: false, envDir: false, plugins: [react()],
+    vite = await createServer({ configFile: false, envDir: false, cacheDir: cache.ruta, plugins: [react()],
       server: { host: "127.0.0.1", port: 0, ws: false, watch: null } });
     await vite.listen();
     const base = `http://127.0.0.1:${vite.httpServer.address().port}`;
@@ -219,7 +223,13 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if (ruta === "/dashboard/reportes/opciones") return [200, { opciones: { propiedades: [], canales: [], estados: [] } }];
       if (ruta === "/dashboard/reportes") return [200, { reportes: datosVisuales ? reportesVisuales : { periodo: { fechaDesde: "2026-10-01", fechaHasta: "2026-10-31", tipo: "mensual" }, filtros: {}, resumen: { totalReservasPeriodo: 0, totalReservasOperativas: 0, reservasConIngreso: 0, ingresosEstimados: 0, nochesOcupadas: 0, nochesDisponibles: 0, ocupacionPromedio: 0 }, historico: [], porCanal: [], porEstado: [], porPropiedad: [] } }];
       if (ruta === "/calendario") return [200, datosVisuales ? calendarioVisual : { anio: 2026, mes: 10, diasMes: 31, propiedades: [], resumen: { reservas: 0 } }];
-      if (ruta === "/recomendaciones") return falloFlowIA ? [503, { mensaje: 'Análisis ficticio no disponible' }] : [200, { recomendaciones: datosVisuales ? [{ ...recomendacionVisual, ...(destinoFlowIA ? { destino: destinoFlowIA } : {}) }] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {} }];
+      if (ruta === "/recomendaciones") return falloFlowIA ? [503, { mensaje: 'Análisis ficticio no disponible' }] : [200, modoFlowIA === 'incompleto' ? { recomendaciones: {} } : { recomendaciones: datosVisuales ? [{ ...recomendacionVisual, ...(destinoFlowIA ? { destino: destinoFlowIA } : {}) }] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {} }];
+      const detalleReserva = /^\/reservas\/(\d+)\/(eventos|mensajes|incidencias|observaciones)$/.exec(ruta);
+      if (method === 'GET' && detalleReserva) {
+        const [,id,campo] = detalleReserva;
+        return [200, { [campo]: detalleReservaIncompleto ? {} : campo === 'eventos' ? [{idEventoReserva:Number(id),tipo:'RESERVA_CREADA',titulo:`Evento ficticio reserva ${id}`,descripcion:'Historial aislado',origen:'Manual',fechaEvento:'2028-02-28T12:00:00.000Z',datosJson:{}}] : [] }];
+      }
+      if (method === 'GET' && ruta === '/reservas' && dosReservas) return [200, {reservas:[reservaVisual,{...reservaVisual,idReserva:2,huesped:'Segunda persona ficticia'}]}];
       const modulo = ruta.split("/")[1];
       if(method==='GET' && /^\/huespedes\/\d+$/.test(ruta)) {
         if(modoDetalleHuesped==='inexistente')return [404,{mensaje:'El huésped no existe.'}];
@@ -259,6 +269,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         if(ruta==='/configuracion/predeterminados-reserva' && request.method==='GET' && demoraPredeterminados) await new Promise(r=>setTimeout(r,demoraPredeterminados));
         if(/^\/huespedes\/\d+$/.test(ruta) && demoraDetalleHuesped) await new Promise(r=>setTimeout(r,demoraDetalleHuesped));
         if(ruta==='/recomendaciones' && demoraFlowIA) await new Promise(r=>setTimeout(r,demoraFlowIA));
+        if(/^\/reservas\/1\/(eventos|mensajes|incidencias|observaciones)$/.test(ruta) && demoraReservaAnterior) await new Promise(r=>setTimeout(r,demoraReservaAnterior));
         if(ruta==='/notificaciones/avisos'&&demoraAvisos)await new Promise(r=>setTimeout(r,demoraAvisos));
         if(ruta==='/notificaciones/preferencias'&&request.method==='PUT'&&demoraPreferencias)await new Promise(r=>setTimeout(r,demoraPreferencias));
         if(solicitudesAbortadas.has(networkId)) return;
@@ -917,6 +928,10 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'falloFlowIA'))falloFlowIA=valores.falloFlowIA;
       if(Object.hasOwn(valores,'demoraFlowIA'))demoraFlowIA=valores.demoraFlowIA;
       if(Object.hasOwn(valores,'destinoFlowIA'))destinoFlowIA=valores.destinoFlowIA;
+      if(Object.hasOwn(valores,'modoFlowIA'))modoFlowIA=valores.modoFlowIA;
+      if(Object.hasOwn(valores,'demoraReservaAnterior'))demoraReservaAnterior=valores.demoraReservaAnterior;
+      if(Object.hasOwn(valores,'detalleReservaIncompleto'))detalleReservaIncompleto=valores.detalleReservaIncompleto;
+      if(Object.hasOwn(valores,'dosReservas'))dosReservas=valores.dosReservas;
       if(Object.hasOwn(valores,'modoAvisos'))modoAvisos=valores.modoAvisos;
       if(Object.hasOwn(valores,'demoraAvisos'))demoraAvisos=valores.demoraAvisos;
       if(Object.hasOwn(valores,'modoPreferencias'))modoPreferencias=valores.modoPreferencias;
@@ -926,12 +941,13 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     }};
     await probarPrioridades(contexto);
     await probarNotificaciones(contexto);
+    await probarRegresionIntegral(contexto);
     assert.equal(excepciones.length, 0, "El navegador no debe tener excepciones en los flujos probados.");
   } catch { throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
   finally {
     if (cdp && socket?.readyState === WebSocket.OPEN) {
       try { await cdp.send("Browser.close"); } catch { /* El navegador puede cerrar el socket antes de responder. */ }
     }
-    socket?.close(); child?.kill(); await vite?.close();
+    socket?.close(); child?.kill(); await vite?.close(); cache.limpiar();
   }
 });

@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useCallback,
   useMemo,
   useRef,
@@ -7,6 +8,7 @@ import {
 } from "react";
 
 import api from "../services/api";
+import { validarAnalisisFlowIA } from "../services/contratosOperativos";
 import { useOverlayPresence } from "../hooks/useOverlayPresence";
 import PanelFlowIA from "../components/flowia/PanelFlowIA";
 const RECOMENDACIONES_VACIAS = Object.freeze([]);
@@ -269,7 +271,7 @@ function FlowIA({
           );
 
         setDatos(
-          response.data
+          validarAnalisisFlowIA(response.data)
         );
       } catch (err) {
         setError(
@@ -294,16 +296,24 @@ function FlowIA({
     }
   }, [abierta, datos, cargando, cargarRecomendaciones]);
 
-  const cerrarFlowIA = useCallback(() => {
-    onCerrar();
-    requestAnimationFrame(() => {
+  const aperturaAnterior = useRef(abierta);
+  useLayoutEffect(() => {
+    const acabaDeCerrar = aperturaAnterior.current && !abierta;
+    aperturaAnterior.current = abierta;
+    if (!acabaDeCerrar) return;
+    // Esperar al commit que retira el diálogo. Un frame solicitado desde el
+    // evento de cierre podía adelantarse a React y perder la restauración.
+    const frame = requestAnimationFrame(() => {
       if (document.querySelector('[data-flowia-panel], dialog[open], [aria-modal="true"]')) return;
       const origen = openerRef.current;
       const target = [origen, document.querySelector('.sidebar-flowia'), document.querySelector('.mobile-menu-toggle')]
         .find(el => el?.isConnected && el.getClientRects().length);
       target?.focus({ preventScroll: true });
     });
-  }, [onCerrar, openerRef]);
+    return () => cancelAnimationFrame(frame);
+  }, [abierta, openerRef]);
+
+  const cerrarFlowIA = useCallback(() => onCerrar(), [onCerrar]);
 
   const navegarARecomendacion =
     (recomendacion) => {

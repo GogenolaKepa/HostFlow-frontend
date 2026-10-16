@@ -4,12 +4,14 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
+import { cacheViteAislada } from './helpers/cacheVite.js';
 
 let vite, MiCuenta, Usuarios, Login, PermisosContext, Configuracion, ThemeProvider, BorradoresProvider;
+const cache = cacheViteAislada();
 before(async () => {
   // SSR local: sin backend ni peticiones API; los efectos React no se ejecutan.
   globalThis.window = { location: { protocol: "http:", hostname: "localhost" } };
-  vite = await createServer({ configFile: false, envDir: false, plugins: [react()],
+  vite = await createServer({ configFile: false, envDir: false, cacheDir: cache.ruta, plugins: [react()],
     server: { middlewareMode: true, ws: false, watch: null } });
   MiCuenta = (await vite.ssrLoadModule("/src/pages/MiCuenta.jsx")).default;
   Usuarios = (await vite.ssrLoadModule("/src/pages/Usuarios.jsx")).default;
@@ -19,7 +21,7 @@ before(async () => {
   ThemeProvider = (await vite.ssrLoadModule("/src/context/ThemeContext.jsx")).ThemeProvider;
   BorradoresProvider = (await vite.ssrLoadModule("/src/context/BorradoresProvider.jsx")).BorradoresProvider;
 });
-after(async () => { await vite?.close(); delete globalThis.window; });
+after(async () => { await vite?.close(); cache.limpiar(); delete globalThis.window; });
 const usuario = { idUsuario: 1, nombre: "Prueba aislada", email: "prueba@example.invalid", rol: "Operador", gestionCuentasDisponible: true, debeCambiarPassword: true, versionRegistro: "0000000000000001" };
 
 test("cambio obligatorio renderiza solo password y salida, sin editar nombre", () => {

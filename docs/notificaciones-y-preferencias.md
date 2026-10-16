@@ -2,8 +2,10 @@
 
 Estado de cierre confirmado por el usuario: DDL v2 Azure y 55/55 derechos directos
 aplicados, CONNECT conocido y roles amplios conservados; pruebas locales de esquema
-25/25 y de permisos 8/8 + 18/18 aprobadas. No repetir SQL. La activación funcional de
-preferencias sigue pendiente. Fuente detallada: backend/docs/estado-notificaciones-v2.md.
+25/25 y de permisos 8/8 + 18/18 aprobadas. El usuario confirmó además guardado real
+del Administrador, persistencia tras F5/reinicio y retorno de escritura a 0.
+No repetir SQL ni activar escrituras por esta revisión.
+Fuente detallada: backend/docs/estado-notificaciones-v2.md.
 Codex solo ejecuta comprobaciones aisladas; la guía manual vigente está en
 HostFlow/revision/cierre-notificaciones/PRUEBAS-WEB.md. Los párrafos de preparación
 que siguen describen la historia, no autorizan nuevas migraciones/concesiones.

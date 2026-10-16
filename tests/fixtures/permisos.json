@@ -1,12 +1,16 @@
 {
   "origen": {
     "repositorio": "GogenolaKepa/HostFlow-backend",
-    "commit": "ba1bd0ea8c2b30ddbe76e39bbbcdd863739b6557",
-    "sha256": "ce1430cf6f9277a6053aafbe89d1616d8a55eb85a6127a7f024cdaa4caafcc59",
-    "cambiosLocales": "Configuración empresarial pendiente de publicación"
+    "commit": "1980ddf19b9f62d704e78e00cf72c7aee9a11cde",
+    "sha256": "0a0b57c759492610fe2199b9712709523a877b43aaf5cc6d03a213839d52d650",
+    "cambiosLocales": "Notificaciones y preferencias pendientes de publicación",
+    "nota": "Catálogo de trabajo: incluye permisos de notificaciones de esta tanda, aún sin commit."
   },
   "permisosPorRol": {
     "Administrador": [
+      "notificaciones.ver",
+      "notificaciones.leer",
+      "notificaciones.preferencias",
       "configuracion.ver",
       "configuracion.modificar",
       "usuarios.ver",
@@ -63,6 +67,9 @@
       "flowia.comercial"
     ],
     "Operador": [
+      "notificaciones.ver",
+      "notificaciones.leer",
+      "notificaciones.preferencias",
       "cuenta.ver",
       "cuenta.modificar",
       "cuenta.password",

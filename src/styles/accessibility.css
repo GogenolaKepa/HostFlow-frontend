@@ -1,0 +1,9 @@
+/* La opción local solo reduce movimiento; nunca invalida la preferencia del SO. */
+:root[data-reduce-motion="true"] *, :root[data-reduce-motion="true"] *::before, :root[data-reduce-motion="true"] *::after,
+:root[data-reduce-motion="true"] dialog::backdrop { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after, dialog::backdrop { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.general-preferences .settings-field { margin: 24px 0; }
+.general-preferences select { width: 100%; max-width: 420px; min-height: 44px; border: 1px solid var(--hf-border); border-radius: 8px; padding: 10px; font: inherit; font-size: 13px; }
+.general-preferences .settings-field p { color: var(--hf-text-muted); font-size: 13px; line-height: 1.6; }

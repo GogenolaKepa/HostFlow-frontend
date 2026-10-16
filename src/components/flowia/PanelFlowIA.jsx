@@ -31,7 +31,7 @@ export default function PanelFlowIA({ children, id, onClose }) {
   }, []);
   const cerrar = () => {
     if (cerrando) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) onClose();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.reduceMotion === 'true') onClose();
     else setCerrando(true);
   };
   const fuera = event => {

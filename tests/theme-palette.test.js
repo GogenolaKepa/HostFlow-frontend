@@ -14,7 +14,7 @@ test("tokens legibles para texto, mensajes, navegación y botones en ambas palet
   const base=Object.fromEntries([...blocks[0].matchAll(/(--hf-[\w-]+):\s*(#[0-9a-f]{6})/g)].map(m=>[m[1],m[2]]));
   for(const [index,block] of blocks.entries()) {
     const tokens={...base,...Object.fromEntries([...block.matchAll(/(--hf-[\w-]+):\s*(#[0-9a-f]{6})/g)].map(m=>[m[1],m[2]]))};
-    const pairs=[['text','surface-raised'],['text-muted','canvas'],['text-faint','surface-raised'],['nav-text','nav-bg'],['on-brand','primary'],['on-brand','primary-hover']];
+    const pairs=[['text','surface-raised'],['text-secondary','surface'],['text-muted','surface-raised'],['info-text','surface-raised'],['text-muted','canvas'],['text-faint','surface-raised'],['nav-text','nav-bg'],['on-brand','primary'],['on-brand','primary-hover']];
     for(const family of ['info','success','warning','danger','violet','cyan','teal'])pairs.push([family+'-text',family+'-soft']);
     for(const [fg,bg] of pairs)assert.ok(contrast(tokens['--hf-'+fg],tokens['--hf-'+bg])>=4.5,`Contraste insuficiente: ${index?'oscuro':'claro'} ${fg}/${bg}`);
   }

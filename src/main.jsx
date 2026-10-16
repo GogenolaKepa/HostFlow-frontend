@@ -5,11 +5,13 @@ import { ThemeProvider } from "./context/ThemeContext.jsx";
 import "./styles/theme.css";
 import "./styles/settings.css";
 import "./styles/workspace.css";
+import "./styles/accessibility.css";
+import { PreferenciasNavegadorBootstrap } from "./components/configuracion/PreferenciasGenerales";
 
 createRoot(
   document.getElementById("root")
 ).render(
   <StrictMode>
-    <ThemeProvider><App /></ThemeProvider>
+    <ThemeProvider><PreferenciasNavegadorBootstrap /><App /></ThemeProvider>
   </StrictMode>
 );

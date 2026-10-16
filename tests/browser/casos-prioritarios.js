@@ -255,7 +255,7 @@ export async function probarPrioridades({ t, evaluate, send, click, fill, espera
     await evaluate("[...document.querySelectorAll('.settings-form-actions button')].find(b=>b.textContent==='Descartar').click()");await esperar("Boolean(document.querySelector('dialog[open]'))");
     await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Descartar cambios').click()");
     await viewport(1280,800);fixture({rol:'Operador'});await recargar();await click('.sidebar-settings');
-    assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),1);fixture({soloLectura:false});
+    assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),3);fixture({soloLectura:false});
   });
 
   await t.test('Huéspedes: móvil/tablet, temas, scroll interno y foco contenido',async()=>{

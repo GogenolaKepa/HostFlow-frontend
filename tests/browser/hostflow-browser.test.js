@@ -9,6 +9,8 @@ import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
 import { propiedadVisual, reservaVisual, huespedVisual, limpiezaVisual, alertaVisual, calendarioVisual, reportesVisuales, recomendacionVisual } from "../fixtures/visual-modulos.js";
 import { probarPrioridades } from './casos-prioritarios.js';
+import { probarNotificaciones } from './casos-notificaciones.js';
+import { TIPOS_NOTIFICACION } from '../../src/services/notificaciones.js';
 
 // Browser real ya instalado, sin dependencias nuevas y sin backend/SQL.
 const browserPath = process.env.HOSTFLOW_TEST_BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
@@ -64,6 +66,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloRedPredeterminados = false;
   let falloFlowIA = false, demoraFlowIA = 0;
   let destinoFlowIA = null;
+  let modoAvisos='datos',demoraAvisos=0,modoPreferencias='pendiente',conflictoPreferencias=false,demoraPreferencias=0,sinNotificaciones=false,revisionPreferencias=100;
+  const preferenciasPorUsuario=new Map();
   const solicitudesAbortadas = new Set();
   let revisionConfiguracion = 2;
   let empresaConfiguracion = {nombreComercial:'Alojamientos ficticios',razonSocial:'',correoContacto:'contacto@example.invalid',telefono:'',pais:'',provincia:'',ciudad:'',direccion:'',informacionAdicional:'',versionRegistro:'0000000000000001'};
@@ -118,9 +122,33 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});
       el.dispatchEvent(new Event('input',{bubbles:true})); })()`);
     const expiry = () => caducaEn ?? Math.floor(Date.now() / 1000) + 7200;
-    const sesion = () => ({ token, usuario: { ...current, debeCambiarPassword: obligatorio }, expiraEn: expiry() });
+    const sesion = () => ({ token, usuario: { ...current, ...(sinNotificaciones?{permisos:current.permisos.filter(p=>!p.startsWith('notificaciones.'))}:{}), debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if(ruta.startsWith('/notificaciones/')) {
+        if(sinNotificaciones)return [403,{mensaje:'Sin permiso.'}];
+        if(ruta==='/notificaciones/avisos'){
+          if(modoAvisos==='error')return [503,{mensaje:'Fallo ficticio de consulta.'}];
+          if(modoAvisos==='incompleto')return [200,{avisos:[]}];
+          const categoria=params.get('categoria')||'todas',prioridad=params.get('prioridad')||'todas',pagina=Number(params.get('pagina')||1),limite=Number(params.get('limite')||20);
+          const todas=modoAvisos==='vacio'?[]:Array.from({length:modoAvisos==='uno'?1:modoAvisos==='prioridades'?5:42},(_,i)=>({idAviso:i+1,tipo:i%2?'INCIDENCIA_ABIERTA':'CHECKIN_PROXIMO',categoria:i%2?'alertas':'reservas',titulo:`Aviso ficticio ${i+1}`,descripcion:'Información operativa ficticia, sin datos privados.',prioridad:modoAvisos==='uno'?'Critica':modoAvisos==='prioridades'?['Critica','Alta','Media','Informativa','NoDefinida'][i]:i%3===0?'Alta':'Media',fecha:modoAvisos==='uno'?'2026-09-27T05:10:00.000Z':i===0?null:'2026-10-15T13:00:00.000Z',destino:{seccion:'alertas'},datosEconomicos:{monto:999999}}));
+          const lista=todas.filter(a=>(categoria==='todas'||a.categoria===categoria)&&(prioridad==='todas'||a.prioridad===prioridad));
+          return [200,{avisos:lista.slice((pagina-1)*limite,pagina*limite),paginacion:{total:lista.length,totalSinFiltros:todas.length,paginas:Math.max(1,Math.ceil(lista.length/limite)),pagina,limite},origen:'alertas_persistidas',lecturaPersonal:false}];
+        }
+        if(modoPreferencias==='pendiente')return [503,{codigo:'NOTIFICACIONES_NO_ACTIVADAS',mensaje:'Las preferencias todavía no están activadas.'}];
+        if(modoPreferencias==='modelo')return [503,{codigo:'NOTIFICACIONES_MODELO_PENDIENTE',mensaje:'Modelo pendiente.'}];
+        if(modoPreferencias==='prohibida')return [403,{mensaje:'Sin permiso.'}];
+        if(modoPreferencias==='error')return [503,{mensaje:'Consulta ficticia no disponible.'}];
+        const lista=preferenciasPorUsuario.get(current.idUsuario)||Object.keys(TIPOS_NOTIFICACION).map(tipo=>({tipo,habilitada:false,versionRegistro:null,persistida:false}));
+        if(method==='PUT'){
+          if(modoPreferencias==='lectura')return [503,{codigo:'NOTIFICACIONES_SOLO_LECTURA',mensaje:'Guardado no habilitado.'}];
+          if(modoPreferencias==='sin-confirmacion')return [200,{preferencias:lista.map(p=>({...p,persistida:false,versionRegistro:null})),estado:{persistencia:'sql',soloLectura:false}}];
+          if(conflictoPreferencias||body.preferencias.some(p=>lista.find(x=>x.tipo===p.tipo).versionRegistro!==p.versionRegistro))return [409,{codigo:'NOTIFICACIONES_CONFLICTO',mensaje:'Conflicto ficticio.'}];
+          const saved=body.preferencias.map(p=>({...p,persistida:true,versionRegistro:(++revisionPreferencias).toString(16).padStart(16,'0')}));preferenciasPorUsuario.set(current.idUsuario,saved);
+          return [200,{preferencias:saved,estado:{persistencia:'sql',soloLectura:false}}];
+        }
+        return [200,{preferencias:lista,estado:{persistencia:'sql',soloLectura:modoPreferencias==='lectura'}}];
+      }
       if(ruta.startsWith('/configuracion/')) {
         if(obligatorio)return [403,{codigo:'PASSWORD_CHANGE_REQUIRED',mensaje:'Debe cambiar su contraseña para continuar.'}];
         if(!configuracionActivada)return [503,{codigo:'CONFIGURACION_PENDIENTE',mensaje:'La persistencia empresarial todavía no está activada.'}];
@@ -231,6 +259,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         if(ruta==='/configuracion/predeterminados-reserva' && request.method==='GET' && demoraPredeterminados) await new Promise(r=>setTimeout(r,demoraPredeterminados));
         if(/^\/huespedes\/\d+$/.test(ruta) && demoraDetalleHuesped) await new Promise(r=>setTimeout(r,demoraDetalleHuesped));
         if(ruta==='/recomendaciones' && demoraFlowIA) await new Promise(r=>setTimeout(r,demoraFlowIA));
+        if(ruta==='/notificaciones/avisos'&&demoraAvisos)await new Promise(r=>setTimeout(r,demoraAvisos));
+        if(ruta==='/notificaciones/preferencias'&&request.method==='PUT'&&demoraPreferencias)await new Promise(r=>setTimeout(r,demoraPreferencias));
         if(solicitudesAbortadas.has(networkId)) return;
         if(ruta.startsWith('/configuracion/') && request.method==='PUT' && demoraGuardarConfiguracion) await new Promise(r=>setTimeout(r,demoraGuardarConfiguracion));
         const [status, data] = request.method === "OPTIONS" ? [204, {}] : api(request.method, ruta, request.postData ? JSON.parse(request.postData) : {}, url.searchParams);
@@ -269,7 +299,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
 
     const comprobarUtilidades = async (rol) => {
       if (await evaluate("document.querySelector('.sidebar').classList.contains('sidebar--collapsed')")) await click('.sidebar-collapse-toggle');
-      const principal = ['Inicio','Propiedades','Reservas','Huéspedes','Calendario','Limpiezas','Reportes','Alertas', ...(rol === 'Administrador' ? ['Usuarios'] : []), 'FlowIA'];
+      const principal = ['Inicio','Propiedades','Reservas','Huéspedes','Calendario','Limpiezas','Reportes','Alertas','Notificaciones', ...(rol === 'Administrador' ? ['Usuarios'] : []), 'FlowIA'];
       assert.deepEqual(await evaluate("[...document.querySelectorAll('.sidebar-nav button')].map(b=>b.textContent.trim())"), principal);
       assert.deepEqual(await evaluate("[...document.querySelector('.sidebar-footer').children].map(e=>e.classList.contains('sidebar-settings')?'configuracion':e.className)"), ['configuracion','sidebar-user','sidebar-logout']);
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-settings').length"), 1);
@@ -814,7 +844,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await comprobarUtilidades('Operador');
       assert.equal(await evaluate("document.querySelector('.settings-nav').textContent.includes('Datos de empresa') || document.querySelector('.settings-nav').textContent.includes('Preferencias operativas')"),false);
       await esperar("Boolean(document.querySelector('.theme-options'))");
-      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),1,"Operador solo ajusta Apariencia.");
+      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),3,"Operador accede a Apariencia, preferencias generales y personales.");
       await click('input[name=apariencia][value=oscuro]');
       datosVisuales = true;
       await evaluate("[...document.querySelectorAll('.sidebar-nav button')].find(b=>b.textContent.trim()==='Reservas').click()");
@@ -876,7 +906,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("localStorage.getItem('token')"), null);
     });
     }
-    await probarPrioridades({t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
+    const contexto={t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
       if(Object.hasOwn(valores,'rol'))current=[...users.values()].find(u=>u.rol===valores.rol&&u.estado==='Activo');
       if(Object.hasOwn(valores,'datosVisuales'))datosVisuales=valores.datosVisuales;
       if(Object.hasOwn(valores,'listaLarga'))listaHuespedesLarga=valores.listaLarga;
@@ -887,7 +917,15 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'falloFlowIA'))falloFlowIA=valores.falloFlowIA;
       if(Object.hasOwn(valores,'demoraFlowIA'))demoraFlowIA=valores.demoraFlowIA;
       if(Object.hasOwn(valores,'destinoFlowIA'))destinoFlowIA=valores.destinoFlowIA;
-    }});
+      if(Object.hasOwn(valores,'modoAvisos'))modoAvisos=valores.modoAvisos;
+      if(Object.hasOwn(valores,'demoraAvisos'))demoraAvisos=valores.demoraAvisos;
+      if(Object.hasOwn(valores,'modoPreferencias'))modoPreferencias=valores.modoPreferencias;
+      if(Object.hasOwn(valores,'conflictoPreferencias'))conflictoPreferencias=valores.conflictoPreferencias;
+      if(Object.hasOwn(valores,'demoraPreferencias'))demoraPreferencias=valores.demoraPreferencias;
+      if(Object.hasOwn(valores,'sinNotificaciones'))sinNotificaciones=valores.sinNotificaciones;
+    }};
+    await probarPrioridades(contexto);
+    await probarNotificaciones(contexto);
     assert.equal(excepciones.length, 0, "El navegador no debe tener excepciones en los flujos probados.");
   } catch { throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
   finally {

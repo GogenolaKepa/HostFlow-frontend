@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { usePermisos } from '../context/PermisosContext';
 import { SecurityIcon } from '../components/security/SecurityUI';
 import { useProtectorBorradores } from '../context/BorradoresContext';
 import Apariencia from '../components/configuracion/Apariencia';
 import PanelConfiguracion from '../components/configuracion/PanelConfiguracion';
+const PreferenciasNotificaciones = lazy(() => import('../components/configuracion/PreferenciasNotificaciones'));
+import PreferenciasGenerales from '../components/configuracion/PreferenciasGenerales';
 
 const sections = [
   { id: 'apariencia', title: 'Apariencia', icon: 'appearance', disponible: true },
-  { id: 'generales', title: 'Preferencias generales', icon: 'settings' },
+  { id: 'generales', title: 'Preferencias generales', icon: 'settings', disponible: true },
   { id: 'operativas', title: 'Preferencias operativas', icon: 'calendar', disponible: true },
   { id: 'empresa', title: 'Datos de empresa', icon: 'building', disponible: true },
-  { id: 'notificaciones', title: 'Notificaciones', icon: 'bell' },
+  { id: 'notificaciones', title: 'Notificaciones', icon: 'bell', disponible: true },
   { id: 'integraciones', title: 'Integraciones', icon: 'link' },
   { id: 'seguridad', title: 'Seguridad y acceso', icon: 'shield', disponible: true },
 ];
@@ -22,13 +24,15 @@ export default function Configuracion({ onNavegar, gestionCuentasDisponible = fa
   const [section,setSection] = useState('apariencia');
   const { protector, ocupado: busy } = useProtectorBorradores();
   const current = sections.find(item=>item.id===section);
-  const visibles = sections.filter(item=>item.id==='apariencia' || (['empresa','operativas'].includes(item.id)?empresarial:general));
+  const visibles = sections.filter(item=>['apariencia','generales'].includes(item.id) || (item.id==='notificaciones'?permite('notificaciones.preferencias'):['empresa','operativas'].includes(item.id)?empresarial:general));
   const navegar = id => {
     if(id===section||busy)return;
     protector.solicitar(() => setSection(id));
   };
   const contenido = () => {
     if(section==='apariencia')return <Apariencia />;
+    if(section==='generales')return <PreferenciasGenerales />;
+    if(section==='notificaciones'&&permite('notificaciones.preferencias'))return <Suspense fallback={<p role="status">Cargando preferencias…</p>}><PreferenciasNotificaciones onNavegar={onNavegar} /></Suspense>;
     if(['empresa','operativas'].includes(section) && empresarial) return <PanelConfiguracion key={section} tipo={section} />;
     if(section==='seguridad' && general) return <div className="settings-card">
       <div className="settings-card-heading"><span className="settings-icon"><SecurityIcon name="shield" /></span><div><h2>Seguridad y acceso</h2><p>Las cuentas y los roles se administran desde Usuarios.</p></div></div>

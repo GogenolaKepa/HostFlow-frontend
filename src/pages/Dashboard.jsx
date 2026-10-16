@@ -6,8 +6,9 @@ import { BorradoresProvider } from "../context/BorradoresProvider";
 import { useProtectorBorradores } from "../context/BorradoresContext";
 import { SecurityIcon } from "../components/security/SecurityUI";
 import { puedeGestionarUsuarios } from "../services/cuentas";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import AccesoFlowIA from "../components/flowia/AccesoFlowIA";
+const Notificaciones = lazy(() => import('./Notificaciones'));
 
 
 
@@ -225,6 +226,7 @@ function IconoNavegacion({
 
 }) {
   if (nombre === "configuracion") return <SecurityIcon name="settings" />;
+  if (nombre === "notificaciones") return <SecurityIcon name="bell" />;
 
 
 
@@ -839,6 +841,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
   const onLogout = () => protector.solicitar(cerrarSesion);
   const tienePermiso = usePermisos();
   const itemsVisibles = [...ITEMS_NAVEGACION,
+    ...(tienePermiso('notificaciones.ver') ? [{ id: 'notificaciones', label: 'Notificaciones', icono: 'notificaciones' }] : []),
     ...(puedeGestionarUsuarios(usuario) ? [{ id: "usuarios", label: "Usuarios", icono: "huespedes" }] : []),
   ];
 
@@ -3787,7 +3790,9 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
           </div>
         )}
 
-        {seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
+        {seccionActiva === "notificaciones" && tienePermiso('notificaciones.ver') ? (
+          <Suspense fallback={<p role="status">Cargando notificaciones…</p>}><Notificaciones onNavegar={cambiarSeccion} /></Suspense>
+        ) : seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
         ) : seccionActiva === "configuracion" ? (
           <Configuracion onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />

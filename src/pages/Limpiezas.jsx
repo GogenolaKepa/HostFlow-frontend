@@ -5,6 +5,8 @@ import {
 } from "react";
 
 import api from "../services/api";
+import { usePermisos } from '../context/PermisosContext';
+import { useConfirmarOperacion } from '../hooks/useConfirmarOperacion';
 
 const ESTADOS = [
   "Todos",
@@ -67,6 +69,8 @@ function claseTexto(valor) {
 }
 
 function Limpiezas({ onVerReserva }) {
+  const tienePermiso = usePermisos();
+  const comando = useConfirmarOperacion();
   const [limpiezas, setLimpiezas] = useState([]);
   const [resumen, setResumen] = useState({
     total: 0,
@@ -107,11 +111,13 @@ function Limpiezas({ onVerReserva }) {
           urgentes: 0,
         }
       );
+      return true;
     } catch (err) {
       setError(
         err.response?.data?.mensaje ||
           "No se pudieron cargar las tareas de limpieza."
       );
+      return false;
     } finally {
       if (mostrarCarga) setCargando(false);
     }
@@ -201,14 +207,14 @@ function Limpiezas({ onVerReserva }) {
 
       const response = await api.post("/limpiezas/sincronizar");
 
-      await cargarDatos({ mostrarCarga: false });
+      const recargado = await cargarDatos({ mostrarCarga: false });
 
       const resultado = response.data.resultado || {};
 
       setMensaje(
         `Limpiezas sincronizadas. ${Number(
           resultado.creadas || 0
-        )} creada(s), ${Number(resultado.actualizadas || 0)} actualizada(s).`
+        )} creada(s), ${Number(resultado.actualizadas || 0)} actualizada(s).${recargado ? '' : ' El guardado se confirmó, pero falta recargar la lista.'}`
       );
     } catch (err) {
       setError(
@@ -263,6 +269,7 @@ function Limpiezas({ onVerReserva }) {
 
   return (
     <div className="limpiezas-page">
+      {comando.dialogo}
       <section className="limpiezas-header">
         <div>
           <span className="limpiezas-eyebrow">
@@ -270,19 +277,22 @@ function Limpiezas({ onVerReserva }) {
           </span>
           <h1>Limpiezas</h1>
           <p>
-            Organización automática entre el check-out de una reserva y el
-            próximo check-in de la propiedad.
+            Tareas registradas entre check-out y próximo check-in. Consultar no
+            sincroniza: confirmá Sincronizar para generar o actualizar tareas.
           </p>
         </div>
 
-        <button
+        <button type="button" className="secondary-button" disabled={sincronizando || comando.ocupado}
+          onClick={() => cargarDatos({ mostrarCarga: false })}>Recargar datos</button>
+        {tienePermiso('limpiezas.sincronizar') && <button
           type="button"
           className="limpiezas-sync-button"
-          onClick={sincronizar}
-          disabled={sincronizando}
+          onClick={() => comando.solicitar({ titulo: 'Sincronizar limpiezas',
+            descripcion: 'Se crearán y actualizarán tareas según las reservas actuales; se cancelarán las de reservas canceladas o no show. Las completadas se conservan.', ejecutar: sincronizar })}
+          disabled={sincronizando || comando.ocupado}
         >
           {sincronizando ? "Sincronizando..." : "Sincronizar"}
-        </button>
+        </button>}
       </section>
 
       {error && (

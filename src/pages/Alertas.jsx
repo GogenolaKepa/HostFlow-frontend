@@ -5,11 +5,15 @@ import {
 } from "react";
 
 import api from "../services/api";
+import { usePermisos } from '../context/PermisosContext';
+import { useConfirmarOperacion } from '../hooks/useConfirmarOperacion';
 
 function Alertas({
   onVerReserva,
   onVerPropiedades,
 }) {
+  const tienePermiso = usePermisos();
+  const comando = useConfirmarOperacion();
   const [
     alertas,
     setAlertas,
@@ -78,12 +82,14 @@ function Alertas({
           response.data
             .alertas || []
         );
+        return true;
       } catch (error) {
         setError(
           error.response?.data
             ?.mensaje ||
             "No se pudieron obtener las alertas."
         );
+        return false;
       } finally {
         setCargando(false);
       }
@@ -100,10 +106,10 @@ function Alertas({
           "/alertas/sincronizar"
         );
 
-        await obtenerAlertas();
+        const recargado = await obtenerAlertas();
 
         setMensaje(
-          "Alertas operativas actualizadas."
+          recargado ? "Alertas operativas actualizadas." : "La sincronización se confirmó, pero falta recargar las alertas."
         );
       } catch (error) {
         setError(
@@ -353,6 +359,7 @@ function Alertas({
 
   return (
     <section className="alertas-page">
+      {comando.dialogo}
       <div className="section-header alertas-page-header">
         <div>
           <h2>
@@ -360,24 +367,27 @@ function Alertas({
           </h2>
 
           <p>
-            Seguimiento centralizado de situaciones que requieren atención.
+            Alertas registradas. Recargar solo consulta; sincronizar modifica las alertas según las condiciones actuales.
           </p>
         </div>
 
-        <button
+        <button type="button" className="secondary-button" disabled={sincronizando || comando.ocupado}
+          onClick={obtenerAlertas}>Recargar datos</button>
+        {tienePermiso('alertas.sincronizar') && <button
           type="button"
           className="secondary-button alertas-refresh-button"
           onClick={
-            sincronizarAlertas
+            () => comando.solicitar({ titulo: 'Sincronizar alertas',
+              descripcion: 'Se crearán o actualizarán alertas y se resolverán automáticamente las condiciones que ya terminaron.', ejecutar: sincronizarAlertas })
           }
           disabled={
-            sincronizando
+            sincronizando || comando.ocupado
           }
         >
           {sincronizando
             ? "Actualizando..."
-            : "↻ Actualizar alertas"}
-        </button>
+            : "Sincronizar alertas"}
+        </button>}
       </div>
 
       {mensaje && (

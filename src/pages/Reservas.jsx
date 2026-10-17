@@ -4,6 +4,10 @@ import { createPortal } from "react-dom";
 import api from "../services/api";
 import { leerListaDetalle } from "../services/contratosOperativos";
 import usePredeterminadosReserva from "../hooks/usePredeterminadosReserva";
+import useCatalogosReserva from "../hooks/useCatalogosReserva";
+import SelectorReserva from "../components/reservas/SelectorReserva";
+import { formularioReservaVacio, payloadReserva, seleccionReservaValida } from "../services/formularioReserva";
+import { useConfirmarOperacion } from '../hooks/useConfirmarOperacion';
 
 const FILTROS_INICIALES_RESERVAS = {
   busqueda: "",
@@ -28,6 +32,7 @@ const OBSERVACION_INICIAL = {
 };
 
 function Reservas() {
+  const comando = useConfirmarOperacion();
   const consultaDetalle = useRef(null);
   useEffect(() => () => consultaDetalle.current?.abort(), []);
   const tienePermiso = usePermisos();
@@ -194,16 +199,14 @@ function Reservas() {
   const [reservaEditando, setReservaEditando] =
     useState(null);
 
-  const [formulario, setFormulario] = useState({
-    idPropiedad: "1",
-    idHuesped: "1",
-    fechaIngreso: "2026-07-01",
-    horaIngreso: "15:00",
-    fechaEgreso: "2026-07-05",
-    horaEgreso: "10:00",
-    cantidadHuespedes: "2",
-    montoEstimado: "120000",
-  });
+  const [formulario, setFormulario] = useState(formularioReservaVacio);
+  const catalogosReserva = useCatalogosReserva(mostrarFormulario);
+  const envioReserva = useRef(false);
+  const [guardandoReserva, setGuardandoReserva] = useState(false);
+  const catalogosListos = !catalogosReserva.propiedades.cargando && !catalogosReserva.huespedes.cargando &&
+    !catalogosReserva.propiedades.error && !catalogosReserva.huespedes.error &&
+    seleccionReservaValida(formulario.idPropiedad, catalogosReserva.propiedades.items) &&
+    seleccionReservaValida(formulario.idHuesped, catalogosReserva.huespedes.items);
 
   const [formularioEdicion, setFormularioEdicion] =
     useState({
@@ -412,10 +415,12 @@ function Reservas() {
       setReservas(
         response.data.reservas
       );
+      return true;
     } catch {
       setError(
         "No se pudieron obtener las reservas."
       );
+      return false;
     } finally {
       setCargando(false);
     }
@@ -442,50 +447,31 @@ function Reservas() {
     predeterminadosReserva.marcarCambio(e.target.name);
     const { name, value } = e.target;
 
-    setFormulario({
-      ...formulario,
+    setFormulario((actual) => ({
+      ...actual,
       [name]: value,
-    });
+    }));
   };
 
   const crearReserva = async (e) => {
     e.preventDefault();
+    if (envioReserva.current) return;
 
     setError("");
     setMensaje("");
 
+    let datos;
     try {
-      await api.post("/reservas", {
-        idPropiedad:
-          Number(formulario.idPropiedad),
-
-        idHuesped:
-          Number(formulario.idHuesped),
-
-        canal: "Manual",
-
-        fechaIngreso:
-          formulario.fechaIngreso,
-
-        horaIngreso:
-          formulario.horaIngreso,
-
-        fechaEgreso:
-          formulario.fechaEgreso,
-
-        horaEgreso:
-          formulario.horaEgreso,
-
-        cantidadHuespedes:
-          Number(
-            formulario.cantidadHuespedes
-          ),
-
-        montoEstimado:
-          Number(
-            formulario.montoEstimado
-          ),
-      });
+      if (!catalogosListos) throw Error('Seleccioná una propiedad y un huésped disponibles antes de guardar.');
+      datos = payloadReserva(formulario, catalogosReserva.propiedades.items, catalogosReserva.huespedes.items);
+    } catch (error) {
+      setError(error.message);
+      return;
+    }
+    try {
+      envioReserva.current = true;
+      setGuardandoReserva(true);
+      await api.post("/reservas", datos);
 
       setMensaje(
         "Reserva registrada correctamente."
@@ -494,16 +480,7 @@ function Reservas() {
 
       setMostrarFormulario(false);
 
-      setFormulario({
-        idPropiedad: "1",
-        idHuesped: "1",
-        fechaIngreso: "2026-07-01",
-        horaIngreso: "15:00",
-        fechaEgreso: "2026-07-05",
-        horaEgreso: "10:00",
-        cantidadHuespedes: "2",
-        montoEstimado: "120000",
-      });
+      setFormulario(formularioReservaVacio());
 
       await obtenerReservas();
     } catch (error) {
@@ -511,6 +488,9 @@ function Reservas() {
         error.response?.data?.mensaje ||
           "No se pudo registrar la reserva."
       );
+    } finally {
+      envioReserva.current = false;
+      setGuardandoReserva(false);
     }
   };
 
@@ -543,14 +523,14 @@ function Reservas() {
 
       horaIngreso:
         reserva.horaIngreso ||
-        "00:00",
+        "",
 
       fechaEgreso:
         reserva.fechaEgreso,
 
       horaEgreso:
         reserva.horaEgreso ||
-        "00:00",
+        "",
 
       estado:
         reserva.estado,
@@ -622,6 +602,8 @@ function Reservas() {
       return;
     }
 
+    setError("");
+    setMensaje("");
     try {
       await api.patch(
         `/reservas/${idReserva}/cancelar`
@@ -2320,6 +2302,7 @@ function Reservas() {
 
   return (
     <section className="reservas-page">
+      {comando.dialogo}
       {/* CABECERA */}
 
       <div className="section-header">
@@ -2330,11 +2313,23 @@ function Reservas() {
 
           <p>
             Listado general de reservas
-            registradas en HostFlow.
+            registradas en HostFlow. Consultar no cambia estados. Las confirmadas
+            con egreso anterior a hoy requieren Finalizar vencidas.
           </p>
         </div>
 
         <div className="reservas-header-actions">
+          {tienePermiso('reservas.estado') && <button type="button" className="secondary-button"
+            disabled={comando.ocupado} onClick={() => comando.solicitar({ titulo: 'Finalizar reservas vencidas',
+              descripcion: 'Se finalizarán todas las reservas Confirmadas con egreso anterior a hoy en Buenos Aires, de cualquier canal. Se registrará su historial. No cancela ni elimina reservas.',
+              ejecutar: async () => {
+                setError(''); setMensaje('');
+                try {
+                  const { data } = await api.post('/reservas/finalizar-vencidas', { confirmar: true });
+                  const recargado = await obtenerReservas();
+                  setMensaje(`Reservas finalizadas: ${data.resultado.cantidadFinalizadas}.${recargado ? '' : ' El guardado se confirmó, pero falta recargar la lista.'}`);
+                } catch (e) { setError(e.response?.data?.mensaje || 'No se pudo confirmar la finalización. Recargá antes de reintentar.'); }
+              } })}>Finalizar vencidas</button>}
           <button
             type="button"
             className={`reservas-filter-toggle ${
@@ -2443,57 +2438,12 @@ function Reservas() {
           </h3>
 
           <div className="form-grid">
-            <div>
-              <label>
-                Propiedad
-              </label>
-
-              <select
-                name="idPropiedad"
-                value={
-                  formulario.idPropiedad
-                }
-                onChange={
-                  manejarCambio
-                }
-              >
-                <option value="1">
-                  Depto Centro A
-                </option>
-
-                <option value="2">
-                  Casa Funes
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label>
-                Huésped
-              </label>
-
-              <select
-                name="idHuesped"
-                value={
-                  formulario.idHuesped
-                }
-                onChange={
-                  manejarCambio
-                }
-              >
-                <option value="1">
-                  Juan Pérez
-                </option>
-
-                <option value="2">
-                  María Gómez
-                </option>
-
-                <option value="3">
-                  Carlos López
-                </option>
-              </select>
-            </div>
+            <SelectorReserva campo="idPropiedad" etiqueta="Propiedades" singular="una propiedad"
+              catalogo={catalogosReserva.propiedades} valor={formulario.idPropiedad} onChange={manejarCambio}
+              recargar={catalogosReserva.recargar} bloqueado={guardandoReserva} />
+            <SelectorReserva campo="idHuesped" etiqueta="Huéspedes" singular="un huésped"
+              catalogo={catalogosReserva.huespedes} valor={formulario.idHuesped} onChange={manejarCambio}
+              recargar={catalogosReserva.recargar} bloqueado={guardandoReserva} />
 
             <div>
               <label>
@@ -2516,6 +2466,8 @@ function Reservas() {
                 type="number"
                 name="cantidadHuespedes"
                 min="1"
+                required
+                step="1"
                 value={
                   formulario
                     .cantidadHuespedes
@@ -2611,6 +2563,8 @@ function Reservas() {
                 type="number"
                 name="montoEstimado"
                 min="0"
+                step="0.01"
+                required
                 value={
                   formulario.montoEstimado
                 }
@@ -2625,8 +2579,9 @@ function Reservas() {
             <button
               type="submit"
               className="primary-button"
+              disabled={guardandoReserva || !catalogosListos}
             >
-              Guardar reserva
+              {guardandoReserva ? 'Guardando reserva…' : 'Guardar reserva'}
             </button>
 
             <button
@@ -2773,6 +2728,8 @@ function Reservas() {
                   manejarCambioEdicion
                 }
               >
+                {formularioEdicion.estado && !['Pendiente','Confirmada','Cancelada','Finalizada'].includes(formularioEdicion.estado) &&
+                  <option value={formularioEdicion.estado} disabled>{formularioEdicion.estado}</option>}
                 <option value="Pendiente">
                   Pendiente
                 </option>
@@ -2801,6 +2758,7 @@ function Reservas() {
                 type="number"
                 name="montoEstimado"
                 min="0"
+                step="0.01"
                 value={
                   formularioEdicion
                     .montoEstimado
@@ -4247,6 +4205,7 @@ function Reservas() {
                         reserva.estado
                       }
                     </span>
+                    {reserva.finalizacionPendiente && <small>Finalización pendiente</small>}
                   </td>
 
                   <td>

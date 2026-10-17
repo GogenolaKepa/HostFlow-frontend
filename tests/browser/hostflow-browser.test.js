@@ -11,6 +11,9 @@ import { propiedadVisual, reservaVisual, huespedVisual, limpiezaVisual, alertaVi
 import { probarPrioridades } from './casos-prioritarios.js';
 import { probarNotificaciones } from './casos-notificaciones.js';
 import { probarRegresionIntegral } from './casos-integrales.js';
+import { probarOperacionesExplicitas } from './casos-operaciones-explicitas.js';
+import { probarCreacionAtomica } from './casos-creacion-atomica.js';
+import { probarFormularioReservas } from './casos-formulario-reservas.js';
 import { TIPOS_NOTIFICACION } from '../../src/services/notificaciones.js';
 import { cacheViteAislada } from '../helpers/cacheVite.js';
 
@@ -70,6 +73,13 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloFlowIA = false, demoraFlowIA = 0;
   let destinoFlowIA = null;
   let modoFlowIA = 'normal', demoraReservaAnterior = 0, detalleReservaIncompleto = false, dosReservas = false;
+  let falloMantenimiento = false;
+  let falloAltaReserva = false;
+  const altasReservas = [];
+  let formularioRealPrueba = false, modoPropiedadesReserva = 'normal', modoHuespedesReserva = 'normal', demoraCatalogosReserva = 0;
+  let falloEdicionReserva = '', falloCancelacionReserva = false;
+  let reservaFormulario = null;
+  const cambiosReservas = [];
   let modoAvisos='datos',demoraAvisos=0,modoPreferencias='pendiente',conflictoPreferencias=false,demoraPreferencias=0,sinNotificaciones=false,revisionPreferencias=100;
   const preferenciasPorUsuario=new Map();
   const solicitudesAbortadas = new Set();
@@ -129,6 +139,31 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     const sesion = () => ({ token, usuario: { ...current, ...(sinNotificaciones?{permisos:current.permisos.filter(p=>!p.startsWith('notificaciones.'))}:{}), debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if (formularioRealPrueba) {
+        if (method === 'GET' && ['/propiedades','/huespedes'].includes(ruta)) {
+          const propiedades = ruta === '/propiedades', modo = propiedades ? modoPropiedadesReserva : modoHuespedesReserva;
+          if (modo === 'error') return [503,{mensaje:'Carga ficticia no disponible.'}];
+          if (modo === 'prohibido') return [403,{mensaje:'Sin permiso.'}];
+          const campo = propiedades ? 'propiedades' : 'huespedes';
+          if (modo === 'incompleto') return [200,{[campo]:{}}];
+          const lista = propiedades ? [...Array.from({length:65},(_,i)=>({...propiedadVisual,idPropiedad:i+100,nombre:`Propiedad ficticia ${i}`})),{...propiedadVisual,idPropiedad:5,nombre:'HF-PILOTO-FICTICIO'}]
+            : [...Array.from({length:65},(_,i)=>({...huespedVisual,idHuesped:i+300})),{...huespedVisual,idHuesped:17,nombre:'Prueba',apellido:'HF-PILOTO-FICTICIO'}];
+          return [200,{[campo]:modo==='vacio'?[]:lista}];
+        }
+        if (method === 'GET' && ruta === '/reservas') return [200,{reservas:reservaFormulario?[{...reservaFormulario,
+          accionesDisponibles:reservaFormulario.accionesDisponibles.filter(a=>a!=='CANCELAR'||current.permisos.includes('reservas.cancelar'))}]:[]}];
+        if (method === 'PUT' && ruta === '/reservas/9005') {
+          cambiosReservas.push({method,ruta,body,rol:current.rol});
+          if (falloEdicionReserva) return [falloEdicionReserva==='conflicto'?409:500,{codigo:falloEdicionReserva==='conflicto'?'RESERVA_CONFLICTO':'OPERACION_RESULTADO_INCIERTO',mensaje:falloEdicionReserva==='conflicto'?'La reserva cambió. Recargá los datos.':'No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.'}];
+          reservaFormulario={...reservaFormulario,...body}; return [200,{reserva:reservaFormulario}];
+        }
+        if (method === 'PATCH' && ruta === '/reservas/9005/cancelar') {
+          if(current.rol!=='Administrador')return [403,{mensaje:'Sin permiso de cancelación.'}];
+          cambiosReservas.push({method,ruta,body,rol:current.rol});
+          if(falloCancelacionReserva)return [500,{codigo:'OPERACION_RESULTADO_INCIERTO',mensaje:'No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.'}];
+          reservaFormulario={...reservaFormulario,estado:'Cancelada',accionesDisponibles:['VER']}; return [200,{reserva:reservaFormulario}];
+        }
+      }
       if(ruta.startsWith('/notificaciones/')) {
         if(sinNotificaciones)return [403,{mensaje:'Sin permiso.'}];
         if(ruta==='/notificaciones/avisos'){
@@ -230,6 +265,21 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         return [200, { [campo]: detalleReservaIncompleto ? {} : campo === 'eventos' ? [{idEventoReserva:Number(id),tipo:'RESERVA_CREADA',titulo:`Evento ficticio reserva ${id}`,descripcion:'Historial aislado',origen:'Manual',fechaEvento:'2028-02-28T12:00:00.000Z',datosJson:{}}] : [] }];
       }
       if (method === 'GET' && ruta === '/reservas' && dosReservas) return [200, {reservas:[reservaVisual,{...reservaVisual,idReserva:2,huesped:'Segunda persona ficticia'}]}];
+      if (method === 'POST' && ruta === '/reservas') {
+        altasReservas.push({rol:current.rol,body});
+        const campos=['idPropiedad','idHuesped','fechaIngreso','horaIngreso','fechaEgreso','horaEgreso','cantidadHuespedes','montoEstimado'];
+        if(current.rol==='Operador' && Object.keys(body).some(k=>!campos.includes(k))) return [403,{mensaje:'Campo de alta no autorizado.'}];
+        if(falloAltaReserva)return [500,{codigo:'OPERACION_RESULTADO_INCIERTO',mensaje:'No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.'}];
+        if(formularioRealPrueba) {
+          if(body.idPropiedad!==5 || body.idHuesped!==17) return [400,{mensaje:'Elegí los fixtures ficticios correctos.'}];
+          reservaFormulario={...reservaVisual,...body,idReserva:9005,propiedad:'HF-PILOTO-FICTICIO',huesped:'Prueba HF-PILOTO-FICTICIO',accionesDisponibles:['VER','EDITAR','CANCELAR']};
+          return [201,{reserva:reservaFormulario}];
+        }
+        return [201,{mensaje:'Reserva creada correctamente.',reserva:{...reservaVisual,idReserva:1000+altasReservas.length,canal:'Manual'}}];
+      }
+      if (falloMantenimiento && method === 'POST' && ['/reservas/finalizar-vencidas','/limpiezas/sincronizar','/alertas/sincronizar'].includes(ruta)) return [503, { mensaje: 'Resultado ficticio incierto. Recargá antes de reintentar.' }];
+      if (method === 'POST' && ruta === '/reservas/finalizar-vencidas') return [200, { resultado: { cantidadFinalizadas: 0, idsReservas: [] } }];
+      if (method === 'POST' && ['/limpiezas/sincronizar','/alertas/sincronizar'].includes(ruta)) return [200, { resultado: { creadas: 0, actualizadas: 0 } }];
       const modulo = ruta.split("/")[1];
       if(method==='GET' && /^\/huespedes\/\d+$/.test(ruta)) {
         if(modoDetalleHuesped==='inexistente')return [404,{mensaje:'El huésped no existe.'}];
@@ -263,6 +313,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
           await send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" }); return;
         }
         const ruta = url.pathname.slice(4); requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams) });
+        if(formularioRealPrueba && request.method==='GET' && ['/propiedades','/huespedes'].includes(ruta) && demoraCatalogosReserva) await new Promise(r=>setTimeout(r,demoraCatalogosReserva));
         if(ruta==='/configuracion/predeterminados-reserva' && falloRedPredeterminados) {
           await send('Fetch.failRequest',{requestId,errorReason:'ConnectionFailed'});return;
         }
@@ -885,6 +936,10 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("Boolean(document.querySelector('input[name=horaIngreso]'))"),false,'La respuesta cancelada no reabre ni modifica formularios.');
       demoraPredeterminados=0;await abrirReserva();await esperar("document.querySelector('.settings-defaults-status')?.textContent.includes('Horarios iniciales')");
       const altas=requests.filter(r=>r.ruta==='/reservas'&&r.method==='POST').length;
+      await esperar("Boolean(document.querySelector('select[name=idPropiedad] option[value=\"1\"]') && document.querySelector('select[name=idHuesped] option[value=\"1\"]'))");
+      await evaluate("for(const name of ['idPropiedad','idHuesped']) {const el=document.querySelector(`select[name=${name}]`);el.value='1';el.dispatchEvent(new Event('change',{bubbles:true}));}");
+      await fill('input[name=fechaIngreso]','2100-01-10'); await fill('input[name=fechaEgreso]','2100-01-12');
+      await fill('input[name=cantidadHuespedes]','1'); await fill('input[name=montoEstimado]','0');
       await evaluate("document.querySelector('input[name=horaIngreso]').form.requestSubmit()");
       await esperar("!document.querySelector('input[name=horaIngreso]')");
       assert.equal(requests.filter(r=>r.ruta==='/reservas'&&r.method==='POST').length,altas+1,'Alta exclusivamente ficticia con API interceptada.');
@@ -917,7 +972,13 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("localStorage.getItem('token')"), null);
     });
     }
-    const contexto={t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
+    const contexto={t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,altasReservas,cambiosReservas,denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
+      if(Object.hasOwn(valores,'formularioRealPrueba')) {formularioRealPrueba=valores.formularioRealPrueba;reservaFormulario=null;}
+      if(Object.hasOwn(valores,'modoPropiedadesReserva'))modoPropiedadesReserva=valores.modoPropiedadesReserva;
+      if(Object.hasOwn(valores,'modoHuespedesReserva'))modoHuespedesReserva=valores.modoHuespedesReserva;
+      if(Object.hasOwn(valores,'demoraCatalogosReserva'))demoraCatalogosReserva=valores.demoraCatalogosReserva;
+      if(Object.hasOwn(valores,'falloEdicionReserva'))falloEdicionReserva=valores.falloEdicionReserva;
+      if(Object.hasOwn(valores,'falloCancelacionReserva'))falloCancelacionReserva=valores.falloCancelacionReserva;
       if(Object.hasOwn(valores,'rol'))current=[...users.values()].find(u=>u.rol===valores.rol&&u.estado==='Activo');
       if(Object.hasOwn(valores,'datosVisuales'))datosVisuales=valores.datosVisuales;
       if(Object.hasOwn(valores,'listaLarga'))listaHuespedesLarga=valores.listaLarga;
@@ -932,6 +993,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'demoraReservaAnterior'))demoraReservaAnterior=valores.demoraReservaAnterior;
       if(Object.hasOwn(valores,'detalleReservaIncompleto'))detalleReservaIncompleto=valores.detalleReservaIncompleto;
       if(Object.hasOwn(valores,'dosReservas'))dosReservas=valores.dosReservas;
+      if(Object.hasOwn(valores,'falloMantenimiento'))falloMantenimiento=valores.falloMantenimiento;
+      if(Object.hasOwn(valores,'falloAltaReserva'))falloAltaReserva=valores.falloAltaReserva;
       if(Object.hasOwn(valores,'modoAvisos'))modoAvisos=valores.modoAvisos;
       if(Object.hasOwn(valores,'demoraAvisos'))demoraAvisos=valores.demoraAvisos;
       if(Object.hasOwn(valores,'modoPreferencias'))modoPreferencias=valores.modoPreferencias;
@@ -942,6 +1005,9 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     await probarPrioridades(contexto);
     await probarNotificaciones(contexto);
     await probarRegresionIntegral(contexto);
+    await probarOperacionesExplicitas(contexto);
+    await probarCreacionAtomica(contexto);
+    await probarFormularioReservas(contexto);
     assert.equal(excepciones.length, 0, "El navegador no debe tener excepciones en los flujos probados.");
   } catch { throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
   finally {

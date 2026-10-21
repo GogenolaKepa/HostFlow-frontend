@@ -21,3 +21,8 @@ export function leerListaDetalle(respuesta, campo) {
   if (!Array.isArray(lista) || lista.some(item => !objeto(item))) throw new Error('Detalle incompleto.');
   return lista;
 }
+export function validarReporte(datos){
+ if(!objeto(datos)||!objeto(datos.resumen)||!objeto(datos.periodo)||!objeto(datos.filtros)||!['historico','porCanal','porEstado','porPropiedad'].every(k=>Array.isArray(datos[k])&&datos[k].every(objeto)))throw new Error('Reporte incompleto. Volvé a consultar antes de exportar.');
+ if(!['totalReservasPeriodo','totalReservasOperativas','nochesOcupadas','nochesDisponibles','ocupacionPromedio'].every(k=>Number.isFinite(datos.resumen[k])&&datos.resumen[k]>=0))throw new Error('Resumen operativo incompleto.');
+ return datos;
+}

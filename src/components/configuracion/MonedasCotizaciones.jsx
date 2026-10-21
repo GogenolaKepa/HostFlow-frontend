@@ -1,0 +1,104 @@
+import {useEffect,useRef,useState} from 'react';
+import api from '../../services/api';
+import {useMonedas} from '../../context/MonedasContext';
+import {usePermisos} from '../../context/PermisosContext';
+import {useBorradorProtegido} from '../../context/BorradoresContext';
+import {SecurityDialog} from '../security/SecurityUI';
+import {convertir,unidades,decimal,fechaNegocio,fijarCheckin,cotizacionValida} from '../../services/monedasCalculos';
+import {formatearImporte} from '../../services/importes';
+const ADVERTENCIA='Esta cotización fue establecida manualmente por el administrador y puede diferir de los valores publicados por entidades financieras. HostFlow no verifica su exactitud. Se recomienda utilizar fuentes oficiales y revisar los importes antes de confirmar operaciones.';
+const revisionValida=valor=>typeof valor==='string'&&/^[a-f0-9]{16}$/i.test(valor);
+const fechaHora=valor=>valor?new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',dateStyle:'short',timeStyle:'short'}).format(new Date(valor)):'No informada';
+const cotizacionVisible=valor=>{const [entero,decimales='']=valor.split('.');return `ARS ${new Intl.NumberFormat('es-AR').format(BigInt(entero))},${decimales.replace(/0+$/,'').padEnd(2,'0')}`;};
+export default function MonedasCotizaciones() {
+ const {estado,tarifas,error:errorEstado,recargar}=useMonedas(),permite=usePermisos();
+ const [fuente,setFuente]=useState('MANUAL'),[valor,setValor]=useState(''),[cotizacion,setCotizacion]=useState(null),[config,setConfig]=useState(null),[configLeida,setConfigLeida]=useState(false);
+ const [error,setError]=useState(''),[mensaje,setMensaje]=useState(''),[ocupado,setOcupado]=useState(false),[confirmar,setConfirmar]=useState(null),[dirty,setDirty]=useState(false);
+ const [propiedades,setPropiedades]=useState([]),[id,setId]=useState(''),[moneda,setMoneda]=useState(''),[precio,setPrecio]=useState('');
+ const [importe,setImporte]=useState(''),[origen,setOrigen]=useState('USD'),[equivalencia,setEquivalencia]=useState(null);
+ const [fechaCheckin,setFechaCheckin]=useState(''),[acuerdo,setAcuerdo]=useState(false),[ultima,setUltima]=useState(false),[fijacion,setFijacion]=useState(null);
+ const bloqueo=useRef(false),[invalida,setInvalida]=useState(false);
+ const editable=estado?.escritura===true&&configLeida&&permite('configuracion.modificar')&&!invalida;
+ useBorradorProtegido(dirty,ocupado);
+ useEffect(()=>{const c=new AbortController();api.get('/propiedades',{signal:c.signal}).then(({data})=>{
+  if(!Array.isArray(data.propiedades))throw Error('Lista incompleta');if(!c.signal.aborted)setPropiedades(data.propiedades);
+ }).catch(()=>{if(!c.signal.aborted)setError('No se pudieron cargar las propiedades para seleccionar su tarifa.');});return()=>c.abort();},[]);
+ useEffect(()=>{if(!estado?.activado){setConfigLeida(false);return;}const c=new AbortController();
+  api.get('/monedas/configuracion',{signal:c.signal}).then(({data})=>{
+   if(data.configuracion!==null&&(!cotizacionValida(data.configuracion)||!revisionValida(data.configuracion.versionRegistro)))throw Error('Contrato incompleto');
+   if(!c.signal.aborted){setConfig(data.configuracion);setCotizacion(data.configuracion);setFuente(data.configuracion?.fuente||'MANUAL');setValor(data.configuracion?.fuente==='MANUAL'?data.configuracion.valor:'');setConfigLeida(true);}
+  }).catch(()=>{if(!c.signal.aborted){setConfigLeida(false);setError('No se pudo cargar la configuración monetaria. El guardado permanece bloqueado.');}});return()=>c.abort();
+ },[estado?.activado]);
+ const cambiar=(setter,v)=>{setter(v);setDirty(true);setMensaje('');setError('');};
+ const ejecutar=async accion=>{if(bloqueo.current)return;bloqueo.current=true;setOcupado(true);setError('');setMensaje('');try{await accion();}catch(e){setError(e.response?.data?.mensaje||e.message||'No se pudo completar la operación.');if(e.response?.status===409||e.response?.data?.codigo==='OPERACION_RESULTADO_INCIERTO')setInvalida(true);}finally{bloqueo.current=false;setOcupado(false);setConfirmar(null);}};
+ const consultar=()=>ejecutar(async()=>{setCotizacion(null);setEquivalencia(null);setFijacion(null);const {data}=await api.post('/monedas/consultar-bcra',{confirmar:true});if(!cotizacionValida(data.cotizacion)||data.persistida!==false)throw Error('La fuente devolvió una respuesta incompleta.');setCotizacion(data.cotizacion);setMensaje('Consulta oficial informativa, todavía no guardada.');});
+ const prepararManual=()=>{try{if(unidades(valor,8)<=0n)throw Error('La cotización debe ser positiva.');setError('');setConfirmar('manual');}catch(e){setError(e.message);}};
+ const guardar=()=>ejecutar(async()=>{
+  if(!editable||!cotizacion)throw Error('La escritura todavía no está habilitada o falta una cotización confirmada.');
+  const body=cotizacion.fuente==='MANUAL'?{fuente:'MANUAL',valor:cotizacion.valor,confirmarManual:true,revision:config?.versionRegistro||null}:{fuente:'BCRA',cotizacionId:cotizacion.id,revision:config?.versionRegistro||null};
+  const {data}=await api.put('/monedas/configuracion',body);
+  if(!cotizacionValida(data.configuracion)||!revisionValida(data.configuracion.versionRegistro)){setInvalida(true);throw Error('No se recibió confirmación válida. Recargá para comprobar el estado antes de reintentar.');}
+  setConfig(data.configuracion);setCotizacion(data.configuracion);setDirty(false);setMensaje('Cotización guardada con autor y revisión.');
+ });
+ const tarifa=tarifas.find(t=>t.idPropiedad===Number(id));
+ const previsualizarTarifa=()=>{try{if(!id||!['ARS','USD'].includes(moneda)||unidades(precio)<=0n)throw Error('Elegí propiedad, moneda y un precio positivo.');setError('');setConfirmar('tarifa');}catch(e){setError(e.message);}};
+ const guardarTarifa=()=>ejecutar(async()=>{
+  if(!editable||!permite('propiedades.gestionar'))throw Error('El guardado todavía no está habilitado.');
+  const {data}=await api.put(`/monedas/tarifas/${id}`,{moneda,precio:decimal(unidades(precio)),revision:tarifa?.versionRegistro||null,confirmar:true});
+  if(!data.tarifa||data.tarifa.idPropiedad!==Number(id)||!revisionValida(data.tarifa.versionRegistro)||data.tarifa.moneda!==moneda||data.tarifa.precio!==decimal(unidades(precio))){setInvalida(true);throw Error('No se recibió una confirmación válida. Recargá los datos.');}
+  await recargar();setDirty(false);setMensaje('Tarifa declarada guardada. No se publicaron canales ni se cambiaron reservas.');
+ });
+ const calcular=()=>{try{if(!cotizacionValida(cotizacion))throw Error('Consultá o confirmá una cotización válida.');setEquivalencia(convertir(importe,origen,origen==='USD'?'ARS':'USD',cotizacion.valor));setError('');}catch(e){setEquivalencia(null);setError(e.message);}};
+ const simularCheckin=()=>{try{if(origen!=='USD')throw Error('Indicá un importe original en USD para simular el acuerdo de check-in.');if(cotizacion?.fuente==='BCRA'&&cotizacion.fecha!==fechaCheckin&&!cotizacion.id)throw Error('Consultá BCRA nuevamente para acreditar la última cotización disponible.');setFijacion(fijarCheckin({canal:'Manual',moneda:origen,importe,pagoEquivalenteARS:acuerdo,fechaIngreso:fechaCheckin,cotizacion,aceptarUltimaOficial:ultima}));setError('');}catch(e){setFijacion(null);setError(e.message);}};
+ const motivoBloqueo=invalida?'Recargá para comprobar el último resultado.':!estado?'Comprobando disponibilidad…':!estado.activado?'Persistencia pendiente de aprobación. Las vistas previas no se guardan.':!estado.escritura?'La escritura monetaria está desactivada. Podés consultar y simular, sin guardar cambios.':!configLeida?'Esperá la lectura de la configuración.':!permite('configuracion.modificar')?'Tu cuenta no tiene permiso para guardar.':!cotizacion?'Primero consultá o confirmá una cotización.':ocupado?'Hay una operación en curso.':'';
+ return <section className="monedas-panel monedas-experiencia">
+  <header className="currency-intro"><div><span className="chart-eyebrow">PRECIOS Y REFERENCIAS</span><h2>Monedas y cotizaciones</h2><p>Consultá referencias, definí tarifas y explorá equivalencias. Tus reservas no cambian con el dólar.</p></div><span className={'currency-badge '+(editable?'currency-badge--enabled':'')} role="status">{!estado?'Comprobando disponibilidad…':!estado.activado?'Persistencia pendiente de aprobación. Las vistas previas no se guardan.':!estado.escritura?'Modo de solo lectura.':'Persistencia habilitada por el servidor.'}</span></header>
+  {errorEstado&&<p role="alert">{errorEstado}</p>}
+  {error&&<p role="alert" className="error">{error}</p>}{mensaje&&<p role="status" className="success-message">{mensaje}</p>}
+  {invalida&&<p role="alert">Recargá la página para comprobar el resultado antes de volver a guardar.</p>}
+  <div className="currency-grid">
+   <article className="currency-card currency-card--quote" aria-labelledby="quote-title">
+    <header className="currency-card-heading"><span className="currency-step" aria-hidden="true">01</span><div><h3 id="quote-title">Cotización actual</h3><p>Tu referencia para equivalencias ARS / USD.</p></div><span className="currency-badge">{config?'Guardada':'Sin configurar'}</span></header>
+    <div className="currency-spotlight"><span>1 USD equivale a</span><strong>{config?cotizacionVisible(config.valor):'Sin cotización guardada'}</strong><span>{config?config.fuente+' · '+config.fecha:'Podés preparar una vista previa para explorar equivalencias.'}</span></div>
+    <div className="currency-form-section"><h4>Preparar una referencia</h4><div className="form-grid"><div><label htmlFor="monedas-fuente">Fuente</label><select id="monedas-fuente" value={fuente} disabled={ocupado} onChange={e=>{cambiar(setFuente,e.target.value);setCotizacion(null);setEquivalencia(null);setFijacion(null);}}><option value="MANUAL">Manual</option><option value="BCRA">BCRA — referencia estadística de divisas</option><option value="BNA" disabled>Banco Nación — automática no disponible</option></select></div>
+     {fuente==='MANUAL'&&<div><label htmlFor="monedas-valor">ARS por USD (hasta 8 decimales)</label><input id="monedas-valor" inputMode="decimal" value={valor} disabled={ocupado} onChange={e=>{cambiar(setValor,e.target.value);setCotizacion(null);setEquivalencia(null);setFijacion(null);}} /></div>}</div>
+     {fuente==='MANUAL'?<><p className="currency-hint">Ingresá un valor y confirmá su vista previa. Confirmar no es guardar.</p><details className="currency-help"><summary>Sobre las referencias manuales</summary><p className="monedas-advertencia">{ADVERTENCIA}</p></details><button type="button" className="secondary-button" disabled={ocupado} onClick={prepararManual}>Confirmar vista previa manual</button></>:<><p className="currency-hint">Referencia estadística de divisas. La consulta no guarda cambios.</p><details className="currency-help"><summary>Qué informa BCRA</summary><p>BCRA informa el campo tipoCotizacion de su estadística de divisas. No equivale a compra/venta minorista ni se lo identifica como A3500. No informa hora de publicación.</p></details><button type="button" className="secondary-button" disabled={ocupado} onClick={consultar}>Consultar BCRA</button></>}
+    </div>
+    {cotizacion&&<div className="currency-preview"><span className="currency-badge">{cotizacion.versionRegistro?'Referencia guardada':'Vista previa · no guardada'}</span><dl className="monedas-cotizacion"><dt>Fuente / tipo</dt><dd>{cotizacion.fuente} / {cotizacion.tipo}</dd><dt>Valor ARS/USD</dt><dd>{cotizacion.valor}</dd><dt>Fecha de cotización</dt><dd>{cotizacion.fecha}</dd><dt>Estado</dt><dd>{cotizacion.fecha===fechaNegocio()?'Fecha del día de hoy':'Última fecha informada; no es una cotización del día de hoy'}</dd><dt>Hora de publicación</dt><dd>{cotizacion.horaPublicacion||'No informada por la fuente'}</dd><dt>Última consulta / establecimiento</dt><dd>{fechaHora(cotizacion.consultadaEn)}</dd><dt>Persistencia</dt><dd>{cotizacion.versionRegistro?'Guardada':'Vista previa no guardada'}</dd></dl></div>}
+    <div className="currency-card-action"><button type="button" className="primary-button" disabled={!editable||!cotizacion||ocupado} aria-describedby="quote-save-reason" onClick={()=>setConfirmar('guardar')}>Guardar cotización</button><p id="quote-save-reason" className="currency-hint">{motivoBloqueo||'El guardado requiere tu confirmación y conserva su autor y revisión.'}</p></div>
+   </article>
+   <article className="currency-card currency-card--rate" aria-labelledby="rate-title">
+    <header className="currency-card-heading"><span className="currency-step" aria-hidden="true">02</span><div><h3 id="rate-title">Tarifa por propiedad</h3><p>Un precio por noche, en su moneda original.</p></div><span className="currency-badge">{editable?'Revisión previa':'Vista previa'}</span></header>
+    <div className="currency-symbols" aria-hidden="true"><span>ARS</span><span>USD</span></div>
+    <div className="form-grid"><div className="currency-field-wide"><label htmlFor="monedas-propiedad">Propiedad</label><select id="monedas-propiedad" value={id} disabled={ocupado} onChange={e=>{const t=tarifas.find(x=>x.idPropiedad===Number(e.target.value));cambiar(setId,e.target.value);setMoneda(t?.moneda||'');setPrecio(t?.precio||'');}}><option value="">Seleccioná una propiedad</option>{propiedades.map(p=><option key={p.idPropiedad} value={p.idPropiedad}>{p.nombre} (#{p.idPropiedad})</option>)}</select></div>
+     <div><label htmlFor="monedas-moneda">Moneda de publicación</label><select id="monedas-moneda" value={moneda} disabled={ocupado} onChange={e=>cambiar(setMoneda,e.target.value)}><option value="">Elegí una moneda</option><option>ARS</option><option>USD</option></select></div><div><label htmlFor="monedas-precio">Precio por noche</label><input id="monedas-precio" inputMode="decimal" value={precio} disabled={ocupado} onChange={e=>cambiar(setPrecio,e.target.value)} /></div></div>
+    {tarifa?<p className="currency-result">Tarifa guardada: <strong>{formatearImporte(tarifa.precio,tarifa.moneda)}</strong>. La referencia se actualiza solo al confirmar una revisión de tarifa.</p>:<p className="currency-hint">{id?'Esta propiedad no tiene tarifa declarada. Su precio histórico conserva la moneda sin declarar.':'Seleccioná una propiedad para consultar su tarifa.'}</p>}
+    <details className="currency-help"><summary>Qué cambia al declarar una tarifa</summary><p>Una tarifa declarada se conserva en su moneda. Los precios históricos sin moneda no se reinterpretan ni se convierten automáticamente.</p><p>Cuando el modelo está activado, la tarifa declarada es el precio autoritativo por noche y su moneda. El precio histórico queda archivado; editar otros datos no modifica la tarifa. Los canales simulados usan la tarifa declarada al publicar o sincronizar explícitamente; revisarla aquí no republica canales ni cambia acuerdos de reservas.</p></details>
+    <div className="currency-card-action"><button type="button" className="secondary-button" disabled={ocupado} onClick={previsualizarTarifa}>{editable?'Revisar y guardar tarifa':'Previsualizar tarifa sin guardar'}</button><p className="currency-hint">{editable?'Revisá el detalle antes de confirmar.':'Solo consulta y vista previa: no se guardan cambios.'}</p></div>
+   </article>
+   <article className="currency-card currency-card--convert" aria-labelledby="convert-title">
+    <header className="currency-card-heading"><span className="currency-step" aria-hidden="true">03</span><div><h3 id="convert-title">Equivalencia informativa</h3><p>Explorá el valor en la otra moneda.</p></div><span className="currency-badge">Consulta local</span></header>
+    <div className="currency-conversion-path" aria-hidden="true"><span>{origen}</span><span>⇄</span><span>{origen==='USD'?'ARS':'USD'}</span></div>
+    <div className="form-grid"><div><label htmlFor="monedas-importe">Importe</label><input id="monedas-importe" inputMode="decimal" value={importe} onChange={e=>{setImporte(e.target.value);setEquivalencia(null);setFijacion(null);}} /></div><div><label htmlFor="monedas-origen">Moneda original</label><select id="monedas-origen" value={origen} onChange={e=>{setOrigen(e.target.value);setEquivalencia(null);}}><option>USD</option><option>ARS</option></select></div></div>
+    <p className="currency-hint">{cotizacion?'Usa '+cotizacion.fuente+' del '+cotizacion.fecha+(cotizacion.versionRegistro?' · guardada.':' · vista previa no guardada.'):'Primero consultá o confirmá una referencia en Cotización actual.'}</p>
+    <button type="button" className="secondary-button" onClick={calcular}>Calcular equivalencia</button>{equivalencia!==null?<p className="monedas-equivalencia" role="status"><strong>{formatearImporte(equivalencia,origen==='USD'?'ARS':'USD')}</strong> · Equivalencia informativa, redondeo a centavos, mitad hacia arriba. El importe original no cambia.</p>:<div className="currency-empty-result">El resultado aparecerá aquí.<span>No modifica importes, tarifas ni acuerdos.</span></div>}
+   </article>
+   <article className="currency-card currency-card--checkin" aria-labelledby="checkin-title">
+    <header className="currency-card-heading"><span className="currency-step" aria-hidden="true">04</span><div><h3 id="checkin-title">Referencia del check-in — simulación local</h3><p>Comprobá un posible pago equivalente en ARS.</p></div><span className="currency-badge">Sin guardado</span></header>
+    <p className="currency-hint">Usa el importe USD del conversor y la referencia seleccionada. Solo acuerdos Manuales; no aplica a Booking/Airbnb ni fija contratos automáticamente.</p>
+    <div><label htmlFor="monedas-checkin">Fecha de check-in</label><input id="monedas-checkin" type="date" value={fechaCheckin} onChange={e=>setFechaCheckin(e.target.value)} /></div>
+    <label className="currency-check"><input type="checkbox" checked={acuerdo} onChange={e=>setAcuerdo(e.target.checked)} /><span>Acuerdo explícito de pago en ARS equivalente al importe USD indicado</span></label>
+    <label className="currency-check"><input type="checkbox" checked={ultima} onChange={e=>setUltima(e.target.checked)} /><span>Aceptar la última cotización oficial disponible, identificando su fecha real</span></label>
+    <button type="button" className="secondary-button" onClick={simularCheckin}>Simular referencia de check-in</button>{fijacion&&<p className="currency-result" role="status">Simulación NO guardada: {formatearImporte(fijacion.equivalenteARS,'ARS')} · {fijacion.fuente} · fecha efectiva {fijacion.fechaEfectiva}.</p>}
+   </article>
+  </div>
+  <details className="currency-help currency-sources"><summary>Fuentes y alcance de la información</summary><p>Banco Nación publica billetes y divisas, cada uno con compra y venta. La integración automática queda no disponible hasta verificar una API oficial adecuada; no se hace scraping.</p><p>Fuentes: <a href="https://www.bcra.gob.ar/apis-banco-central/" target="_blank" rel="noreferrer">BCRA</a> · <a href="https://www.bna.com.ar/Personas" target="_blank" rel="noreferrer">Banco Nación</a>. Fechas y horas se muestran en Buenos Aires. Datos públicos con fines informativos y académicos.</p></details>
+  {confirmar&&<SecurityDialog title={confirmar==='manual'?'Confirmar cotización manual':confirmar==='tarifa'?'Revisar tarifa':'Guardar cotización'} description={confirmar==='manual'?ADVERTENCIA:confirmar==='tarifa'?`${formatearImporte(precio,moneda)}. ${editable?'Se usará la cotización GUARDADA, no la vista previa.':'Es una vista previa, no se guardará.'}`:'Se registrará la fuente, fecha, valor y autor. Las reservas no cambian.'} busy={ocupado} onClose={()=>{if(!ocupado)setConfirmar(null);}}>
+   <button type="button" className="secondary-button" disabled={ocupado} onClick={()=>setConfirmar(null)}>Cancelar</button><button type="button" className="primary-button" disabled={ocupado} onClick={()=>{
+    if(confirmar==='manual'){setCotizacion({fuente:'MANUAL',tipo:'MANUAL',valor:decimal(unidades(valor,8),8),fecha:estado?.fechaNegocio||fechaNegocio(),horaPublicacion:null,consultadaEn:new Date().toISOString()});setConfirmar(null);setMensaje('Vista previa manual confirmada; no guardada.');}
+    else if(confirmar==='tarifa'){if(editable)guardarTarifa();else{setMensaje(`Vista previa NO guardada: ${formatearImporte(precio,moneda)}.`);setConfirmar(null);}}
+    else guardar();
+   }}>{ocupado?'Procesando…':'Confirmar'}</button>
+  </SecurityDialog>}
+ </section>;
+}

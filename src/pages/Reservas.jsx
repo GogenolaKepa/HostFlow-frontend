@@ -1,13 +1,19 @@
 import { usePermisos } from "../context/PermisosContext";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
 import { leerListaDetalle } from "../services/contratosOperativos";
 import usePredeterminadosReserva from "../hooks/usePredeterminadosReserva";
 import useCatalogosReserva from "../hooks/useCatalogosReserva";
 import SelectorReserva from "../components/reservas/SelectorReserva";
-import { formularioReservaVacio, payloadReserva, seleccionReservaValida } from "../services/formularioReserva";
+import { formularioReservaVacio, payloadReserva, seleccionReservaValida,confirmacionReservaValida } from "../services/formularioReserva";
+import {formatearImporte} from '../services/importes';
 import { useConfirmarOperacion } from '../hooks/useConfirmarOperacion';
+import {useMonedas} from '../context/MonedasContext';
+import {useProtectorBorradores,useBorradorProtegido} from '../context/BorradoresContext';
+import {acuerdoVacio,acuerdoFormulario,altaAcuerdoConfirmada} from '../services/acuerdosMonetarios';
+import FormularioAcuerdo from '../components/reservas/FormularioAcuerdo';
+const PanelAcuerdoReserva=lazy(()=>import('../components/reservas/PanelAcuerdoReserva'));
 
 const FILTROS_INICIALES_RESERVAS = {
   busqueda: "",
@@ -202,7 +208,11 @@ function Reservas() {
   const [formulario, setFormulario] = useState(formularioReservaVacio);
   const catalogosReserva = useCatalogosReserva(mostrarFormulario);
   const envioReserva = useRef(false);
+  const borradorManual=useRef(false);
   const [guardandoReserva, setGuardandoReserva] = useState(false);
+  const {estado:monedas}=useMonedas(),{protector}=useProtectorBorradores();
+  const [acuerdoNuevo,setAcuerdoNuevo]=useState(acuerdoVacio),[altaBloqueada,setAltaBloqueada]=useState(false);
+  const confirmarAlta=useConfirmarOperacion();
   const catalogosListos = !catalogosReserva.propiedades.cargando && !catalogosReserva.huespedes.cargando &&
     !catalogosReserva.propiedades.error && !catalogosReserva.huespedes.error &&
     seleccionReservaValida(formulario.idPropiedad, catalogosReserva.propiedades.items) &&
@@ -218,6 +228,7 @@ function Reservas() {
       montoEstimado: "",
     });
   const predeterminadosReserva = usePredeterminadosReserva(mostrarFormulario, setFormulario);
+  useBorradorProtegido(Boolean((mostrarFormulario&&(borradorManual.current||(monedas?.reservas&&JSON.stringify(acuerdoNuevo)!==JSON.stringify(acuerdoVacio()))))||(reservaEditando&&Object.keys(formularioEdicion).some(k=>String(formularioEdicion[k]??'')!==String(reservaEditando[k]??'')))),guardandoReserva);
 
   // =========================================================
   // AIRBNB
@@ -384,10 +395,8 @@ function Reservas() {
       "hidden";
 
     const manejarEscape = (e) => {
-      if (e.key === "Escape") {
-        consultaDetalle.current?.abort();
-        consultaDetalle.current = null;
-        setReservaDetalle(null);
+      if (e.key === "Escape"&&!e.defaultPrevented&&!document.querySelector('dialog[open]')) {
+        protector.solicitar(()=>{consultaDetalle.current?.abort();consultaDetalle.current=null;setReservaDetalle(null);});
       }
     };
 
@@ -405,7 +414,7 @@ function Reservas() {
         manejarEscape
       );
     };
-  }, [reservaDetalle]);
+  }, [reservaDetalle,protector]);
 
   const obtenerReservas = async () => {
     try {
@@ -444,6 +453,7 @@ function Reservas() {
   // =========================================================
 
   const manejarCambio = (e) => {
+    borradorManual.current=true;
     predeterminadosReserva.marcarCambio(e.target.name);
     const { name, value } = e.target;
 
@@ -455,7 +465,7 @@ function Reservas() {
 
   const crearReserva = async (e) => {
     e.preventDefault();
-    if (envioReserva.current) return;
+    if (envioReserva.current||altaBloqueada) return;
 
     setError("");
     setMensaje("");
@@ -464,14 +474,25 @@ function Reservas() {
     try {
       if (!catalogosListos) throw Error('Seleccioná una propiedad y un huésped disponibles antes de guardar.');
       datos = payloadReserva(formulario, catalogosReserva.propiedades.items, catalogosReserva.huespedes.items);
+      if(monedas?.reservas){
+        if(!monedas.acuerdosEscritura)throw Error('Los acuerdos están en modo de solo lectura. No se puede crear una nueva reserva monetaria.');
+        datos.acuerdoMonetario=acuerdoFormulario(acuerdoNuevo);
+      }
     } catch (error) {
       setError(error.message);
       return;
     }
+    if(monedas?.reservas){confirmarAlta.solicitar({titulo:'Crear reserva y acuerdo',descripcion:`Se confirmarán la estadía y el importe contractual ${datos.acuerdoMonetario.moneda} ${datos.acuerdoMonetario.importe}. La cotización del check-in no se fija anticipadamente. No se registra un pago.`,ejecutar:()=>enviarReserva(datos)});return;}
+    await enviarReserva(datos);
+  };
+  const enviarReserva = async datos => {
+    if(envioReserva.current||altaBloqueada)return;
     try {
       envioReserva.current = true;
       setGuardandoReserva(true);
-      await api.post("/reservas", datos);
+      const {data}=await api.post("/reservas", datos);
+      if(!confirmacionReservaValida(data?.reserva,datos)){setAltaBloqueada(true);throw Error("No se recibió confirmación completa de la reserva. Recargá antes de reintentar.");}
+      if(datos.acuerdoMonetario&&!altaAcuerdoConfirmada(data.reserva,datos.acuerdoMonetario,tienePermiso('reservas.importes'))){setAltaBloqueada(true);throw Error('No se recibió confirmación completa del acuerdo. Recargá antes de reintentar.');}
 
       setMensaje(
         "Reserva registrada correctamente."
@@ -479,14 +500,17 @@ function Reservas() {
       predeterminadosReserva.reiniciar();
 
       setMostrarFormulario(false);
+      borradorManual.current=false;
 
       setFormulario(formularioReservaVacio());
+      setAcuerdoNuevo(acuerdoVacio());
 
       await obtenerReservas();
     } catch (error) {
+      if(!error.response||error.response.status===409||error.response.status>=500)setAltaBloqueada(true);
       setError(
         error.response?.data?.mensaje ||
-          "No se pudo registrar la reserva."
+          error.message||"No se pudo registrar la reserva."
       );
     } finally {
       envioReserva.current = false;
@@ -501,13 +525,11 @@ function Reservas() {
   const manejarCambioEdicion = (e) => {
     const { name, value } = e.target;
 
-    setFormularioEdicion({
-      ...formularioEdicion,
-      [name]: value,
-    });
+    setFormularioEdicion(actual=>({...actual,[name]:value}));
   };
 
-  const abrirEdicion = (reserva) => {
+  const abrirEdicion = (reserva) => protector.solicitar(() => {
+    if(envioReserva.current||altaBloqueada)return;
     setError("");
     setMensaje("");
 
@@ -538,90 +560,39 @@ function Reservas() {
       montoEstimado:
         reserva.montoEstimado,
     });
+  });
+
+  const guardarEdicion = async e => {
+    e.preventDefault();if(envioReserva.current||altaBloqueada)return;
+    const id=reservaEditando.idReserva,datos={fechaIngreso:formularioEdicion.fechaIngreso,horaIngreso:formularioEdicion.horaIngreso,
+      fechaEgreso:formularioEdicion.fechaEgreso,horaEgreso:formularioEdicion.horaEgreso,
+      ...(tienePermiso('reservas.estado')?{estado:formularioEdicion.estado}:{}),
+      ...(tienePermiso('reservas.importes')?{montoEstimado:Number(formularioEdicion.montoEstimado)}:{})};
+    envioReserva.current=true;setGuardandoReserva(true);setError('');setMensaje('');
+    try{
+      const {data}=await api.put('/reservas/'+id,datos);
+      if(!confirmacionReservaValida(data?.reserva,datos,id)){setAltaBloqueada(true);throw Error('No se recibió confirmación completa de la edición. Recargá antes de reintentar.');}
+      setMensaje('Reserva modificada correctamente.');setReservaEditando(null);await obtenerReservas();
+    }catch(error){
+      if(!error.response||error.response.status===409||error.response.status>=500)setAltaBloqueada(true);
+      setError(error.response?.data?.mensaje||error.message||'No se pudo modificar la reserva.');
+    }finally{envioReserva.current=false;setGuardandoReserva(false);}
   };
+  const cancelarEdicion=()=>protector.solicitar(()=>{if(envioReserva.current)return;setReservaEditando(null);setError('');});
 
-  const guardarEdicion = async (e) => {
-    e.preventDefault();
-
-    setError("");
-    setMensaje("");
-
-    try {
-      await api.put(
-        `/reservas/${reservaEditando.idReserva}`,
-        {
-          fechaIngreso:
-            formularioEdicion.fechaIngreso,
-
-          horaIngreso:
-            formularioEdicion.horaIngreso,
-
-          fechaEgreso:
-            formularioEdicion.fechaEgreso,
-
-          horaEgreso:
-            formularioEdicion.horaEgreso,
-
-          ...(tienePermiso("reservas.estado") ? { estado: formularioEdicion.estado } : {}),
-          ...(tienePermiso("reservas.importes") ? { montoEstimado: Number(formularioEdicion.montoEstimado) } : {}),
-        }
-      );
-
-      setMensaje(
-        "Reserva modificada correctamente."
-      );
-
-      setReservaEditando(null);
-
-      await obtenerReservas();
-    } catch (error) {
-      setError(
-        error.response?.data?.mensaje ||
-          "No se pudo modificar la reserva."
-      );
-    }
-  };
-
-  const cancelarEdicion = () => {
-    setReservaEditando(null);
-    setError("");
-  };
-
-  // =========================================================
-  // CANCELACIÓN MANUAL
-  // =========================================================
-
-  const cancelarReserva = async (
-    idReserva
-  ) => {
-    const confirmar = confirm(
-      "¿Seguro que querés cancelar esta reserva?"
-    );
-
-    if (!confirmar) {
-      return;
-    }
-
-    setError("");
-    setMensaje("");
-    try {
-      await api.patch(
-        `/reservas/${idReserva}/cancelar`
-      );
-
-      setMensaje(
-        "Reserva cancelada correctamente."
-      );
-
-      setError("");
-
-      await obtenerReservas();
-    } catch (error) {
-      setError(
-        error.response?.data?.mensaje ||
-          "No se pudo cancelar la reserva."
-      );
-    }
+  // Cancelación lógica: la confirmación no se repite mientras haya un envío.
+  const cancelarReserva=async idReserva=>{
+    if(envioReserva.current||altaBloqueada)return;
+    if(!confirm('¿Seguro que querés cancelar esta reserva?'))return;
+    envioReserva.current=true;setGuardandoReserva(true);setError('');setMensaje('');
+    try{
+      const {data}=await api.patch('/reservas/'+idReserva+'/cancelar');
+      if(!confirmacionReservaValida(data?.reserva,{estado:'Cancelada'},idReserva)){setAltaBloqueada(true);throw Error('No se recibió confirmación completa de la cancelación. Recargá antes de reintentar.');}
+      setMensaje('Reserva cancelada correctamente.');await obtenerReservas();
+    }catch(error){
+      if(!error.response||error.response.status===409||error.response.status>=500)setAltaBloqueada(true);
+      setError(error.response?.data?.mensaje||error.message||'No se pudo cancelar la reserva.');
+    }finally{envioReserva.current=false;setGuardandoReserva(false);}
   };
 
   // =========================================================
@@ -1170,17 +1141,8 @@ function Reservas() {
   const formatearMonto = (
     monto
   ) => {
-    const numero =
-      Number(monto) || 0;
-
-    return numero.toLocaleString(
-      "es-AR",
-      {
-        style: "currency",
-        currency: "ARS",
-        maximumFractionDigits: 0,
-      }
-    );
+    if(monto===null||monto===undefined||!Number.isFinite(Number(monto)))return 'Importe no informado';
+    return Number(monto).toLocaleString('es-AR',{maximumFractionDigits:2})+' — moneda no declarada';
   };
 
   const abrirDetalleReserva = async (
@@ -1322,7 +1284,8 @@ function Reservas() {
     setCargandoObservacionesDetalle(false);
   };
 
-  const cerrarDetalleReserva = () => {
+  const cerrarDetalleReserva = () => protector.solicitar(cerrarDetalleSinBorrador);
+  const cerrarDetalleSinBorrador = () => {
     consultaDetalle.current?.abort();
     consultaDetalle.current = null;
     setReservaDetalle(null);
@@ -2303,6 +2266,7 @@ function Reservas() {
   return (
     <section className="reservas-page">
       {comando.dialogo}
+      {confirmarAlta.dialogo}
       {/* CABECERA */}
 
       <div className="section-header">
@@ -2409,6 +2373,8 @@ function Reservas() {
       </div>
 
       {/* MENSAJES */}
+      {guardandoReserva&&<p role="status">Guardando operación de reserva…</p>}
+      {altaBloqueada&&<p role="alert">Recargá para comprobar el resultado antes de guardar otra vez. No se reenvía automáticamente.</p>}
 
       {mensaje && (
         <p className="success-message">
@@ -2575,11 +2541,12 @@ function Reservas() {
             </div>
           </div>
 
+          {monedas?.reservas?<><FormularioAcuerdo valor={acuerdoNuevo} onChange={setAcuerdoNuevo} disabled={guardandoReserva||!monedas.acuerdosEscritura} prefijo="nuevo-acuerdo" />{!monedas.acuerdosEscritura&&<p role="status">Acuerdos en solo lectura. Guardar requiere activación autorizada.</p>}</>:<p className="settings-defaults-status">Acuerdos monetarios deshabilitados; el monto estimado no acredita moneda ni cotización contractual.</p>}
           <div className="form-actions">
             <button
               type="submit"
               className="primary-button"
-              disabled={guardandoReserva || !catalogosListos}
+              disabled={guardandoReserva || !catalogosListos||altaBloqueada||(monedas?.reservas&&!monedas.acuerdosEscritura)}
             >
               {guardandoReserva ? 'Guardando reserva…' : 'Guardar reserva'}
             </button>
@@ -2648,6 +2615,7 @@ function Reservas() {
                 value={
                   formularioEdicion.fechaIngreso
                 }
+                disabled={reservaEditando.acuerdoMonetario?.estadoFijacion==='FIJADA'}
                 onChange={
                   manejarCambioEdicion
                 }
@@ -2667,6 +2635,7 @@ function Reservas() {
                 value={
                   formularioEdicion.horaIngreso
                 }
+                disabled={reservaEditando.acuerdoMonetario?.estadoFijacion==='FIJADA'}
                 onChange={
                   manejarCambioEdicion
                 }
@@ -2774,13 +2743,15 @@ function Reservas() {
             <button
               type="submit"
               className="primary-button"
+              disabled={guardandoReserva||altaBloqueada}
             >
-              Guardar cambios
+              {guardandoReserva?"Guardando cambios…":"Guardar cambios"}
             </button>
 
             <button
               type="button"
               className="secondary-button"
+              disabled={guardandoReserva}
               onClick={
                 cancelarEdicion
               }
@@ -4184,10 +4155,7 @@ function Reservas() {
                   </td>
 
                   <td>
-                    $
-                    {reserva.montoEstimado.toLocaleString(
-                      "es-AR"
-                    )}
+                    {formatearImporte(reserva.montoEstimado,reserva.monedaAcordada)}
                   </td>
 
                   <td>
@@ -4237,7 +4205,7 @@ function Reservas() {
                       ) && (
                         <button
                           type="button"
-                          className="edit-button"
+                          className="edit-button" disabled={guardandoReserva||altaBloqueada}
                           onClick={() =>
                             abrirEdicion(
                               reserva
@@ -4255,6 +4223,7 @@ function Reservas() {
                         <button
                           type="button"
                           className="cancel-button"
+                          disabled={guardandoReserva||altaBloqueada}
                           onClick={() =>
                             cancelarReserva(
                               reserva.idReserva
@@ -4512,13 +4481,7 @@ function Reservas() {
                   </span>
 
                   <strong>
-                    $
-                    {Number(
-                      reserva.montoEstimado ||
-                        0
-                    ).toLocaleString(
-                      "es-AR"
-                    )}
+                    {formatearImporte(reserva.montoEstimado,reserva.monedaAcordada)}
                   </strong>
                 </div>
               </div>
@@ -4547,7 +4510,7 @@ function Reservas() {
                 ) && (
                   <button
                     type="button"
-                    className="edit-button"
+                    className="edit-button" disabled={guardandoReserva||altaBloqueada}
                     onClick={() =>
                       abrirEdicion(
                         reserva
@@ -4565,6 +4528,7 @@ function Reservas() {
                   <button
                     type="button"
                     className="cancel-button"
+                          disabled={guardandoReserva||altaBloqueada}
                     onClick={() =>
                       cancelarReserva(
                         reserva.idReserva
@@ -4800,6 +4764,7 @@ function Reservas() {
               </div>
 
               <div className="reservation-detail-grid">
+                <Suspense fallback={<p role="status">Cargando acuerdo monetario…</p>}><PanelAcuerdoReserva key={reservaDetalle.idReserva} reserva={reservaDetalle} onActualizado={async acuerdo=>{setReservaDetalle(actual=>actual?{...actual,acuerdoMonetario:acuerdo}:actual);await recargarEventosDetalle(reservaDetalle.idReserva);await obtenerReservas();}} /></Suspense>
                 <section className="reservation-detail-card">
                   <div className="reservation-detail-card-title">
                     <span className="reservation-detail-icon">⌂</span>
@@ -4872,7 +4837,7 @@ function Reservas() {
                     </div>
                     <div>
                       <dt>Moneda</dt>
-                      <dd>ARS</dd>
+                      <dd>{['ARS','USD'].includes(reservaDetalle.monedaAcordada)?reservaDetalle.monedaAcordada:'No declarada'}</dd>
                     </div>
                     <div>
                       <dt>Tipo de gestión</dt>

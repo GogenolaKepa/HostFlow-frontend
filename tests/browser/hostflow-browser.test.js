@@ -14,6 +14,13 @@ import { probarRegresionIntegral } from './casos-integrales.js';
 import { probarOperacionesExplicitas } from './casos-operaciones-explicitas.js';
 import { probarCreacionAtomica } from './casos-creacion-atomica.js';
 import { probarFormularioReservas } from './casos-formulario-reservas.js';
+import { probarMonedas } from './casos-monedas.js';
+import {crearApiJornadaMonetaria} from './api-jornada-monetaria.js';
+import {probarJornadaMonetaria} from './casos-jornada-monetaria.js';
+import {probarCierreNocturno} from './casos-cierre-nocturno.js';
+import {probarPulidoUX} from './casos-pulido-ux.js';
+import {probarReportesVisuales} from './casos-reportes-visuales.js';
+import { fechaNegocio } from '../../src/services/monedasCalculos.js';
 import { TIPOS_NOTIFICACION } from '../../src/services/notificaciones.js';
 import { cacheViteAislada } from '../helpers/cacheVite.js';
 
@@ -50,7 +57,7 @@ class CDP {
 test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aislada", {
   skip: !fs.existsSync(browserPath), timeout: 240000,
 }, async (t) => {
-  let vite, child, socket, cdp;
+  let vite, child, socket, cdp,apiUniversitaria;
   const cache = cacheViteAislada();
   let fase = "inicio";
   const password = randomBytes(20).toString("hex");
@@ -80,6 +87,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloEdicionReserva = '', falloCancelacionReserva = false;
   let reservaFormulario = null;
   const cambiosReservas = [];
+  let monedasActivas=false,monedasEscritura=false,falloBcraMonedas=false,falloGuardadoMonedas='',configMonedas=null,tarifasMonedas=[],avisoTarifaMonedas=false,revisionMonedas=100;
+  const jornada=crearApiJornadaMonetaria(),soloJornada=process.env.HOSTFLOW_TEST_JORNADA_ONLY==='1',soloNocturno=process.env.HOSTFLOW_TEST_NOCTURNO_ONLY==='1',soloPulido=process.env.HOSTFLOW_TEST_PULIDO_ONLY==='1';
   let modoAvisos='datos',demoraAvisos=0,modoPreferencias='pendiente',conflictoPreferencias=false,demoraPreferencias=0,sinNotificaciones=false,revisionPreferencias=100;
   const preferenciasPorUsuario=new Map();
   const solicitudesAbortadas = new Set();
@@ -139,6 +148,29 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     const sesion = () => ({ token, usuario: { ...current, ...(sinNotificaciones?{permisos:current.permisos.filter(p=>!p.startsWith('notificaciones.'))}:{}), debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if(apiUniversitaria&&/^\/(?:propiedades|huespedes|reservas|calendario|limpiezas|dashboard\/reportes)(?:\/|$)/.test(ruta))return apiUniversitaria.pedir(ruta+(params.size?'?'+params.toString():''),method,['GET','HEAD'].includes(method)?undefined:body,current.rol).then(r=>apiUniversitaria.transformar?.({method,ruta,params,respuesta:r})||[r.status,r.data]);
+      const respuestaJornada=jornada.responder(method,ruta,body,params,current);if(respuestaJornada)return respuestaJornada;
+      if(ruta.startsWith('/monedas/')){
+        if(ruta==='/monedas/estado')return [200,{activado:monedasActivas,escritura:monedasEscritura,persistencia:monedasActivas?'sql':'pendiente',fechaNegocio:fechaNegocio(),fuentes:[{id:'MANUAL',disponible:true},{id:'BCRA',disponible:true},{id:'BNA',disponible:false}]}];
+        if(ruta==='/monedas/consultar-bcra')return falloBcraMonedas?[503,{mensaje:'Fuente oficial ficticia no disponible.'}]:[200,{cotizacion:{id:'consulta-oficial-ficticia',fuente:'BCRA',tipo:'BCRA_TIPO_COTIZACION',valor:'1250.00000000',fecha:fechaNegocio(),horaPublicacion:null,consultadaEn:new Date().toISOString()},persistida:false}];
+        if(ruta==='/monedas/alertas')return [200,{disponible:monedasActivas,motivo:monedasActivas?'':'Referencias pendientes de aprobación.',alertas:avisoTarifaMonedas?[1,2].map(i=>({id:`tarifa-ficticia-${i}`,idPropiedad:1,propiedad:'Alojamiento ficticio',titulo:'Revisar tarifa en ARS',mensaje:'La equivalencia de referencia varió -20.00 %. El precio no cambió.',fuente:'BCRA',tipo:'BCRA_TIPO_COTIZACION',fecha:fechaNegocio()})):[]}];
+        if(!monedasActivas)return [503,{codigo:'MONEDAS_PENDIENTES',mensaje:'Persistencia pendiente.'}];
+        if(ruta==='/monedas/tarifas'&&method==='GET')return [200,{tarifas:tarifasMonedas}];
+        if(method==='GET'&&ruta==='/monedas/configuracion')return current.rol==='Administrador'?[200,{configuracion:configMonedas}]:[403,{mensaje:'Sin permiso.'}];
+        if(['PUT','POST'].includes(method)){
+          if(current.rol!=='Administrador')return [403,{mensaje:'Sin permiso.'}];
+          if(!monedasEscritura)return [503,{codigo:'MONEDAS_SOLO_LECTURA',mensaje:'Solo lectura.'}];
+          if(falloGuardadoMonedas)return [falloGuardadoMonedas==='conflicto'?409:500,{codigo:falloGuardadoMonedas==='conflicto'?'MONEDAS_CONFLICTO':'OPERACION_RESULTADO_INCIERTO',mensaje:'Recargá los datos antes de reintentar.'}];
+          const revision=(++revisionMonedas).toString(16).padStart(16,'0');
+          if(ruta==='/monedas/configuracion'){
+            configMonedas={fuente:body.fuente,tipo:body.fuente==='MANUAL'?'MANUAL':'BCRA_TIPO_COTIZACION',valor:body.fuente==='MANUAL'?body.valor:'1250.00000000',fecha:fechaNegocio(),consultadaEn:new Date().toISOString(),versionRegistro:revision,idAutor:current.idUsuario};return [200,{configuracion:configMonedas}];
+          }
+          if(ruta==='/monedas/tarifas/1'){
+            const tarifa={idPropiedad:1,nombre:propiedadVisual.nombre,moneda:body.moneda,precio:body.precio,versionRegistro:revision,referencia:configMonedas};tarifasMonedas=[tarifa];return [200,{tarifa}];
+          }
+        }
+        return [404,{mensaje:'Contrato de monedas no previsto.'}];
+      }
       if (formularioRealPrueba) {
         if (method === 'GET' && ['/propiedades','/huespedes'].includes(ruta)) {
           const propiedades = ruta === '/propiedades', modo = propiedades ? modoPropiedadesReserva : modoHuespedesReserva;
@@ -275,7 +307,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
           reservaFormulario={...reservaVisual,...body,idReserva:9005,propiedad:'HF-PILOTO-FICTICIO',huesped:'Prueba HF-PILOTO-FICTICIO',accionesDisponibles:['VER','EDITAR','CANCELAR']};
           return [201,{reserva:reservaFormulario}];
         }
-        return [201,{mensaje:'Reserva creada correctamente.',reserva:{...reservaVisual,idReserva:1000+altasReservas.length,canal:'Manual'}}];
+        return [201,{mensaje:'Reserva creada correctamente.',reserva:{...reservaVisual,...body,idReserva:1000+altasReservas.length,canal:'Manual'}}];
       }
       if (falloMantenimiento && method === 'POST' && ['/reservas/finalizar-vencidas','/limpiezas/sincronizar','/alertas/sincronizar'].includes(ruta)) return [503, { mensaje: 'Resultado ficticio incierto. Recargá antes de reintentar.' }];
       if (method === 'POST' && ruta === '/reservas/finalizar-vencidas') return [200, { resultado: { cantidadFinalizadas: 0, idsReservas: [] } }];
@@ -306,13 +338,17 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     });
     cdp.on('Network.loadingFailed', ({ requestId, canceled }) => { if(canceled) solicitudesAbortadas.add(requestId); });
     cdp.on("Fetch.requestPaused", async ({ requestId, request, networkId }) => {
+      let etapa='origen';
       try {
         const url = new URL(request.url);
         if (url.origin === base) { modulosCliente.push(url.pathname);await send("Fetch.continueRequest", { requestId }); return; }
         if (url.hostname !== "127.0.0.1" || !url.pathname.startsWith("/api/")) {
           await send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" }); return;
         }
-        const ruta = url.pathname.slice(4); requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams) });
+        const ruta = url.pathname.slice(4);
+        // Solo payloads ficticios de negocio de la jornada. Nunca auth/contraseñas/tokens.
+        const cuerpoJornada=(jornada.esActiva()||apiUniversitaria)&&/^\/(monedas|reservas|propiedades|huespedes)(\/|$)/.test(ruta)&&request.postData?JSON.parse(request.postData):undefined;
+        requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams),...(cuerpoJornada?{body:cuerpoJornada}:{}) });
         if(formularioRealPrueba && request.method==='GET' && ['/propiedades','/huespedes'].includes(ruta) && demoraCatalogosReserva) await new Promise(r=>setTimeout(r,demoraCatalogosReserva));
         if(ruta==='/configuracion/predeterminados-reserva' && falloRedPredeterminados) {
           await send('Fetch.failRequest',{requestId,errorReason:'ConnectionFailed'});return;
@@ -325,12 +361,14 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         if(ruta==='/notificaciones/preferencias'&&request.method==='PUT'&&demoraPreferencias)await new Promise(r=>setTimeout(r,demoraPreferencias));
         if(solicitudesAbortadas.has(networkId)) return;
         if(ruta.startsWith('/configuracion/') && request.method==='PUT' && demoraGuardarConfiguracion) await new Promise(r=>setTimeout(r,demoraGuardarConfiguracion));
-        const [status, data] = request.method === "OPTIONS" ? [204, {}] : api(request.method, ruta, request.postData ? JSON.parse(request.postData) : {}, url.searchParams);
+        etapa='fixture';
+        const [status, data] = request.method === "OPTIONS" ? [204, {}] : await api(request.method, ruta, request.postData ? JSON.parse(request.postData) : {}, url.searchParams);
+        etapa='entrega';
         await send("Fetch.fulfillRequest", { requestId, responseCode: status,
           responseHeaders: [{ name: "Content-Type", value: "application/json" }, { name: "Access-Control-Allow-Origin", value: base },
             { name: "Access-Control-Allow-Headers", value: "authorization,content-type" }, { name: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,OPTIONS" }],
           body: Buffer.from(status === 204 ? "" : JSON.stringify(data)).toString("base64") });
-      } catch { if(!solicitudesAbortadas.has(networkId)) excepciones.push("API aislada"); }
+      } catch(error) { if(!solicitudesAbortadas.has(networkId)) excepciones.push({tipo:'API aislada',fase,etapa,ruta:new URL(request.url).pathname,clase:error.name}); }
     });
     await send("Runtime.enable"); await send("Page.enable"); await send('Network.enable'); await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
     await send("Page.bringToFront");
@@ -404,14 +442,14 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
-    if (process.env.HOSTFLOW_TEST_PRIORITY_ONLY !== '1') {
+    if (process.env.HOSTFLOW_TEST_PRIORITY_ONLY !== '1'&&!soloJornada&&!soloNocturno&&!soloPulido) {
     await t.test("Administrador inicia en Inicio y recarga sin sincronizar otros módulos", async () => {
       fase = "inicio Admin"; await login(); await esperar(inicioVisible);
       assert.equal(await evaluate("document.querySelector('.sidebar-nav').textContent.includes('Usuarios')"),true);
       assert.equal(await evaluate("document.querySelector('.main').textContent.includes('Ingresos del mes')"),true);
       const previas = requests.length;
       await recargarInicio();
-      assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
+      assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico','/monedas/estado'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
       await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
     });
 
@@ -421,7 +459,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await esperar("Boolean(document.querySelector('.theme-options'))");
       assert.equal(await evaluate("document.querySelector('.sidebar-settings').getAttribute('aria-current')"),'page');
       assert.equal(await evaluate("document.documentElement.dataset.theme"),"light");
-      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),7);
+      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),8);
       await capturar('configuracion-clara');
       const anteriores = requests.length, tokenPrevio = await evaluate("localStorage.getItem('token')");
       await click('input[name=apariencia][value=oscuro]');
@@ -895,7 +933,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelector('.main').textContent.includes('123.456')"),false);
       const previas = requests.length;
       await recargarInicio();
-      assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
+      assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico','/monedas/estado'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
       await click('.sidebar-user'); await esperar("Boolean(document.querySelector('#cuenta-nombre'))");
       await recargarInicio();
       assert.equal(await evaluate("document.querySelector('.sidebar-nav').textContent.includes('Usuarios')"),false);
@@ -972,7 +1010,15 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("localStorage.getItem('token')"), null);
     });
     }
-    const contexto={t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,altasReservas,cambiosReservas,denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
+    const contexto={t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,altasReservas,cambiosReservas,snapshotJornada:jornada.snapshot,activarApiUniversitaria:async crear=>{apiUniversitaria=await crear();return apiUniversitaria;},denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
+      jornada.configurar(valores);
+      if(Object.hasOwn(valores,'monedasActivas'))monedasActivas=valores.monedasActivas;
+      if(Object.hasOwn(valores,'monedasEscritura'))monedasEscritura=valores.monedasEscritura;
+      if(Object.hasOwn(valores,'falloBcraMonedas'))falloBcraMonedas=valores.falloBcraMonedas;
+      if(Object.hasOwn(valores,'falloGuardadoMonedas'))falloGuardadoMonedas=valores.falloGuardadoMonedas;
+      if(Object.hasOwn(valores,'configMonedas'))configMonedas=valores.configMonedas;
+      if(Object.hasOwn(valores,'tarifasMonedas'))tarifasMonedas=valores.tarifasMonedas;
+      if(Object.hasOwn(valores,'avisoTarifaMonedas'))avisoTarifaMonedas=valores.avisoTarifaMonedas;
       if(Object.hasOwn(valores,'formularioRealPrueba')) {formularioRealPrueba=valores.formularioRealPrueba;reservaFormulario=null;}
       if(Object.hasOwn(valores,'modoPropiedadesReserva'))modoPropiedadesReserva=valores.modoPropiedadesReserva;
       if(Object.hasOwn(valores,'modoHuespedesReserva'))modoHuespedesReserva=valores.modoHuespedesReserva;
@@ -1002,18 +1048,25 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'demoraPreferencias'))demoraPreferencias=valores.demoraPreferencias;
       if(Object.hasOwn(valores,'sinNotificaciones'))sinNotificaciones=valores.sinNotificaciones;
     }};
+    if(!soloJornada&&!soloNocturno)await probarPulidoUX(contexto);
+    if(!soloJornada&&!soloNocturno)await probarReportesVisuales(contexto);
+    if(!soloJornada&&!soloNocturno&&!soloPulido){
     await probarPrioridades(contexto);
     await probarNotificaciones(contexto);
     await probarRegresionIntegral(contexto);
     await probarOperacionesExplicitas(contexto);
     await probarCreacionAtomica(contexto);
     await probarFormularioReservas(contexto);
+    await probarMonedas(contexto);
+    }
+    if(!soloNocturno&&!soloPulido)await probarJornadaMonetaria(contexto);
+    if(!soloJornada&&!soloPulido)await probarCierreNocturno(contexto);
     assert.equal(excepciones.length, 0, "El navegador no debe tener excepciones en los flujos probados.");
-  } catch { throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
+  } catch { if(excepciones.length)process.stderr.write(JSON.stringify({excepcionesAisladas:excepciones})+'\n');throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
   finally {
     if (cdp && socket?.readyState === WebSocket.OPEN) {
       try { await cdp.send("Browser.close"); } catch { /* El navegador puede cerrar el socket antes de responder. */ }
     }
-    socket?.close(); child?.kill(); await vite?.close(); cache.limpiar();
+    socket?.close(); child?.kill(); await apiUniversitaria?.cerrar(); await vite?.close(); cache.limpiar();
   }
 });

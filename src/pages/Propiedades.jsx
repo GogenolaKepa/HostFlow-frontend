@@ -1,7 +1,14 @@
 import { desplazarAlInicio } from "../services/navegacion";
+import ImportePropiedad from '../components/monedas/ImportePropiedad';
+import {useMonedas} from '../context/MonedasContext';
+import {SecurityDialog} from '../components/security/SecurityUI';
+import {formatearImporte} from '../services/importes';
 import { usePermisos } from "../context/PermisosContext";
+import {guardadoPropiedadValido} from '../services/contratoPropiedad';
+import {useBorradorProtegido,useProtectorBorradores} from '../context/BorradoresContext';
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -11,8 +18,13 @@ import {
 
 import api from "../services/api";
 
-function Propiedades() {
+function Propiedades({onVerMonedas}={}) {
   const tienePermiso = usePermisos();
+  const {protector}=useProtectorBorradores();
+  const {estado:estadoMonedas,tarifas,recargar:recargarMonedas}=useMonedas();
+  const [monedaNueva,setMonedaNueva]=useState(''),[confirmarPrecio,setConfirmarPrecio]=useState(false),[guardandoPropiedad,setGuardandoPropiedad]=useState(false),[recargaNecesaria,setRecargaNecesaria]=useState(false);
+  const envioPropiedad=useRef(false);
+  const consultaPropiedades=useRef(null);
   // =========================================================
   // ESTADOS GENERALES
   // =========================================================
@@ -151,6 +163,9 @@ function Propiedades() {
   ] = useState(
     formularioInicial
   );
+  const basePropiedad=idPropiedadEditando?propiedades.find(p=>p.idPropiedad===idPropiedadEditando):formularioInicial;
+  const camposPropiedad=idPropiedadEditando?['nombre','tipo','direccion','ciudad','provincia','capacidadMaxima','estado']:Object.keys(formularioInicial);
+  useBorradorProtegido(Boolean(mostrarFormulario&&(camposPropiedad.some(k=>String(formulario[k]??'')!==String(basePropiedad?.[k]??''))||(!idPropiedadEditando&&monedaNueva))),guardandoPropiedad);
 
   // =========================================================
   // INICIO
@@ -158,6 +173,7 @@ function Propiedades() {
 
   useEffect(() => {
     obtenerPropiedades();
+    return()=>consultaPropiedades.current?.abort();
   }, []);
 
   useEffect(() => {
@@ -199,23 +215,28 @@ function Propiedades() {
 
   const obtenerPropiedades =
     async () => {
+      consultaPropiedades.current?.abort();const control=new AbortController();consultaPropiedades.current=control;
       try {
         setError("");
 
         const response =
           await api.get(
-            "/propiedades"
+            "/propiedades",{signal:control.signal}
           );
+        if(control.signal.aborted||consultaPropiedades.current!==control)return;
+        const lista=response.data?.propiedades;
+        if(!Array.isArray(lista)||lista.some(p=>!p||!Number.isInteger(p.idPropiedad)||p.idPropiedad<=0||typeof p.nombre!=='string')||new Set(lista.map(p=>p.idPropiedad)).size!==lista.length)throw Error('Listado incompleto.');
 
         setPropiedades(
           response.data.propiedades
         );
       } catch {
+        if(control.signal.aborted||consultaPropiedades.current!==control)return;
         setError(
           "No se pudieron obtener las propiedades."
         );
       } finally {
-        setCargando(false);
+        if(!control.signal.aborted&&consultaPropiedades.current===control)setCargando(false);
       }
     };
 
@@ -459,6 +480,7 @@ function Propiedades() {
 
   const limpiarFormulario =
     () => {
+      setMonedaNueva('');
       setFormulario(
         formularioInicial
       );
@@ -473,7 +495,8 @@ function Propiedades() {
     };
 
   const abrirFormularioNuevaPropiedad =
-    () => {
+    () => protector.solicitar(() => {
+      setMonedaNueva('');
       setMensaje("");
       setError("");
 
@@ -494,7 +517,7 @@ function Propiedades() {
       );
 
       desplazarAlInicio();
-    };
+    });
 
   // =========================================================
   // EDITAR PROPIEDAD
@@ -503,7 +526,7 @@ function Propiedades() {
   const editarPropiedad =
     (
       propiedad
-    ) => {
+    ) => protector.solicitar(() => {
       setMensaje("");
       setError("");
 
@@ -527,6 +550,8 @@ function Propiedades() {
         propiedad.idPropiedad
       );
 
+      const tarifa=propiedad.tarifaMonetaria||tarifas.find(t=>t.idPropiedad===propiedad.idPropiedad);
+      setMonedaNueva(tarifa?.moneda||propiedad.monedaBase||'');
       setFormulario({
         nombre:
           propiedad.nombre ||
@@ -557,7 +582,7 @@ function Propiedades() {
 
         precioBase:
           String(
-            propiedad.precioBase ||
+            tarifa?.precio||propiedad.precioBase ||
               ""
           ),
 
@@ -574,91 +599,44 @@ function Propiedades() {
       );
 
       desplazarAlInicio();
-    };
+    });
 
   // =========================================================
   // GUARDAR PROPIEDAD
   // =========================================================
 
-  const guardarPropiedad =
-    async (
-      e
-    ) => {
-      e.preventDefault();
-
-      setError("");
-      setMensaje("");
-
-      const datosPropiedad = {
-        nombre:
-          formulario.nombre.trim(),
-
-        tipo:
-          formulario.tipo,
-
-        direccion:
-          formulario.direccion.trim(),
-
-        ciudad:
-          formulario.ciudad.trim(),
-
-        provincia:
-          formulario.provincia.trim(),
-
-        capacidadMaxima:
-          Number(
-            formulario
-              .capacidadMaxima
-          ),
-
-        precioBase:
-          Number(
-            formulario
-              .precioBase
-          ),
-
-        estado:
-          formulario.estado,
-      };
-
-      try {
-        if (
-          idPropiedadEditando
-        ) {
-          await api.put(
-            `/propiedades/${idPropiedadEditando}`,
-            datosPropiedad
-          );
-
-          setMensaje(
-            "Propiedad modificada correctamente."
-          );
-        } else {
-          await api.post(
-            "/propiedades",
-            datosPropiedad
-          );
-
-          setMensaje(
-            "Propiedad registrada correctamente."
-          );
-        }
-
-        limpiarFormulario();
-
-        await obtenerPropiedades();
-      } catch (error) {
-        setError(
-          error.response?.data
-            ?.mensaje ||
-            "No se pudo guardar la propiedad."
-        );
+  const guardarPropiedad = async (e,confirmado=false) => {
+    e?.preventDefault();
+    if(envioPropiedad.current||recargaNecesaria)return;
+    setError('');setMensaje('');
+    const datos={nombre:formulario.nombre.trim(),tipo:formulario.tipo,direccion:formulario.direccion.trim(),ciudad:formulario.ciudad.trim(),provincia:formulario.provincia.trim(),capacidadMaxima:Number(formulario.capacidadMaxima),estado:formulario.estado};
+    if(!idPropiedadEditando&&estadoMonedas?.activado){
+      if(!estadoMonedas.escritura){setError('Las tarifas están en modo de solo lectura. No se creó la propiedad.');return;}
+      if(!['ARS','USD'].includes(monedaNueva)){setError('Elegí explícitamente la moneda de la tarifa.');return;}
+      if(!confirmado){setConfirmarPrecio(true);return;}
+    }
+    envioPropiedad.current=true;setGuardandoPropiedad(true);
+    const comprobar=propiedad=>{if(!guardadoPropiedadValido(propiedad,datos,idPropiedadEditando)){setRecargaNecesaria(true);throw Error('No se recibió confirmación completa. Recargá antes de reintentar.');}};
+    try {
+      if(idPropiedadEditando){
+        const {data}=await api.put('/propiedades/'+idPropiedadEditando,datos);comprobar(data?.propiedad);
+        setMensaje('Propiedad modificada correctamente.');
+      }else if(estadoMonedas?.activado){
+        const {data}=await api.post('/monedas/propiedades',{propiedad:datos,moneda:monedaNueva,precio:String(formulario.precioBase),confirmar:true});
+        comprobar(data?.propiedad);
+        if(!data.propiedad?.idPropiedad||data.propiedad.monedaBase!==monedaNueva){setRecargaNecesaria(true);throw Error('No se recibió confirmación completa. Recargá antes de reintentar.');}
+        setMensaje('Propiedad y tarifa registradas correctamente.');
+        await recargarMonedas();
+      }else {
+        const {data}=await api.post('/propiedades',{...datos,precioBase:Number(formulario.precioBase)});comprobar(data?.propiedad);
+        setMensaje('Propiedad registrada; precio histórico sin moneda declarada.');
       }
-    };
-
-  // =========================================================
-  // FORMULARIO IMAGEN
-  // =========================================================
+      limpiarFormulario();await obtenerPropiedades();
+    }catch(error){
+      if(!error.response||error.response.status>=500||error.response?.data?.codigo==='OPERACION_RESULTADO_INCIERTO'||error.response?.status===409)setRecargaNecesaria(true);
+      setError(error.response?.data?.mensaje||error.message||'No se pudo guardar la propiedad.');
+    }finally {envioPropiedad.current=false;setGuardandoPropiedad(false);setConfirmarPrecio(false);}
+  };
 
   const manejarCambioImagen =
     (
@@ -1757,9 +1735,8 @@ function Propiedades() {
               </h4>
 
               <p>
-                Administrá la presencia
-                de esta propiedad en los
-                canales externos.
+                Simulación académica de Booking y Airbnb, sin conexión a sus APIs oficiales.
+                Las publicaciones usan proveedores en memoria; reiniciar el backend puede perder ese estado simulado.
               </p>
             </div>
           </div>
@@ -2755,12 +2732,7 @@ function Propiedades() {
                 <div>
                   <span>Precio base</span>
                   <strong className="property-detail-price">
-                    $
-                    {Number(
-                      propiedad.precioBase
-                    ).toLocaleString(
-                      "es-AR"
-                    )}
+                    <ImportePropiedad propiedad={propiedad} />
                   </strong>
                 </div>
 
@@ -2925,12 +2897,7 @@ function Propiedades() {
                   </span>
 
                   <strong className="property-detail-price">
-                    $
-                    {Number(
-                      propiedad.precioBase
-                    ).toLocaleString(
-                      "es-AR"
-                    )}
+                    <ImportePropiedad propiedad={propiedad} />
                   </strong>
                 </div>
 
@@ -3196,6 +3163,8 @@ function Propiedades() {
           </p>
         </div>
 
+        <div className="page-actions">
+        <button type="button" className="secondary-button" disabled={guardandoPropiedad} onClick={obtenerPropiedades}>Recargar propiedades</button>
         {!propiedadSeleccionada && tienePermiso("propiedades.gestionar") && (
           <button
             className="primary-button"
@@ -3206,6 +3175,7 @@ function Propiedades() {
             Nueva propiedad
           </button>
         )}
+        </div>
       </div>
 
       {mensaje && (
@@ -3380,23 +3350,29 @@ function Propiedades() {
 
                   <div>
                     <label>
-                      Precio base
+                      Precio por noche {monedaNueva||'— moneda no declarada'}
                     </label>
 
                     <input
                       type="number"
                       name="precioBase"
+                      disabled={Boolean(idPropiedadEditando)||guardandoPropiedad||recargaNecesaria}
                       value={
                         formulario
                           .precioBase
                       }
-                      min="1"
+                      min="0.01"
                       step="0.01"
                       onChange={
                         manejarCambio
                       }
                       required
                     />
+                  </div>
+
+                  <div>
+                    {idPropiedadEditando?<><p>El precio vigente se revisa únicamente en Monedas y cotizaciones. Este formulario modifica los datos de la propiedad.</p>{onVerMonedas&&<button type="button" className="secondary-button" onClick={onVerMonedas}>Revisar tarifa y moneda</button>}</>:<><label htmlFor="propiedad-moneda">Moneda original</label><select id="propiedad-moneda" value={estadoMonedas?.activado?monedaNueva:''} disabled={!estadoMonedas?.escritura||guardandoPropiedad} required={estadoMonedas?.activado===true} onChange={e=>setMonedaNueva(e.target.value)}><option value="">{estadoMonedas?.activado?'Elegí ARS o USD':'Moneda no declarada — esquema pendiente'}</option><option>ARS</option><option>USD</option></select><p>{estadoMonedas?.activado?'La propiedad y su tarifa se confirman juntas.':'El alta anterior conserva un precio sin moneda; no se simula una tarifa persistida.'}</p></>}
+                    {recargaNecesaria&&<p role="alert">Recargá los datos antes de volver a guardar.</p>}
                   </div>
 
                   <div>
@@ -3431,6 +3407,7 @@ function Propiedades() {
                 <div className="form-actions">
                   <button
                     type="submit"
+                    disabled={guardandoPropiedad||recargaNecesaria}
                     className="primary-button"
                   >
                     {idPropiedadEditando
@@ -3442,7 +3419,7 @@ function Propiedades() {
                     type="button"
                     className="secondary-button"
                     onClick={
-                      limpiarFormulario
+                      () => protector.solicitar(limpiarFormulario)
                     }
                   >
                     Cancelar
@@ -3533,13 +3510,7 @@ function Propiedades() {
                         </span>
 
                         <span>
-                          Precio base: $
-                          {Number(
-                            propiedad
-                              .precioBase
-                          ).toLocaleString(
-                            "es-AR"
-                          )}
+                          Precio base: <ImportePropiedad propiedad={propiedad} />
                         </span>
                       </div>
 
@@ -3578,6 +3549,7 @@ function Propiedades() {
             </div>
           </>
         )}
+      {confirmarPrecio&&<SecurityDialog title="Crear propiedad y tarifa" description={`${formulario.nombre}: ${formatearImporte(formulario.precioBase,monedaNueva)} por noche. Se confirman juntas; no se publican canales.`} busy={guardandoPropiedad} onClose={()=>{if(!guardandoPropiedad)setConfirmarPrecio(false);}}><button type="button" className="secondary-button" disabled={guardandoPropiedad} onClick={()=>setConfirmarPrecio(false)}>Cancelar</button><button type="button" className="primary-button" disabled={guardandoPropiedad} onClick={()=>guardarPropiedad(null,true)}>Confirmar</button></SecurityDialog>}
     </section>
   );
 }

@@ -6,25 +6,27 @@ import Apariencia from '../components/configuracion/Apariencia';
 import PanelConfiguracion from '../components/configuracion/PanelConfiguracion';
 const PreferenciasNotificaciones = lazy(() => import('../components/configuracion/PreferenciasNotificaciones'));
 import PreferenciasGenerales from '../components/configuracion/PreferenciasGenerales';
+const MonedasCotizaciones = lazy(() => import('../components/configuracion/MonedasCotizaciones'));
 
 const sections = [
   { id: 'apariencia', title: 'Apariencia', icon: 'appearance', disponible: true },
   { id: 'generales', title: 'Preferencias generales', icon: 'settings', disponible: true },
   { id: 'operativas', title: 'Preferencias operativas', icon: 'calendar', disponible: true },
   { id: 'empresa', title: 'Datos de empresa', icon: 'building', disponible: true },
+  { id: 'monedas', title: 'Monedas y cotizaciones', icon: 'settings', disponible: true },
   { id: 'notificaciones', title: 'Notificaciones', icon: 'bell', disponible: true },
   { id: 'integraciones', title: 'Integraciones', icon: 'link' },
   { id: 'seguridad', title: 'Seguridad y acceso', icon: 'shield', disponible: true },
 ];
 
-export default function Configuracion({ onNavegar, gestionCuentasDisponible = false }) {
+export default function Configuracion({ onNavegar, gestionCuentasDisponible = false, apartadoInicial = 'apariencia' }) {
   const permite = usePermisos();
   const general = permite('usuarios.ver');
   const empresarial = permite('configuracion.ver');
-  const [section,setSection] = useState('apariencia');
+  const [section,setSection] = useState(apartadoInicial==='monedas'&&empresarial?'monedas':'apariencia');
   const { protector, ocupado: busy } = useProtectorBorradores();
   const current = sections.find(item=>item.id===section);
-  const visibles = sections.filter(item=>['apariencia','generales'].includes(item.id) || (item.id==='notificaciones'?permite('notificaciones.preferencias'):['empresa','operativas'].includes(item.id)?empresarial:general));
+  const visibles = sections.filter(item=>['apariencia','generales'].includes(item.id) || (item.id==='notificaciones'?permite('notificaciones.preferencias'):['empresa','operativas','monedas'].includes(item.id)?empresarial:general));
   const navegar = id => {
     if(id===section||busy)return;
     protector.solicitar(() => setSection(id));
@@ -32,6 +34,7 @@ export default function Configuracion({ onNavegar, gestionCuentasDisponible = fa
   const contenido = () => {
     if(section==='apariencia')return <Apariencia />;
     if(section==='generales')return <PreferenciasGenerales />;
+    if(section==='monedas'&&empresarial)return <Suspense fallback={<p role="status">Cargando monedas…</p>}><MonedasCotizaciones /></Suspense>;
     if(section==='notificaciones'&&permite('notificaciones.preferencias'))return <Suspense fallback={<p role="status">Cargando preferencias…</p>}><PreferenciasNotificaciones onNavegar={onNavegar} /></Suspense>;
     if(['empresa','operativas'].includes(section) && empresarial) return <PanelConfiguracion key={section} tipo={section} />;
     if(section==='seguridad' && general) return <div className="settings-card">

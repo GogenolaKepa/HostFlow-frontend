@@ -3,6 +3,7 @@ import Usuarios from "./Usuarios";
 import MiCuenta from "./MiCuenta";
 import Configuracion from "./Configuracion";
 import { BorradoresProvider } from "../context/BorradoresProvider";
+import { MonedasProvider } from '../context/MonedasProvider';
 import { useProtectorBorradores } from "../context/BorradoresContext";
 import { SecurityIcon } from "../components/security/SecurityUI";
 import { puedeGestionarUsuarios } from "../services/cuentas";
@@ -13,6 +14,8 @@ const Notificaciones = lazy(() => import('./Notificaciones'));
 
 
 import api from "../services/api";
+import {totalSinMoneda} from '../services/importes';
+import AvisoMonetarioInicio from '../components/monedas/AvisoMonetarioInicio';
 
 
 
@@ -853,6 +856,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
   const [seccionActiva, setSeccionActiva] = useState("inicio");
+  const [apartadoConfiguracion, setApartadoConfiguracion] = useState('apariencia');
   const [flowIAAbierta, setFlowIAAbierta] = useState(false);
   const flowIAPanelId = useId();
   const flowIAOpener = useRef(null);
@@ -1891,71 +1895,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-  const formatearMontoDashboard =
-
-
-
-    (
-
-
-
-      monto
-
-
-
-    ) =>
-
-
-
-      Number(
-
-
-
-        monto || 0
-
-
-
-      ).toLocaleString(
-
-
-
-        "es-AR",
-
-
-
-        {
-
-
-
-          style:
-
-
-
-            "currency",
-
-
-
-          currency:
-
-
-
-            "ARS",
-
-
-
-          maximumFractionDigits:
-
-
-
-            0,
-
-
-
-        }
-
-
-
-      );
+  const formatearMontoDashboard = totalSinMoneda;
 
 
 
@@ -2135,7 +2075,8 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
     if (seccion === "configuracion" && seccionActiva === "configuracion") { setMenuMovilAbierto(false); return; }
     protector.solicitar(() => ejecutarCambioSeccion(seccion));
   };
-  const ejecutarCambioSeccion = (seccion) => {
+  const ejecutarCambioSeccion = (seccion, apartado = 'apariencia') => {
+    setApartadoConfiguracion(apartado);
 
 
 
@@ -3795,7 +3736,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
         ) : seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
         ) : seccionActiva === "configuracion" ? (
-          <Configuracion onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />
+          <Configuracion key={apartadoConfiguracion} apartadoInicial={apartadoConfiguracion} onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />
         ) : seccionActiva === "mi-cuenta" ? (
           <MiCuenta usuario={usuario} onSesionActualizada={onSesionActualizada} onLogout={onLogout} />
         ) : (<>
@@ -3810,7 +3751,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-          <Propiedades />
+          <Propiedades onVerMonedas={() => protector.solicitar(() => ejecutarCambioSeccion('configuracion','monedas'))} />
 
 
 
@@ -3925,6 +3866,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
           <Alertas
+            onVerMonedas={() => protector.solicitar(() => ejecutarCambioSeccion('configuracion','monedas'))}
 
 
 
@@ -4044,6 +3986,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
+            {tienePermiso('dashboard.economia')&&<AvisoMonetarioInicio key={usuario.idUsuario} idUsuario={usuario.idUsuario} onVerReportes={()=>cambiarSeccion('reportes')} onVerMonedas={()=>protector.solicitar(()=>ejecutarCambioSeccion('configuracion','monedas'))} />}
             <section className="cards">
 
 
@@ -4193,6 +4136,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
               {tienePermiso("dashboard.economia") && (<button
+                disabled
 
 
 
@@ -4272,19 +4216,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-                  $
-
-
-
-                  {resumen.ingresosMes.toLocaleString(
-
-
-
-                    "es-AR"
-
-
-
-                  )}
+                  Moneda no declarada
 
 
 
@@ -6103,6 +6035,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
         openerRef={flowIAOpener}
         panelId={flowIAPanelId}
         menuAbierto={menuMovilAbierto}
+        onVerMonedas={() => protector.solicitar(() => ejecutarCambioSeccion('configuracion','monedas'))}
         onVerReserva={
           verReserva
         }
@@ -6921,5 +6854,5 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 export default function DashboardProtegido(props) {
-  return <BorradoresProvider><Dashboard {...props} /></BorradoresProvider>;
+  return <MonedasProvider><BorradoresProvider><Dashboard {...props} /></BorradoresProvider></MonedasProvider>;
 }

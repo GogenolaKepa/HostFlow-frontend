@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
+import {formatearImporte} from '../../services/importes';
 import { usePermisos } from '../../context/PermisosContext';
 import { AccountAvatar, SecurityDialog, SecurityIcon } from '../security/SecurityUI';
 import '../../styles/guests.css';
@@ -10,7 +11,6 @@ const fecha = valor => {
   return Number.isNaN(date.getTime()) ? 'No informada' : date.toLocaleDateString('es-AR');
 };
 const texto = valor => valor === null || valor === undefined || valor === '' ? 'No informado' : valor;
-const dinero = valor => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(valor);
 
 export default function DetalleHuesped({ idHuesped, onClose, onVerReserva }) {
   const permite = usePermisos();
@@ -46,7 +46,7 @@ export default function DetalleHuesped({ idHuesped, onClose, onVerReserva }) {
             {h.historialReservas.map(r => <li className="guest-reservation" key={r.idReserva}>
               <div className="guest-reservation-title"><strong>{texto(r.propiedad)}</strong><span className="guest-status">{texto(r.estado)}</span></div>
               <dl><div><dt>Canal</dt><dd>{texto(r.canal)}</dd></div><div><dt>Estadía</dt><dd>{fecha(r.fechaIngreso)} → {fecha(r.fechaEgreso)}</dd></div>
-                {permite('reservas.importes') && r.montoEstimado !== null && r.montoEstimado !== undefined && Number.isFinite(Number(r.montoEstimado)) && <div><dt>Importe estimado</dt><dd>{dinero(Number(r.montoEstimado))}</dd></div>}
+                {permite('reservas.importes') && r.montoEstimado !== null && r.montoEstimado !== undefined && Number.isFinite(Number(r.montoEstimado)) && <div><dt>Importe estimado</dt><dd>{formatearImporte(r.montoEstimado,r.monedaAcordada)}</dd></div>}
               </dl>
               <button type="button" className="secondary-button" onClick={() => { onClose(); onVerReserva(r.idReserva); }}>Ver reserva <span className="sr-only">#{r.idReserva}</span></button>
             </li>)}

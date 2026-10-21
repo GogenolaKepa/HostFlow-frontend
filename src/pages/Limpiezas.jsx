@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -71,6 +72,8 @@ function claseTexto(valor) {
 function Limpiezas({ onVerReserva }) {
   const tienePermiso = usePermisos();
   const comando = useConfirmarOperacion();
+  const envio=useRef(false);
+  const [requiereRecarga,setRequiereRecarga]=useState(false);
   const [limpiezas, setLimpiezas] = useState([]);
   const [resumen, setResumen] = useState({
     total: 0,
@@ -111,6 +114,7 @@ function Limpiezas({ onVerReserva }) {
           urgentes: 0,
         }
       );
+      setRequiereRecarga(false);
       return true;
     } catch (err) {
       setError(
@@ -200,6 +204,7 @@ function Limpiezas({ onVerReserva }) {
   }, [limpiezas, busqueda, filtroEstado, filtroPropiedad]);
 
   const sincronizar = async () => {
+    if(envio.current||requiereRecarga)return;envio.current=true;
     try {
       setSincronizando(true);
       setError("");
@@ -217,24 +222,28 @@ function Limpiezas({ onVerReserva }) {
         )} creada(s), ${Number(resultado.actualizadas || 0)} actualizada(s).${recargado ? '' : ' El guardado se confirmó, pero falta recargar la lista.'}`
       );
     } catch (err) {
+      if(!err.response||err.response.status>=500)setRequiereRecarga(true);
       setError(
         err.response?.data?.mensaje ||
           "No se pudieron sincronizar las tareas de limpieza."
       );
     } finally {
+      envio.current=false;
       setSincronizando(false);
     }
   };
 
   const cambiarEstado = async (tarea, nuevoEstado) => {
+    if(envio.current||requiereRecarga)return;envio.current=true;
     try {
       setTareaActualizando(tarea.idTareaLimpieza);
       setError("");
       setMensaje("");
 
-      await api.patch(`/limpiezas/${tarea.idTareaLimpieza}/estado`, {
+      const {data}=await api.patch(`/limpiezas/${tarea.idTareaLimpieza}/estado`, {
         estado: nuevoEstado,
       });
+      if(data?.tarea?.idTareaLimpieza!==tarea.idTareaLimpieza||data.tarea.estado!==nuevoEstado){setRequiereRecarga(true);throw Error('No se recibió confirmación completa. Recargá los datos antes de reintentar.');}
 
       await cargarDatos({ mostrarCarga: false });
 
@@ -242,11 +251,14 @@ function Limpiezas({ onVerReserva }) {
         `La tarea de ${tarea.propiedad} pasó a "${nuevoEstado}".`
       );
     } catch (err) {
+      if(!err.response||err.response.status>=500)setRequiereRecarga(true);
       setError(
         err.response?.data?.mensaje ||
+          err.message ||
           "No se pudo actualizar el estado de la tarea."
       );
     } finally {
+      envio.current=false;
       setTareaActualizando(null);
     }
   };
@@ -282,6 +294,7 @@ function Limpiezas({ onVerReserva }) {
           </p>
         </div>
 
+        <div className="page-actions">
         <button type="button" className="secondary-button" disabled={sincronizando || comando.ocupado}
           onClick={() => cargarDatos({ mostrarCarga: false })}>Recargar datos</button>
         {tienePermiso('limpiezas.sincronizar') && <button
@@ -289,10 +302,11 @@ function Limpiezas({ onVerReserva }) {
           className="limpiezas-sync-button"
           onClick={() => comando.solicitar({ titulo: 'Sincronizar limpiezas',
             descripcion: 'Se crearán y actualizarán tareas según las reservas actuales; se cancelarán las de reservas canceladas o no show. Las completadas se conservan.', ejecutar: sincronizar })}
-          disabled={sincronizando || comando.ocupado}
+          disabled={sincronizando || comando.ocupado || tareaActualizando!==null || requiereRecarga}
         >
           {sincronizando ? "Sincronizando..." : "Sincronizar"}
         </button>}
+        </div>
       </section>
 
       {error && (
@@ -417,7 +431,7 @@ function Limpiezas({ onVerReserva }) {
               <tbody>
                 {limpiezasFiltradas.map((tarea) => {
                   const actualizando =
-                    tareaActualizando === tarea.idTareaLimpieza;
+                    tareaActualizando !== null || sincronizando || requiereRecarga;
 
                   return (
                     <tr key={tarea.idTareaLimpieza}>

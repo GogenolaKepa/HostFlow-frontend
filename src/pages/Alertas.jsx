@@ -7,10 +7,12 @@ import {
 import api from "../services/api";
 import { usePermisos } from '../context/PermisosContext';
 import { useConfirmarOperacion } from '../hooks/useConfirmarOperacion';
+import AvisosTarifa from '../components/monedas/AvisosTarifa';
 
 function Alertas({
   onVerReserva,
   onVerPropiedades,
+  onVerMonedas,
 }) {
   const tienePermiso = usePermisos();
   const comando = useConfirmarOperacion();
@@ -371,6 +373,7 @@ function Alertas({
           </p>
         </div>
 
+        <div className="page-actions">
         <button type="button" className="secondary-button" disabled={sincronizando || comando.ocupado}
           onClick={obtenerAlertas}>Recargar datos</button>
         {tienePermiso('alertas.sincronizar') && <button
@@ -388,7 +391,10 @@ function Alertas({
             ? "Actualizando..."
             : "Sincronizar alertas"}
         </button>}
+        </div>
       </div>
+
+      <AvisosTarifa onVerMonedas={onVerMonedas} onVerPropiedades={onVerPropiedades} />
 
       {mensaje && (
         <p className="success-message">

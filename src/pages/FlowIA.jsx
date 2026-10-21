@@ -11,6 +11,9 @@ import api from "../services/api";
 import { validarAnalisisFlowIA } from "../services/contratosOperativos";
 import { useOverlayPresence } from "../hooks/useOverlayPresence";
 import PanelFlowIA from "../components/flowia/PanelFlowIA";
+import AvisosTarifa from "../components/monedas/AvisosTarifa";
+import {useMonedas} from "../context/MonedasContext";
+import {usePermisos} from "../context/PermisosContext";
 const RECOMENDACIONES_VACIAS = Object.freeze([]);
 
 
@@ -186,7 +189,9 @@ function FlowIA({
   onCambiarSeccion,
   onVerReserva,
   onVerLimpieza,
+  onVerMonedas,
 }) {
+  const {estado:estadoMonedas}=useMonedas(),permite=usePermisos();
   const [
     datos,
     setDatos,
@@ -577,6 +582,10 @@ function FlowIA({
                   )}
                 </>
               )}
+              {estadoMonedas?.activado&&permite('alertas.ver')&&<AvisosTarifa
+                onVerMonedas={()=>{cerrarFlowIA();onVerMonedas?.();}}
+                onVerPropiedades={()=>{cerrarFlowIA();onCambiarSeccion?.('propiedades');}}
+              />}
             </div>
 
 

@@ -1,3 +1,4 @@
+import {celdaCsv,textoPlanilla} from '../services/exportacionTabular';
 import { usePermisos } from "../context/PermisosContext";
 import {
   useEffect,
@@ -6,6 +7,10 @@ import {
   useState,
 } from "react";
 import api from "../services/api";
+import {validarReporte} from '../services/contratosOperativos';
+import {totalSinMoneda} from '../services/importes';
+import ResumenMonetario from '../components/monedas/ResumenMonetario';
+import {GraficoTendencia,GraficoDistribucion,GraficoPropiedades} from '../components/reportes/GraficosReportes';
 
 const FILTROS_INICIALES = {
   periodo: "6",
@@ -17,8 +22,12 @@ const FILTROS_INICIALES = {
 };
 
 function Reportes() {
+  // El contrato historico no acredita divisas: no graficar ni sumar importes mixtos.
+  const agregadosComparables = false;
   const tienePermiso = usePermisos();
   const exportacionEnCurso = useRef(false);
+  const lecturaReporte=useRef(null);
+  useEffect(()=>()=>lecturaReporte.current?.abort(),[]);
   const [generandoPdf, setGenerandoPdf] = useState(false);
   const [
     datos,
@@ -201,6 +210,8 @@ function Reportes() {
       filtros =
         filtrosAplicados
     ) => {
+      lecturaReporte.current?.abort();
+      const control=new AbortController();lecturaReporte.current=control;
       try {
         setCargando(true);
         setError("");
@@ -212,24 +223,26 @@ function Reportes() {
 
         const response =
           await api.get(
-            `/dashboard/reportes?${parametros}`
+            `/dashboard/reportes?${parametros}`,{signal:control.signal}
           );
-
+        if(control.signal.aborted||lecturaReporte.current!==control)return;
         setDatos(
-          response.data.reportes
+          validarReporte(response.data.reportes)
         );
 
         setUltimaActualizacion(
           new Date()
         );
       } catch (error) {
+        if(control.signal.aborted||lecturaReporte.current!==control)return;
+        setDatos(null);
         setError(
           error.response?.data
             ?.mensaje ||
             "No se pudieron cargar los reportes."
         );
       } finally {
-        setCargando(false);
+        if(!control.signal.aborted&&lecturaReporte.current===control)setCargando(false);
       }
     };
 
@@ -490,28 +503,7 @@ function Reportes() {
           "&#039;"
         );
 
-  const escaparCsv =
-    (
-      valor
-    ) => {
-      const texto =
-        String(
-          valor ?? ""
-        );
-
-      if (
-        /[;"\n\r]/.test(
-          texto
-        )
-      ) {
-        return `"${texto.replace(
-          /"/g,
-          '""'
-        )}"`;
-      }
-
-      return texto;
-    };
+  const escaparCsv=celdaCsv;
 
   const nombreArchivoReporte =
     () => {
@@ -798,7 +790,7 @@ function Reportes() {
               formatearMonto(
                 item.ingresosEstimados
               ),
-              `${item.participacionIngresos}%`,
+              totalSinMoneda(),
             ]);
           }
         );
@@ -861,9 +853,7 @@ function Reportes() {
                           (
                             celda
                           ) =>
-                            `<td>${escaparHtml(
-                              celda
-                            )}</td>`
+                            `<td>${escaparHtml(textoPlanilla(celda))}</td>`
                         )
                         .join("")}
                     </tr>
@@ -1051,7 +1041,7 @@ function Reportes() {
                 formatearMonto(
                   item.ingresosEstimados
                 ),
-                `${item.participacionIngresos}%`,
+                totalSinMoneda(),
               ]
             )
           )
@@ -1359,7 +1349,7 @@ function Reportes() {
                 formatearMonto(
                   item.ingresosEstimados
                 ),
-                `${item.participacionIngresos}%`,
+                totalSinMoneda(),
               ]
             )
           )
@@ -2060,7 +2050,7 @@ function Reportes() {
               formatearMonto(
                 item.ingresosEstimados
               ),
-              `${item.participacionIngresos}%`,
+              totalSinMoneda(),
             ]
           ),
           {
@@ -2180,7 +2170,7 @@ function Reportes() {
   const generarArchivoReporte =
     async () => {
       if (exportacionEnCurso.current) return;
-      if (!tienePermiso("reportes.exportar")) return;
+      if (!tienePermiso("reportes.exportar")||cargando||!datos||error) return;
       if (
         !haySeccionesSeleccionadas
       ) {
@@ -2316,23 +2306,9 @@ function Reportes() {
       );
     };
 
-  const formatearMonto =
-    (
-      valor
-    ) =>
-      Number(
-        valor || 0
-      ).toLocaleString(
-        "es-AR",
-        {
-          style:
-            "currency",
-          currency:
-            "ARS",
-          maximumFractionDigits:
-            0,
-        }
-      );
+  // No existe moneda acreditada de las reservas historicas del contrato actual.
+  // Un numero agregado no permite reconstruir ni separar ARS/USD.
+  const formatearMonto = totalSinMoneda;
 
   const formatearMes =
     (
@@ -2417,7 +2393,7 @@ function Reportes() {
           </h1>
 
           <p>
-            {tienePermiso("reportes.economia")
+            {tienePermiso("reportes.economia") && agregadosComparables
               ? "Análisis de rendimiento, ocupación, ingresos y reservas registradas en HostFlow."
               : "Análisis operativo de ocupación y reservas registradas en HostFlow."}
           </p>
@@ -2454,6 +2430,7 @@ function Reportes() {
           {tienePermiso("reportes.exportar") && (<button
             type="button"
             className="reportes-generate-button"
+            disabled={cargando||!datos||Boolean(error)}
             onClick={() => {
               setErrorExportacion(
                 ""
@@ -2468,6 +2445,8 @@ function Reportes() {
           </button>)}
         </div>
       </div>
+
+      {tienePermiso('reportes.economia')&&datos?.periodo&&<ResumenMonetario filtros={{fechaDesde:datos.periodo.fechaDesde,fechaHasta:datos.periodo.fechaHasta,...datos.filtros}} exportable />}
 
       {mostrarFiltros && (
         <form
@@ -2775,7 +2754,7 @@ function Reportes() {
           </div>
 
           <div className="reportes-summary-grid">
-            {tienePermiso("reportes.economia") && (<article className="reportes-summary-card">
+            {tienePermiso("reportes.economia") && agregadosComparables && (<article className="reportes-summary-card">
               <span>
                 Ingresos estimados
               </span>
@@ -2854,7 +2833,7 @@ function Reportes() {
           </div>
 
           <div className="reportes-main-grid">
-            {tienePermiso("reportes.economia") && (<article className="reportes-panel reportes-panel--income">
+            {tienePermiso("reportes.economia") && agregadosComparables && (<article className="reportes-panel reportes-panel--income">
               <div className="reportes-panel-heading">
                 <div>
                   <h2>
@@ -2941,231 +2920,17 @@ function Reportes() {
             </article>)}
 
             <article className="reportes-panel reportes-panel--occupancy">
-              <div className="reportes-panel-heading">
-                <div>
-                  <h2>
-                    Ocupación mensual
-                  </h2>
-
-                  <p>
-                    Noches ocupadas sobre
-                    noches disponibles por
-                    mes.
-                  </p>
-                </div>
-              </div>
-
-              <div className="reportes-month-list">
-                {datos.historico.map(
-                  (
-                    item
-                  ) => (
-                    <div
-                      className="reportes-month-row"
-                      key={
-                        `ocupacion-${item.mes}`
-                      }
-                    >
-                      <div className="reportes-month-row-top">
-                        <span>
-                          {formatearMes(
-                            item.inicioMes
-                          )}
-                        </span>
-
-                        <strong>
-                          {
-                            item.ocupacionMensual
-                          }
-                          %
-                        </strong>
-                      </div>
-
-                      <div className="reportes-bar reportes-bar--occupancy">
-                        <span
-                          style={{
-                            width:
-                              `${Math.max(
-                                0,
-                                Math.min(
-                                  100,
-                                  Number(
-                                    item.ocupacionMensual ||
-                                    0
-                                  )
-                                )
-                              )}%`,
-                          }}
-                        />
-                      </div>
-
-                      <small>
-                        {
-                          item.nochesOcupadas
-                        }{" "}
-                        ocupadas ·{" "}
-                        {
-                          item.nochesDisponibles
-                        }{" "}
-                        disponibles
-                      </small>
-                    </div>
-                  )
-                )}
-              </div>
+              <div className="reportes-panel-heading"><div><span className="chart-eyebrow">TENDENCIA · POR MES</span><h2>Ocupación mensual</h2><p>Noches ocupadas sobre noches disponibles.</p></div><span className="chart-unit">%</span></div>
+              <GraficoTendencia datos={datos.historico} campo="ocupacionMensual" titulo="Ocupación mensual" unidad="%" maximo={100}/>
+            </article>
+            <article className="reportes-panel reportes-panel--bookings">
+              <div className="reportes-panel-heading"><div><span className="chart-eyebrow">EVOLUCIÓN · POR MES</span><h2>Reservas del período por mes</h2><p>Cantidad de reservas según el mes de ingreso.</p></div><span className="chart-unit">N.º</span></div>
+              <GraficoTendencia datos={datos.historico} campo="cantidadReservas" titulo="Reservas mensuales"/>
             </article>
           </div>
-
           <div className="reportes-secondary-grid">
-            <article className="reportes-panel">
-              <div className="reportes-panel-heading">
-                <div>
-                  <h2>
-                    Reservas por canal
-                  </h2>
-
-                  <p>
-                    Distribución de las
-                    reservas que cumplen los
-                    filtros aplicados.
-                  </p>
-                </div>
-              </div>
-
-              <div className="reportes-breakdown-list">
-                {datos.porCanal.length >
-                0 ? (
-                  datos.porCanal.map(
-                    (
-                      item
-                    ) => (
-                      <div
-                        className="reportes-breakdown-row"
-                        key={
-                          item.canal
-                        }
-                      >
-                        <div>
-                          <strong>
-                            {
-                              item.canal
-                            }
-                          </strong>
-
-                          <span>
-                            {
-                              item.cantidad
-                            }{" "}
-                            reserva
-                            {Number(
-                              item.cantidad
-                            ) === 1
-                              ? ""
-                              : "s"}
-                          </span>
-                        </div>
-
-                        <div className="reportes-breakdown-value">
-                          {
-                            item.porcentaje
-                          }
-                          %
-                        </div>
-
-                        <div className="reportes-bar reportes-bar--compact">
-                          <span
-                            style={{
-                              width:
-                                `${item.porcentaje}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  )
-                ) : (
-                  <div className="reportes-empty">
-                    Sin reservas para los
-                    filtros seleccionados.
-                  </div>
-                )}
-              </div>
-            </article>
-
-            <article className="reportes-panel">
-              <div className="reportes-panel-heading">
-                <div>
-                  <h2>
-                    Reservas por estado
-                  </h2>
-
-                  <p>
-                    Distribución de estados
-                    dentro del período y
-                    filtros seleccionados.
-                  </p>
-                </div>
-              </div>
-
-              <div className="reportes-breakdown-list">
-                {datos.porEstado.length >
-                0 ? (
-                  datos.porEstado.map(
-                    (
-                      item
-                    ) => (
-                      <div
-                        className="reportes-breakdown-row"
-                        key={
-                          item.estado
-                        }
-                      >
-                        <div>
-                          <strong>
-                            {
-                              item.estado
-                            }
-                          </strong>
-
-                          <span>
-                            {
-                              item.cantidad
-                            }{" "}
-                            reserva
-                            {Number(
-                              item.cantidad
-                            ) === 1
-                              ? ""
-                              : "s"}
-                          </span>
-                        </div>
-
-                        <div className="reportes-breakdown-value">
-                          {
-                            item.porcentaje
-                          }
-                          %
-                        </div>
-
-                        <div className="reportes-bar reportes-bar--compact reportes-bar--state">
-                          <span
-                            style={{
-                              width:
-                                `${item.porcentaje}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  )
-                ) : (
-                  <div className="reportes-empty">
-                    Sin reservas para los
-                    filtros seleccionados.
-                  </div>
-                )}
-              </div>
-            </article>
+            <article className="reportes-panel"><div className="reportes-panel-heading"><div><span className="chart-eyebrow">DISTRIBUCIÓN</span><h2>Reservas por canal</h2><p>De dónde llegan tus reservas.</p></div></div><GraficoDistribucion titulo="Reservas por canal" filas={datos.porCanal.map(f=>({etiqueta:f.canal,valor:f.cantidad}))}/></article>
+            <article className="reportes-panel"><div className="reportes-panel-heading"><div><span className="chart-eyebrow">ESTADO ACTUAL</span><h2>Reservas por estado</h2><p>Situación de las reservas del período.</p></div></div><GraficoDistribucion titulo="Reservas por estado" filas={datos.porEstado.map(f=>({etiqueta:f.estado,valor:f.cantidad}))}/></article>
           </div>
 
           <article className="reportes-panel reportes-property-panel">
@@ -3176,13 +2941,15 @@ function Reportes() {
                 </h2>
 
                 <p>
-                  {tienePermiso("reportes.economia")
+                  {tienePermiso("reportes.economia") && agregadosComparables
                     ? "Reservas, noches e ingresos estimados generados por cada alojamiento."
                     : "Reservas y noches por alojamiento."}
                 </p>
               </div>
             </div>
 
+            <GraficoPropiedades datos={datos.porPropiedad}/>
+            <details className="chart-data chart-property-details"><summary>Ver detalle por propiedad</summary>
             <div className="reportes-property-table-wrap">
               <table className="reportes-property-table">
                 <thead>
@@ -3199,11 +2966,11 @@ function Reportes() {
                       Noches
                     </th>
 
-                    {tienePermiso("reportes.economia") && (<th>
+                    {tienePermiso("reportes.economia") && agregadosComparables && (<th>
                       Ingresos estimados
                     </th>)}
 
-                    {tienePermiso("reportes.economia") && (<th>
+                    {tienePermiso("reportes.economia") && agregadosComparables && (<th>
                       Participación de ingresos
                     </th>)}
                   </tr>
@@ -3239,19 +3006,19 @@ function Reportes() {
                           }
                         </td>
 
-                        {tienePermiso("reportes.economia") && (<td className="reportes-money">
+                        {tienePermiso("reportes.economia") && agregadosComparables && (<td className="reportes-money">
                           {formatearMonto(
                             item.ingresosEstimados
                           )}
                         </td>)}
 
-                        {tienePermiso("reportes.economia") && (<td>
+                        {tienePermiso("reportes.economia") && agregadosComparables && (<td>
                           <div className="reportes-property-share">
                             <div className="reportes-bar reportes-bar--compact">
                               <span
                                 style={{
                                   width:
-                                    `${item.participacionIngresos}%`,
+                                    totalSinMoneda(),
                                 }}
                               />
                             </div>
@@ -3270,6 +3037,7 @@ function Reportes() {
                 </tbody>
               </table>
             </div>
+            </details>
           </article>
         </>
       )}

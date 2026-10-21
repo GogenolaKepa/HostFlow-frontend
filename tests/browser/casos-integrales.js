@@ -7,7 +7,7 @@ export async function probarRegresionIntegral({t,evaluate,send,click,esperar,ini
   const abrirReserva = id => evaluate(`document.querySelector('#reserva-${id} .detail-button').click()`);
   await t.test('FlowIA: respuesta incompleta recuperable y último análisis intacto al fallar actualización',async()=>{
     fase('regresión FlowIA incompleta');fixture({rol:'Administrador',datosVisuales:true,modoFlowIA:'incompleto',falloFlowIA:false});
-    await viewport(1280);await send('Page.reload');await esperar(inicioVisible);
+    await viewport(1280);await evaluate('globalThis.__recargaIntegralMonedas=true');await send('Page.reload');await esperar(`globalThis.__recargaIntegralMonedas===undefined && (${inicioVisible})`);
     await click('.sidebar-flowia');await esperar("Boolean(document.querySelector('.flowia-state--error'))");
     assert.equal(await evaluate("Boolean(document.querySelector('.flowia-state--empty'))"),false);
     fixture({modoFlowIA:'normal'});await click('.flowia-state--error button');await esperar("document.querySelectorAll('.flowia-card').length===1");

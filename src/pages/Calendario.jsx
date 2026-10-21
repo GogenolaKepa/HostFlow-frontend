@@ -1,3 +1,4 @@
+import {formatearImporte} from '../services/importes';
 import {
 
   useEffect,
@@ -634,61 +635,7 @@ function Calendario({
 
 
 
-  const formatearMoneda =
-
-    (valor) => {
-
-      if (
-
-        valor === null ||
-
-        valor === undefined
-
-      ) {
-
-        return "-";
-
-      }
-
-
-
-      return new Intl
-
-        .NumberFormat(
-
-          "es-AR",
-
-          {
-
-            style:
-
-              "currency",
-
-
-
-            currency:
-
-              "ARS",
-
-
-
-            maximumFractionDigits:
-
-              0,
-
-          }
-
-        )
-
-        .format(
-
-          Number(valor)
-
-        );
-
-    };
-
-
+  const formatearMoneda = formatearImporte;
 
   const formatearFecha =
 

@@ -48,6 +48,7 @@ export async function probarPrioridades({ t, evaluate, send, click, fill, espera
     assert.equal(await evaluate("document.querySelector('.guest-dialog').contains(document.activeElement)"),true);
     assert.equal(await evaluate("document.querySelector('.guest-dialog').textContent.includes('Documento ficticio')"),true);
     assert.equal(await evaluate("document.querySelector('.guest-dialog').textContent.includes('Importe estimado')"),true);
+    assert.equal(await evaluate("document.querySelector('.guest-dialog').textContent.includes('moneda no declarada')"),true,'El historial sin moneda acreditada no se presenta como ARS.');
     await esperar("!document.querySelector('.assistant-rail, .flowia-panel')");
     assert.ok(requests.slice(previas).every(r=>['GET','OPTIONS'].includes(r.method)&&/^\/huespedes\/\d+$/.test(r.ruta)));
     await capturar('huesped-modal-cargado');
@@ -75,7 +76,7 @@ export async function probarPrioridades({ t, evaluate, send, click, fill, espera
     fixture({demoraDetalle:0});await evaluate("[...document.querySelectorAll('.huespedes-desktop-list button')].find(b=>b.textContent.trim()==='Editar').click()");
     await fill('input[name=nombre]','Borrador conservado');await abrir();await esperar("document.querySelector('.guest-dialog')?.textContent.includes('todavía no posee reservas')");await cerrar();
     assert.equal(await evaluate("document.querySelector('input[name=nombre]').value"),'Borrador conservado');
-    await evaluate("[...document.querySelectorAll('.form-actions button')].find(b=>b.textContent.trim()==='Cancelar').click()");fixture({modoDetalle:'normal',listaLarga:false});
+    await evaluate("[...document.querySelectorAll('.form-actions button')].find(b=>b.textContent.trim()==='Cancelar').click()");await esperar("Boolean(document.querySelector('dialog[open]'))");await evaluate("[...document.querySelectorAll('dialog[open] button')].find(b=>b.textContent.includes('Descartar')).click()");await esperar("!document.querySelector('dialog[open]')");fixture({modoDetalle:'normal',listaLarga:false});
   });
 
   await t.test('FlowIA: drawer modal sin cambiar geometría en todos los módulos y tres temas',async()=>{

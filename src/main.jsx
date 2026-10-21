@@ -6,6 +6,9 @@ import "./styles/theme.css";
 import "./styles/settings.css";
 import "./styles/workspace.css";
 import "./styles/accessibility.css";
+import './styles/monedas.css';
+import './styles/page-polish.css';
+import './styles/reportes-monedas-visual.css';
 import { PreferenciasNavegadorBootstrap } from "./components/configuracion/PreferenciasGenerales";
 
 createRoot(

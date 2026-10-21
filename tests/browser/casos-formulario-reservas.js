@@ -112,7 +112,7 @@ export async function probarFormularioReservas({t,evaluate,send,fill,esperar,ini
       await enviar();await esperar("document.querySelector('.reservas-page .error')?.textContent.includes('Recargá')");
       assert.equal(await evaluate("Boolean(document.querySelector('.success-message'))"),false);
       assert.equal(await evaluate("document.querySelector('input[name=fechaEgreso]').value"),'2100-01-13');
-      await evaluate('new Promise(r=>setTimeout(r,200))');assert.equal(cambiosReservas.length,antes+1);await boton('Cancelar edición');
+      await evaluate('new Promise(r=>setTimeout(r,200))');assert.equal(cambiosReservas.length,antes+1);await boton('Cancelar edición');await esperar("Boolean(document.querySelector('dialog[open]'))");await boton('Descartar y continuar','dialog[open]');await recargar();await navegar();
     }
     fixture({falloEdicionReserva:'',falloCancelacionReserva:true});const antes=cambiosReservas.length;
     if(rol==='Administrador') {

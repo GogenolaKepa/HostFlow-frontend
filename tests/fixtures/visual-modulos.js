@@ -7,7 +7,7 @@ export const propiedadVisual = { idPropiedad: 1, nombre: "Alojamiento ficticio",
   tipoPropiedad: "Departamento", ciudad: "Ciudad de prueba", direccion: "Dirección ficticia", capacidad: 2,
   capacidadMaxima: 2, precioBase: 0, dormitorios: 1, banos: 1, estado: "Activa", situacion: "Disponible", imagenPrincipal: null, servicios: [], comodidades: [] };
 export const huespedVisual = { idHuesped: 1, nombre: "Visitante", apellido: "ficticio", email: "visitante@example.invalid",
-  telefono: "—", origenRegistro: "Manual", cantidadReservas: 1, situacion: "Reserva próxima", reservasActivas: [reservaVisual], historialReservas: [], proximaReserva: reservaVisual };
+  telefono: "—", dni:"No registrado", nacionalidad:"No registrada", origenRegistro: "Manual", cantidadReservas: 1, situacion: "Reserva próxima", reservasActivas: [reservaVisual], historialReservas: [], proximaReserva: reservaVisual };
 export const limpiezaVisual = { idTareaLimpieza: 1, idPropiedad: 1, propiedad: "Alojamiento ficticio", idReservaSalida: 1,
   huespedReservaSalida: "Visitante ficticio", canalReservaSalida: "Manual", fechaInicio: "2026-10-17", horaInicio: "11:00",
   fechaLimite: "2026-10-17", horaLimite: "15:00", minutosDisponibles: 240, estado: "Pendiente", prioridad: "Alta" };

@@ -31,6 +31,9 @@ export async function probarReportesVisuales({t,evaluate,send,click,fill,esperar
   for(const width of [320,820,1440]){
    await send('Emulation.setDeviceMetricsOverride',{width,height:850,deviceScaleFactor:1,mobile:width<701});
    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),true,`Monedas ${width}`);await capturar('monedas-tarjetas-'+width);
+   const cajas=await evaluate("[...document.querySelectorAll('.currency-card')].map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};})");
+   if(width===1440){assert.equal(cajas[0].y,cajas[1].y);assert.equal(cajas[2].y,cajas[3].y);assert.equal(cajas[0].x,cajas[2].x);assert.equal(cajas[1].x,cajas[3].x);assert.ok(cajas[1].x>cajas[0].x);assert.ok(cajas[2].y>=Math.max(cajas[0].bottom,cajas[1].bottom));}
+   else {assert.ok(cajas.every(c=>c.x===cajas[0].x));for(let i=1;i<4;i++)assert.ok(cajas[i].y>=cajas[i-1].bottom);}
   }
   await ir('Reportes');if(await evaluate("Boolean(document.querySelector('dialog[open]'))")){await evaluate("[...document.querySelectorAll('dialog button')].find(b=>b.textContent.includes('Descartar')).click()");}
   await esperar("Boolean(document.querySelector('.reportes-main-grid'))");await click('.monedas-resumen summary');

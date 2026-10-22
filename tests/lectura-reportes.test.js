@@ -1,0 +1,44 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {crearLecturaReportes,reporteParaFiltros,parametrosReporte} from '../src/services/lecturaReportes.js';
+import {resumenMonetarioValido,csvAcuerdos} from '../src/services/resumenMonetario.js';
+import {reportesVisuales} from './fixtures/visual-modulos.js';
+const todas={periodo:'6',idPropiedad:'',canal:'',estado:''};
+const propiedad={...todas,idPropiedad:'6'};
+const respuesta=f=>({data:{reportes:{...reportesVisuales,filtros:{idPropiedad:f.idPropiedad?Number(f.idPropiedad):null,canal:f.canal||null,estado:f.estado||null}}}});
+test('Filtros operativos transmitidos y contrastados: Todas, propiedad 6 y período personalizado',()=>{
+ assert.equal(new URLSearchParams(parametrosReporte(todas)).has('idPropiedad'),false);
+ assert.equal(new URLSearchParams(parametrosReporte(propiedad)).get('idPropiedad'),'6');
+ assert.equal(reporteParaFiltros(respuesta(todas).data.reportes,todas).filtros.idPropiedad,null);
+ assert.equal(reporteParaFiltros(respuesta(propiedad).data.reportes,propiedad).filtros.idPropiedad,6);
+ assert.throws(()=>reporteParaFiltros(respuesta(todas).data.reportes,propiedad),/no corresponde/);
+ const personalizado={...propiedad,periodo:'personalizado',fechaDesde:'2026-10-01',fechaHasta:'2026-10-31',canal:'Manual',estado:'Confirmada'};
+ assert.equal(reporteParaFiltros(respuesta(personalizado).data.reportes,personalizado).filtros.canal,'Manual');
+ assert.equal(new URLSearchParams(parametrosReporte(personalizado)).has('meses'),false);
+ assert.throws(()=>reporteParaFiltros(respuesta(personalizado).data.reportes,{...personalizado,fechaHasta:'2026-10-30'}),/período/);
+});
+test('Respuesta tardía y fallo 503 no restauran resultados de otro filtro ni ocultan el error de cuentas',async()=>{
+ const pendientes=[],lectura=crearLecturaReportes({get(url,opciones){return new Promise((resolve,reject)=>pendientes.push({url,opciones,resolve,reject}));}});
+ const eventos=[];let datos='anteriores';
+ const callbacks={inicio:()=>{datos=null;eventos.push('inicio');},exito:r=>{datos=r;eventos.push('exito');},error:e=>{datos=null;eventos.push(e.response.data.mensaje);},fin:()=>eventos.push('fin')};
+ const p1=lectura.consultar(todas,callbacks),p2=lectura.consultar(propiedad,callbacks);
+ assert.equal(datos,null);assert.equal(pendientes[0].opciones.signal.aborted,true);
+ pendientes[1].resolve(respuesta(propiedad));await p2;
+ pendientes[0].resolve(respuesta(todas));await p1;
+ assert.equal(datos.filtros.idPropiedad,6);assert.equal(eventos.filter(e=>e==='exito').length,1);
+ const p3=lectura.consultar(todas,callbacks);assert.equal(datos,null);
+ pendientes[2].reject({response:{status:503,data:{mensaje:'La gestión de cuentas no está disponible. Reintente más tarde.'}}});await p3;
+ assert.equal(datos,null);assert.equal(eventos.at(-2),'La gestión de cuentas no está disponible. Reintente más tarde.');
+ const p4=lectura.consultar(propiedad,callbacks);lectura.cancelar();pendientes[3].resolve(respuesta(propiedad));await p4;assert.equal(datos,null);
+});
+test('CSV monetario de propiedad 6 y filtros vacíos exige coincidencia y conserva USD sin sumar legado',()=>{
+ const filtros={fechaDesde:'2026-10-01',fechaHasta:'2026-10-31',idPropiedad:'6',canal:'Manual',estado:'Confirmada'};
+ const r={disponible:true,criterio:'IMPORTES_ACORDADOS_ORIGINALES_SIN_COBROS',filtros:{...filtros,idPropiedad:6},porMoneda:[{moneda:'USD',importe:'200.00',cantidad:'1'}],sinMoneda:'0',totalReservas:'1'};
+ assert.equal(resumenMonetarioValido(r,filtros),true);
+ assert.equal(resumenMonetarioValido(r,{...filtros,idPropiedad:''}),false);
+ assert.match(csvAcuerdos(r),/Propiedad;6;Canal;Manual;Estado;Confirmada/);
+ assert.match(csvAcuerdos(r),/USD;200.00;1/);assert.doesNotMatch(csvAcuerdos(r),/ARS;/);
+ const vacio={...r,filtros:{...filtros,idPropiedad:5},porMoneda:[],sinMoneda:'0',totalReservas:'0'};
+ assert.equal(resumenMonetarioValido(vacio,{...filtros,idPropiedad:'5'}),true);
+ assert.doesNotMatch(csvAcuerdos(vacio),/USD;200/);
+});

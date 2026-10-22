@@ -4802,14 +4802,14 @@ function Reservas() {
                     <div>
                       <h4>Información económica</h4>
                       <p>
-                        Resumen económico de la estadía.
+                        Estimación de la estadía, separada del acuerdo contractual. No registra cobros.
                       </p>
                     </div>
                   </div>
 
                   <dl className="reservation-detail-list">
                     <div>
-                      <dt>Monto estimado</dt>
+                      <dt>Monto estimado (no contractual)</dt>
                       <dd className="reservation-detail-money">
                         {formatearMonto(
                           reservaDetalle.montoEstimado

@@ -10,3 +10,7 @@
 .monedas-formulario-acuerdo legend{font-weight:600;padding:0 .4rem}.monedas-formulario-acuerdo label{display:block;margin:.5rem 0}.monedas-formulario-acuerdo input:not([type=checkbox]),.monedas-formulario-acuerdo select{box-sizing:border-box;max-width:100%;width:100%;min-width:0;padding:.6rem;border:1px solid var(--hf-border);border-radius:.5rem;background:var(--hf-surface);color:var(--hf-text)}
 .monedas-reserva{margin:0}.monedas-reserva .monedas-cotizacion{font-size:.88rem}.monedas-estimacion{overflow-wrap:anywhere}
 .monedas-resumen{margin:1rem 0;color:var(--hf-text)}.monedas-resumen p{line-height:1.5}.monedas-resumen li{margin:.5rem 0;overflow-wrap:anywhere}
+/* Resultados del flujo informativo; conserva la grilla y las tarjetas aprobadas. */
+.currency-amounts{display:grid;gap:5px;margin:12px 0;min-width:0}.currency-amounts dt{font-size:12px;color:var(--hf-text-muted)}.currency-amounts dd{margin:0 0 10px;font-size:clamp(17px,1.4vw,23px);font-weight:650;line-height:1.4;color:var(--hf-text);overflow-wrap:anywhere}
+.monedas-panel .currency-night-control{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:10px;align-items:center}.monedas-panel .currency-night-control button{width:44px;min-width:0;padding:0;font-size:20px}.currency-night-control input{text-align:center}
+.currency-free-converter>.form-grid{margin:14px 0}.currency-free-converter>.currency-card-action{margin-top:12px}.currency-stay-result,.currency-rate-equivalence{min-width:0;overflow-wrap:anywhere}

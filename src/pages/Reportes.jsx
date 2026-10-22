@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import api from "../services/api";
-import {validarReporte} from '../services/contratosOperativos';
+import {crearLecturaReportes} from '../services/lecturaReportes';
 import {totalSinMoneda} from '../services/importes';
 import ResumenMonetario from '../components/monedas/ResumenMonetario';
 import {GraficoTendencia,GraficoDistribucion,GraficoPropiedades} from '../components/reportes/GraficosReportes';
@@ -27,7 +27,8 @@ function Reportes() {
   const tienePermiso = usePermisos();
   const exportacionEnCurso = useRef(false);
   const lecturaReporte=useRef(null);
-  useEffect(()=>()=>lecturaReporte.current?.abort(),[]);
+  if(!lecturaReporte.current)lecturaReporte.current=crearLecturaReportes(api);
+  useEffect(()=>()=>lecturaReporte.current?.cancelar(),[]);
   const [generandoPdf, setGenerandoPdf] = useState(false);
   const [
     datos,
@@ -142,109 +143,12 @@ function Reportes() {
       }
     };
 
-  const construirParametros =
-    (
-      filtros
-    ) => {
-      const params =
-        new URLSearchParams();
-
-      params.set(
-        "periodo",
-        filtros.periodo
-      );
-
-      if (
-        filtros.periodo ===
-        "personalizado"
-      ) {
-        params.set(
-          "fechaDesde",
-          filtros.fechaDesde
-        );
-
-        params.set(
-          "fechaHasta",
-          filtros.fechaHasta
-        );
-      } else {
-        params.set(
-          "meses",
-          filtros.periodo
-        );
-      }
-
-      if (
-        filtros.idPropiedad
-      ) {
-        params.set(
-          "idPropiedad",
-          filtros.idPropiedad
-        );
-      }
-
-      if (
-        filtros.canal
-      ) {
-        params.set(
-          "canal",
-          filtros.canal
-        );
-      }
-
-      if (
-        filtros.estado
-      ) {
-        params.set(
-          "estado",
-          filtros.estado
-        );
-      }
-
-      return params
-        .toString();
-    };
-
-  const obtenerReportes =
-    async (
-      filtros =
-        filtrosAplicados
-    ) => {
-      lecturaReporte.current?.abort();
-      const control=new AbortController();lecturaReporte.current=control;
-      try {
-        setCargando(true);
-        setError("");
-
-        const parametros =
-          construirParametros(
-            filtros
-          );
-
-        const response =
-          await api.get(
-            `/dashboard/reportes?${parametros}`,{signal:control.signal}
-          );
-        if(control.signal.aborted||lecturaReporte.current!==control)return;
-        setDatos(
-          validarReporte(response.data.reportes)
-        );
-
-        setUltimaActualizacion(
-          new Date()
-        );
-      } catch (error) {
-        if(control.signal.aborted||lecturaReporte.current!==control)return;
-        setDatos(null);
-        setError(
-          error.response?.data
-            ?.mensaje ||
-            "No se pudieron cargar los reportes."
-        );
-      } finally {
-        if(!control.signal.aborted&&lecturaReporte.current===control)setCargando(false);
-      }
-    };
+  const obtenerReportes = (filtros=filtrosAplicados) => lecturaReporte.current.consultar(filtros,{
+    inicio:()=>{setDatos(null);setCargando(true);setError('');setMostrarGenerador(false);setErrorExportacion('');},
+    exito:reporte=>{setDatos(reporte);setUltimaActualizacion(new Date());},
+    error:e=>{setDatos(null);setError(e.response?.data?.mensaje||e.message||'No se pudieron cargar los reportes.');},
+    fin:()=>setCargando(false),
+  });
 
   // =========================================================
   // FILTROS
@@ -327,6 +231,8 @@ function Reportes() {
 
       setError("");
 
+      setDatos(null);
+      setCargando(true);
       setFiltrosAplicados({
         ...filtrosFormulario,
       });
@@ -338,6 +244,8 @@ function Reportes() {
 
   const limpiarFiltros =
     () => {
+      setDatos(null);
+      setCargando(true);
       setFiltrosFormulario({
         ...FILTROS_INICIALES,
       });

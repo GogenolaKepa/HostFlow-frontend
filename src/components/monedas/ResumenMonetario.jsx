@@ -7,15 +7,16 @@ import {formatearTotalMonetario} from '../../services/importes';
 import {resumenMonetarioValido,csvAcuerdos} from '../../services/resumenMonetario';
 import {GraficoDistribucion} from '../reportes/GraficosReportes';
 export default function ResumenMonetario({filtros={},exportable=false}){
- const {estado}=useMonedas(),permite=usePermisos(),[data,setData]=useState(null),[error,setError]=useState(''),[intento,setIntento]=useState(0);
+ const {estado}=useMonedas(),permite=usePermisos(),[respuesta,setRespuesta]=useState(null),[error,setError]=useState(''),[intento,setIntento]=useState(0);
  const hoy=fechaNegocio(),[year,mes]=hoy.split('-').map(Number),finMes=new Date(Date.UTC(year,mes,0)).toISOString().slice(0,10);
  const clave=JSON.stringify({fechaDesde:filtros.fechaDesde||hoy.slice(0,7)+'-01',fechaHasta:filtros.fechaHasta||finMes,
   ...(filtros.idPropiedad?{idPropiedad:String(filtros.idPropiedad)}:{}),...(filtros.canal?{canal:filtros.canal}:{}),...(filtros.estado?{estado:filtros.estado}:{})});
+ const data=respuesta?.clave===clave?respuesta.data:null;
  useEffect(()=>{
   if(!estado?.reservas||!permite('reportes.economia'))return;
-  const controller=new AbortController();setData(null);setError('');const parametros=JSON.parse(clave);
+  const controller=new AbortController();setRespuesta(null);setError('');const parametros=JSON.parse(clave);
   api.get('/monedas/resumen',{params:parametros,signal:controller.signal}).then(({data:r})=>{
-   if(!resumenMonetarioValido(r,parametros))throw Error('Resumen incompleto');if(!controller.signal.aborted)setData(r);
+   if(!resumenMonetarioValido(r,parametros))throw Error('Resumen incompleto');if(!controller.signal.aborted)setRespuesta({clave,data:r});
   }).catch(()=>{if(!controller.signal.aborted)setError('No se pudieron acreditar los importes por moneda. Las métricas operativas se conservan.');});return()=>controller.abort();
  },[clave,estado?.reservas,intento,permite]);
  const descargar=()=>{if(!data?.disponible||!permite('reportes.exportar'))return;const url=URL.createObjectURL(new Blob([csvAcuerdos(data)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`hostflow-acuerdos-${data.filtros.fechaDesde}-${data.filtros.fechaHasta}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
@@ -25,6 +26,6 @@ export default function ResumenMonetario({filtros={},exportable=false}){
    {data.porMoneda.length===0&&<p>Sin importes contractuales declarados en este periodo.</p>}<p>{data.sinMoneda} reservas sin moneda acreditada, excluidas de los totales. {data.totalReservas} reservas consideradas.</p>
    {exportable&&permite('reportes.exportar')&&<button type="button" className="secondary-button" onClick={descargar}>Exportar acuerdos por moneda (CSV)</button>}
   </>}
-  {estado?.reservas&&<button type="button" className="secondary-button" onClick={()=>setIntento(i=>i+1)}>Recargar importes acordados</button>}
+  {estado?.reservas&&<button type="button" className="secondary-button" onClick={()=>{setRespuesta(null);setIntento(i=>i+1);}}>Recargar importes acordados</button>}
  </div></details>;
 }

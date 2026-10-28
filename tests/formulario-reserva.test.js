@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formularioReservaVacio, leerCatalogoReserva, payloadReserva, seleccionReservaValida } from '../src/services/formularioReserva.js';
+import { confirmacionReservaValida, formularioReservaVacio, leerCatalogoReserva, payloadReserva, seleccionReservaValida } from '../src/services/formularioReserva.js';
 
 const propiedades = [{ id: 5, nombre: 'Propiedad ficticia' }, { id: 845, nombre: 'Otra ficticia' }];
 const huespedes = [{ id: 17, nombre: 'Prueba ficticia' }, { id: 701, nombre: 'Otra persona ficticia' }];
@@ -37,4 +37,14 @@ test('Impide enviar identidades ausentes/obsoletas o campos numéricos vacíos/i
     {montoEstimado:'-1'},{montoEstimado:'Infinity'},{cantidadHuespedes:''},{cantidadHuespedes:'1.5'},{cantidadHuespedes:'0'},{fechaIngreso:''},{horaEgreso:''}])
     assert.throws(()=>payloadReserva({...formulario(),...cambio},propiedades,huespedes));
   assert.throws(()=>payloadReserva(formulario(),[],huespedes));
+});
+
+
+test('confirmación de edición acepta la huella renovada sin dejar de contrastar los campos guardados',()=>{
+ const enviados={versionEdicion:'a'.repeat(64),fechaEgreso:'2100-01-13',montoEstimado:200};
+ const actual={idReserva:32,...enviados,versionEdicion:'b'.repeat(64)};
+ assert.equal(confirmacionReservaValida(actual,enviados,32),true);
+ assert.equal(confirmacionReservaValida({...actual,fechaEgreso:'2100-01-12'},enviados,32),false);
+ assert.equal(confirmacionReservaValida({...actual,montoEstimado:100},enviados,32),false);
+ assert.equal(confirmacionReservaValida({...actual,idReserva:33},enviados,32),false);
 });

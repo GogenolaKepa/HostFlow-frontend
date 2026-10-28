@@ -61,12 +61,16 @@ export async function probarCierreNocturno({t,evaluate,send,click,fill,esperar,l
   const antes=requests.length;await submit('input[name=nombre]');await esperar("document.querySelector('.propiedades-page .error')?.textContent.includes('Recargá')");assert.equal(await evaluate("document.querySelector('input[name=nombre]').value"),'Propiedad respuesta parcial');assert.equal(await evaluate("Boolean(document.querySelector('.propiedades-page .success-message'))"),false);
   await submit('input[name=nombre]');await evaluate('new Promise(r=>setTimeout(r,80))');assert.equal(requests.slice(antes).filter(r=>r.method==='POST').length,1);delete real.transformar;await recargar();await ir('Propiedades');await esperar("document.querySelector('.main').textContent.includes('Propiedad respuesta parcial')");assert.equal([...real.h.propiedades.values()].filter(p=>p.nombre==='Propiedad respuesta parcial').length,1);
  });
- await t.test('Reportes reales aislados: una consulta anterior tardía no reemplaza los filtros vigentes',async()=>{
+ await t.test('Reportes reales aislados: una consulta anterior tardía tras navegar no reemplaza los filtros vigentes',async()=>{
   fase('nocturno reportes concurrentes');await ir('Reportes');await esperar("Boolean(document.querySelector('.reportes-summary-grid'))");await boton('Filtros');
-  real.transformar=async({ruta,params,respuesta})=>{if(ruta==='/dashboard/reportes'&&params.get('estado')==='Confirmada')await new Promise(r=>setTimeout(r,500));return [respuesta.status,respuesta.data];};
-  await seleccionar('select[name=estado]','Confirmada');await boton('Aplicar filtros');await esperar("document.querySelector('.reportes-refresh-compact')?.disabled===true");
+  let liberarAnterior;const anteriorPendiente=new Promise(r=>liberarAnterior=r);
+  real.transformar=async({ruta,params,respuesta})=>{if(ruta==='/dashboard/reportes'&&params.get('estado')==='Confirmada')await anteriorPendiente;return [respuesta.status,respuesta.data];};
+  await seleccionar('select[name=estado]','Confirmada');await boton('Aplicar filtros');await esperar("Boolean(document.querySelector('.reportes-loading'))");
+  assert.equal(await evaluate("Boolean(document.querySelector('.reportes-summary-grid')||document.querySelector('.reportes-generate-button'))"),false,'Durante la carga no hay datos anteriores ni exportación disponible');
+  // La UI vigente oculta el formulario al cargar: cambiar de pantalla cancela esa consulta.
+  await ir('Inicio');await ir('Reportes');await esperar("Boolean(document.querySelector('.reportes-summary-grid'))");
   if(!await evaluate("Boolean(document.querySelector('select[name=estado]'))"))await click('.reportes-filter-toggle');await seleccionar('select[name=estado]','Cancelada');await boton('Aplicar filtros');
-  await esperar("[...document.querySelectorAll('.reportes-breakdown-row strong')].some(e=>e.textContent.trim()==='Cancelada')");await evaluate('new Promise(r=>setTimeout(r,650))');
+  await esperar("[...document.querySelectorAll('.reportes-breakdown-row strong')].some(e=>e.textContent.trim()==='Cancelada')");liberarAnterior();await evaluate('new Promise(r=>setTimeout(r,100))');
   assert.equal(await evaluate("[...document.querySelectorAll('.reportes-breakdown-row strong')].some(e=>e.textContent.trim()==='Cancelada')"),true,'Los datos deben corresponder al estado aplicado, no a la petición anterior');delete real.transformar;
  });
  await t.test('Exportaciones CSV y Excel conservan filtros, estado y cantidades del reporte real aislado',async()=>{

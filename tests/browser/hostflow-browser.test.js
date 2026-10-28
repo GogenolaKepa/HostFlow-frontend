@@ -187,13 +187,15 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         if (method === 'PUT' && ruta === '/reservas/9005') {
           cambiosReservas.push({method,ruta,body,rol:current.rol});
           if (falloEdicionReserva) return [falloEdicionReserva==='conflicto'?409:500,{codigo:falloEdicionReserva==='conflicto'?'RESERVA_CONFLICTO':'OPERACION_RESULTADO_INCIERTO',mensaje:falloEdicionReserva==='conflicto'?'La reserva cambió. Recargá los datos.':'No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.'}];
-          reservaFormulario={...reservaFormulario,...body}; return [200,{reserva:reservaFormulario}];
+          if(body.versionEdicion!==reservaFormulario.versionEdicion)return [409,{codigo:'RESERVA_CONFLICTO_CONCURRENCIA',mensaje:'La reserva cambió. Recargá los datos.'}];
+          reservaFormulario={...reservaFormulario,...body,versionEdicion:'b'.repeat(64)}; return [200,{reserva:reservaFormulario}];
         }
         if (method === 'PATCH' && ruta === '/reservas/9005/cancelar') {
           if(current.rol!=='Administrador')return [403,{mensaje:'Sin permiso de cancelación.'}];
           cambiosReservas.push({method,ruta,body,rol:current.rol});
           if(falloCancelacionReserva)return [500,{codigo:'OPERACION_RESULTADO_INCIERTO',mensaje:'No se pudo confirmar el resultado del guardado. Recargá los datos antes de reintentar.'}];
-          reservaFormulario={...reservaFormulario,estado:'Cancelada',accionesDisponibles:['VER']}; return [200,{reserva:reservaFormulario}];
+          if(body.versionEdicion!==reservaFormulario.versionEdicion)return [409,{codigo:'RESERVA_CONFLICTO_CONCURRENCIA',mensaje:'La reserva cambió. Recargá los datos.'}];
+          reservaFormulario={...reservaFormulario,versionEdicion:'c'.repeat(64),estado:'Cancelada',accionesDisponibles:['VER']}; return [200,{reserva:reservaFormulario}];
         }
       }
       if(ruta.startsWith('/notificaciones/')) {

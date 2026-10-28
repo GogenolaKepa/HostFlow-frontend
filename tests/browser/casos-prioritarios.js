@@ -177,7 +177,9 @@ export async function probarPrioridades({ t, evaluate, send, click, fill, espera
   });
 
   await t.test('FlowIA: backdrop sin clic accidental, salida, foco y movimiento reducido',async()=>{
-    fase('FlowIA backdrop y movimiento reducido');await viewport(1280,800);await abrirFlowIA();
+    fase('FlowIA backdrop y movimiento reducido');await viewport(1280,800);
+    await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+    await abrirFlowIA();
     const antes=await posicion();
     await evaluate("document.querySelector('.main').focus()");
     assert.equal(await evaluate("document.querySelector('.flowia-panel').contains(document.activeElement)"),true,'El fondo modal no acepta foco.');
@@ -187,6 +189,7 @@ export async function probarPrioridades({ t, evaluate, send, click, fill, espera
     assert.equal(await evaluate("Boolean(document.querySelector('dialog.flowia-panel[open]'))"),true,'Arrastrar desde dentro hacia fuera no cierra el diálogo.');
     const peticiones=requests.length;
     const salida=await evaluate("(() => {const r=document.querySelector('.sidebar-logout').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()");
+    t.diagnostic(JSON.stringify({salida,entorno:await evaluate("({alto:innerHeight,reduce:matchMedia('(prefers-reduced-motion: reduce)').matches,preferencia:document.documentElement.dataset.reduceMotion})")}));
     await raton('mousePressed',salida.x,salida.y);await raton('mouseReleased',salida.x,salida.y);
     await esperar("Boolean(document.querySelector('.flowia-panel--closing'))");
     assert.equal(await evaluate("document.querySelector('.flowia-panel').matches(':modal')"),true,'El fondo permanece bloqueado durante la animación.');

@@ -47,6 +47,7 @@ export async function probarFormularioReservas({t,evaluate,send,fill,esperar,ini
       await esperar("document.querySelector('.success-message')?.textContent.includes('modificada')");
       assert.equal(cambiosReservas.at(-1).ruta,'/reservas/9005');
       assert.equal(cambiosReservas.at(-1).body.fechaEgreso,'2100-01-13');
+      assert.equal(cambiosReservas.at(-1).body.versionEdicion,'a'.repeat(64));
       assert.equal('idPropiedad' in cambiosReservas.at(-1).body,false);
       assert.equal('estado' in cambiosReservas.at(-1).body,rol==='Administrador');
       assert.equal('montoEstimado' in cambiosReservas.at(-1).body,rol==='Administrador');
@@ -56,6 +57,7 @@ export async function probarFormularioReservas({t,evaluate,send,fill,esperar,ini
         await boton('Cancelar','.reservas-page .table-actions');
         await esperar("document.querySelector('.success-message')?.textContent.includes('cancelada')");
         assert.equal(cambiosReservas.at(-1).ruta,'/reservas/9005/cancelar');
+        assert.equal(cambiosReservas.at(-1).body.versionEdicion,'b'.repeat(64));
         await recargar();await navegar();await esperar("document.querySelector('.reservas-page').textContent.includes('Cancelada')");
       } else assert.equal(await evaluate("Boolean(document.querySelector('.reservas-page .cancel-button'))"),false,'Operador no tiene reservas.cancelar');
       const fin=altasReservas.length;await abrir();await listo();

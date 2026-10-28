@@ -507,7 +507,7 @@ function Reservas() {
 
       await obtenerReservas();
     } catch (error) {
-      if(!error.response||error.response.status===409||error.response.status>=500)setAltaBloqueada(true);
+      if(!error.response||error.response.status===409||error.response.status===428||error.response.status>=500)setAltaBloqueada(true);
       setError(
         error.response?.data?.mensaje ||
           error.message||"No se pudo registrar la reserva."
@@ -564,7 +564,7 @@ function Reservas() {
 
   const guardarEdicion = async e => {
     e.preventDefault();if(envioReserva.current||altaBloqueada)return;
-    const id=reservaEditando.idReserva,datos={fechaIngreso:formularioEdicion.fechaIngreso,horaIngreso:formularioEdicion.horaIngreso,
+    const id=reservaEditando.idReserva,datos={versionEdicion:reservaEditando.versionEdicion,fechaIngreso:formularioEdicion.fechaIngreso,horaIngreso:formularioEdicion.horaIngreso,
       fechaEgreso:formularioEdicion.fechaEgreso,horaEgreso:formularioEdicion.horaEgreso,
       ...(tienePermiso('reservas.estado')?{estado:formularioEdicion.estado}:{}),
       ...(tienePermiso('reservas.importes')?{montoEstimado:Number(formularioEdicion.montoEstimado)}:{})};
@@ -574,7 +574,7 @@ function Reservas() {
       if(!confirmacionReservaValida(data?.reserva,datos,id)){setAltaBloqueada(true);throw Error('No se recibió confirmación completa de la edición. Recargá antes de reintentar.');}
       setMensaje('Reserva modificada correctamente.');setReservaEditando(null);await obtenerReservas();
     }catch(error){
-      if(!error.response||error.response.status===409||error.response.status>=500)setAltaBloqueada(true);
+      if(!error.response||error.response.status===409||error.response.status===428||error.response.status>=500)setAltaBloqueada(true);
       setError(error.response?.data?.mensaje||error.message||'No se pudo modificar la reserva.');
     }finally{envioReserva.current=false;setGuardandoReserva(false);}
   };
@@ -586,11 +586,11 @@ function Reservas() {
     if(!confirm('¿Seguro que querés cancelar esta reserva?'))return;
     envioReserva.current=true;setGuardandoReserva(true);setError('');setMensaje('');
     try{
-      const {data}=await api.patch('/reservas/'+idReserva+'/cancelar');
+      const {data}=await api.patch('/reservas/'+idReserva+'/cancelar',{versionEdicion:reservas.find(r=>r.idReserva===idReserva)?.versionEdicion});
       if(!confirmacionReservaValida(data?.reserva,{estado:'Cancelada'},idReserva)){setAltaBloqueada(true);throw Error('No se recibió confirmación completa de la cancelación. Recargá antes de reintentar.');}
       setMensaje('Reserva cancelada correctamente.');await obtenerReservas();
     }catch(error){
-      if(!error.response||error.response.status===409||error.response.status>=500)setAltaBloqueada(true);
+      if(!error.response||error.response.status===409||error.response.status===428||error.response.status>=500)setAltaBloqueada(true);
       setError(error.response?.data?.mensaje||error.message||'No se pudo cancelar la reserva.');
     }finally{envioReserva.current=false;setGuardandoReserva(false);}
   };

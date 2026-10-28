@@ -1,5 +1,6 @@
 // Datos exclusivamente ficticios para capturas/regresion; nunca se envian a SQL.
-export const reservaVisual = { idReserva: 1, idPropiedad: 1, idHuesped: 1,
+export const reservaVisual = {
+  versionEdicion: "a".repeat(64), idReserva: 1, idPropiedad: 1, idHuesped: 1,
   huesped: "Visitante ficticio", propiedad: "Alojamiento ficticio", canal: "Manual", estado: "Confirmada",
   fechaIngreso: "2026-10-14", fechaEgreso: "2026-10-17", horaIngreso: "15:00", horaEgreso: "11:00",
   cantidadHuespedes: 2, cantidadNoches: 3, montoEstimado: 0, accionesDisponibles: ["VER", "EDITAR"] };

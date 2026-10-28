@@ -2,7 +2,7 @@ const ID_MAXIMO = 2147483647;
 const idValido = valor => /^[1-9]\d{0,9}$/.test(String(valor)) && Number(valor) <= ID_MAXIMO;
 export function confirmacionReservaValida(reserva,datos,id){
  if(!reserva||!Number.isInteger(reserva.idReserva)||!idValido(reserva.idReserva)||(id&&reserva.idReserva!==Number(id)))return false;
- return Object.entries(datos).filter(([k])=>k!=='acuerdoMonetario').every(([k,v])=>['idPropiedad','idHuesped','cantidadHuespedes','montoEstimado'].includes(k)?Number(reserva[k])===Number(v):reserva[k]===v);
+ return Object.entries(datos).filter(([k])=>!['acuerdoMonetario','versionEdicion'].includes(k)).every(([k,v])=>['idPropiedad','idHuesped','cantidadHuespedes','montoEstimado'].includes(k)?Number(reserva[k])===Number(v):reserva[k]===v);
 }
 
 export function formularioReservaVacio() {

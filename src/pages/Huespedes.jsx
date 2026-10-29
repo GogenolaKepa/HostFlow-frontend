@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../services/api";
 import DetalleHuesped from "../components/huespedes/DetalleHuesped";
@@ -138,9 +139,7 @@ function Huespedes({ onVerReserva }) {
 
   if (cargando) {
     return (
-      <h2>
-        Cargando huéspedes...
-      </h2>
+      <CargaPagina variante="huespedes" />
     );
   }
 

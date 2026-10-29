@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import { usePermisos } from "../context/PermisosContext";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -2253,9 +2254,7 @@ function Reservas() {
 
   if (cargando) {
     return (
-      <h2>
-        Cargando reservas...
-      </h2>
+      <CargaPagina variante="reservas" />
     );
   }
 

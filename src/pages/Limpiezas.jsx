@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import {
   useEffect,
   useMemo,
@@ -271,11 +272,7 @@ function Limpiezas({ onVerReserva }) {
 
   if (cargando) {
     return (
-      <div className="limpiezas-page">
-        <div className="limpiezas-loading">
-          Cargando tareas de limpieza...
-        </div>
-      </div>
+      <CargaPagina variante="limpiezas" />
     );
   }
 

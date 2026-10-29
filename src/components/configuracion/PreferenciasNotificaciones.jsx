@@ -1,3 +1,4 @@
+import CargaPagina from "../CargaPagina";
 import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { usePermisos } from '../../context/PermisosContext';
@@ -41,7 +42,7 @@ export default function PreferenciasNotificaciones({onNavegar}) {
   return <div className="settings-card notification-settings" aria-busy={cargando||guardando}>
     <div className="settings-card-heading"><span className="settings-icon"><SecurityIcon name="bell" /></span><div><h2>Preferencias de notificaciones</h2><p>Preferencias personales de tu cuenta.</p></div></div>
     <p>Estas opciones se aplicarán a futuras notificaciones personales. No silencian la bandeja operativa actual, la detección de conflictos ni las limpiezas.</p>
-    {cargando?<p role="status">Consultando preferencias…</p>:pendiente?<div className="settings-activation" role="status"><h3>{pendiente.titulo}</h3><p>{pendiente.descripcion}</p></div>:<>
+    {cargando?<CargaPagina variante="preferencias" />:pendiente?<div className="settings-activation" role="status"><h3>{pendiente.titulo}</h3><p>{pendiente.descripcion}</p></div>:<>
       {error&&<SecurityFeedback error>{error}</SecurityFeedback>}{mensaje&&<SecurityFeedback>{mensaje}</SecurityFeedback>}
       {data?<form onSubmit={e=>{e.preventDefault();if(editable&&dirty&&!conflicto&&!enviando.current)setConfirmar(true);}}>
         {data.estado.soloLectura&&<p role="status">Preferencias en modo de solo lectura.</p>}

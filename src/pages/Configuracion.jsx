@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import { lazy, Suspense, useState } from 'react';
 import { usePermisos } from '../context/PermisosContext';
 import { SecurityIcon } from '../components/security/SecurityUI';
@@ -35,7 +36,7 @@ export default function Configuracion({ onNavegar, gestionCuentasDisponible = fa
     if(section==='apariencia')return <Apariencia />;
     if(section==='generales')return <PreferenciasGenerales />;
     if(section==='monedas'&&empresarial)return <Suspense fallback={<p role="status">Cargando monedas…</p>}><MonedasCotizaciones /></Suspense>;
-    if(section==='notificaciones'&&permite('notificaciones.preferencias'))return <Suspense fallback={<p role="status">Cargando preferencias…</p>}><PreferenciasNotificaciones onNavegar={onNavegar} /></Suspense>;
+    if(section==='notificaciones'&&permite('notificaciones.preferencias'))return <Suspense fallback={<CargaPagina variante="preferencias" />}><PreferenciasNotificaciones onNavegar={onNavegar} /></Suspense>;
     if(['empresa','operativas'].includes(section) && empresarial) return <PanelConfiguracion key={section} tipo={section} />;
     if(section==='seguridad' && general) return <div className="settings-card">
       <div className="settings-card-heading"><span className="settings-icon"><SecurityIcon name="shield" /></span><div><h2>Seguridad y acceso</h2><p>Las cuentas y los roles se administran desde Usuarios.</p></div></div>

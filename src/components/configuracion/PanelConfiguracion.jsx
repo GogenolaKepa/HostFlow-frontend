@@ -1,3 +1,4 @@
+import CargaPagina from "../CargaPagina";
 import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { usePermisos } from '../../context/PermisosContext';
@@ -76,7 +77,7 @@ export default function PanelConfiguracion({ tipo }) {
 
   return <div className="settings-card settings-editor" aria-busy={cargando||guardando}>
     <div className="settings-card-heading"><span className="settings-icon"><SecurityIcon name={icon} /></span><div><h2>{title}</h2><p>{description}</p></div></div>
-    {cargando ? <p role="status">Cargando configuración…</p> : !datos ? <div className="settings-activation">
+    {cargando ? <CargaPagina variante={tipo === "empresa" ? "empresa" : "operativas"} /> : !datos ? <div className="settings-activation">
       <SecurityIcon name={pendiente?'shield':'alert'} /><h3>{pendiente?'Pendiente de activar persistencia':'No pudimos cargar la configuración'}</h3><p role="alert">{error}</p>
       {pendiente && <p>Esta sección requiere la vinculación SQL aprobada. No se realizan guardados simulados ni se crean datos al abrirla.</p>}
       <button className="settings-button" type="button" onClick={()=>setIntento(i=>i+1)}>Reintentar</button>

@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import {formatearImporte} from '../services/importes';
 import {
 
@@ -1481,15 +1482,7 @@ function Calendario({
 
     return (
 
-      <section className="calendar-page">
-
-        <div className="calendar-loading-card">
-
-          Cargando calendario...
-
-        </div>
-
-      </section>
+      <CargaPagina variante="calendario" />
 
     );
 

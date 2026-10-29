@@ -1,3 +1,4 @@
+import { probarSkeletons } from './casos-skeletons.js';
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
@@ -98,6 +99,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let revisionConfiguracion = 2;
   let empresaConfiguracion = {nombreComercial:'Alojamientos ficticios',razonSocial:'',correoContacto:'contacto@example.invalid',telefono:'',pais:'',provincia:'',ciudad:'',direccion:'',informacionAdicional:'',versionRegistro:'0000000000000001'};
   let operativasConfiguracion = {horaIngreso:'15:00',horaEgreso:'10:00',zonaHoraria:'America/Argentina/Buenos_Aires',versionRegistro:'0000000000000002'};
+  let skeletonDemora=0,skeletonModo='datos';
+  const rutasSkeleton=['/dashboard/resumen','/propiedades','/reservas','/huespedes','/limpiezas','/limpiezas/resumen','/calendario','/dashboard/reportes','/configuracion/empresa','/configuracion/operativas','/notificaciones/preferencias'];
   const requests = []; const excepciones = []; const modulosCliente = [];
   try {
     vite = await createServer({ configFile: false, envDir: false, cacheDir: cache.ruta, plugins: [react()],
@@ -151,6 +154,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     const sesion = () => ({ token, usuario: { ...current, ...(sinNotificaciones?{permisos:current.permisos.filter(p=>!p.startsWith('notificaciones.'))}:{}), debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if(skeletonModo==='error' && method==='GET' && rutasSkeleton.includes(ruta))return [503,{mensaje:'Fallo ficticio de carga'}];
       if(reservasEstabilizacion && method==='GET' && ruta==='/reservas')return [200,{reservas:reservasEstabilizacion}];
       if(apiUniversitaria&&/^\/(?:propiedades|huespedes|reservas|calendario|limpiezas|dashboard\/reportes)(?:\/|$)/.test(ruta))return apiUniversitaria.pedir(ruta+(params.size?'?'+params.toString():''),method,['GET','HEAD'].includes(method)?undefined:body,current.rol).then(r=>apiUniversitaria.transformar?.({method,ruta,params,respuesta:r})||[r.status,r.data]);
       const respuestaJornada=jornada.responder(method,ruta,body,params,current);if(respuestaJornada)return respuestaJornada;
@@ -352,6 +356,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
           await send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" }); return;
         }
         const ruta = url.pathname.slice(4);
+        if(skeletonDemora && request.method==='GET' && rutasSkeleton.includes(ruta))await new Promise(r=>setTimeout(r,skeletonDemora));
         // Solo payloads ficticios de negocio de la jornada. Nunca auth/contraseñas/tokens.
         const cuerpoJornada=(jornada.esActiva()||apiUniversitaria)&&/^\/(monedas|reservas|propiedades|huespedes)(\/|$)/.test(ruta)&&request.postData?JSON.parse(request.postData):undefined;
         requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams),...(cuerpoJornada?{body:cuerpoJornada}:{}) });
@@ -448,6 +453,11 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
+    if(process.env.HOSTFLOW_TEST_SKELETON_ONLY==='1') {
+      await probarSkeletons({t,send,evaluate,esperar,click,login,inicioVisible,requests,excepciones,
+        configurar:({demora=0,modo='datos'}={})=>{skeletonDemora=demora;skeletonModo=modo;datosVisuales=modo!=='vacio';modoPreferencias=modo==='vacio'?'pendiente':'lectura';},
+        fase:n=>{fase=n;}});return;
+    }
     if (!soloEstabilizacion && process.env.HOSTFLOW_TEST_PRIORITY_ONLY !== '1'&&!soloJornada&&!soloNocturno&&!soloPulido) {
     await t.test("Administrador inicia en Inicio y recarga sin sincronizar otros módulos", async () => {
       fase = "inicio Admin"; await login(); await esperar(inicioVisible);

@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import {celdaCsv,textoPlanilla} from '../services/exportacionTabular';
 import { usePermisos } from "../context/PermisosContext";
 import {
@@ -2280,11 +2281,7 @@ function Reportes() {
     !datos
   ) {
     return (
-      <section className="reportes-page">
-        <div className="reportes-loading">
-          Cargando reportes...
-        </div>
-      </section>
+      <CargaPagina variante="reportes" />
     );
   }
 

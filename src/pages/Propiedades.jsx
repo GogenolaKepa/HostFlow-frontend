@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import { desplazarAlInicio } from "../services/navegacion";
 import ImportePropiedad from '../components/monedas/ImportePropiedad';
 import {useMonedas} from '../context/MonedasContext';
@@ -3136,9 +3137,7 @@ function Propiedades({onVerMonedas}={}) {
 
   if (cargando) {
     return (
-      <h2>
-        Cargando propiedades...
-      </h2>
+      <CargaPagina variante="propiedades" />
     );
   }
 

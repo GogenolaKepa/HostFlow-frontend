@@ -1,3 +1,4 @@
+import CargaPagina from "../components/CargaPagina";
 import { usePermisos } from "../context/PermisosContext";
 import Usuarios from "./Usuarios";
 import MiCuenta from "./MiCuenta";
@@ -2502,45 +2503,6 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-  if (!datos && seccionActiva === "inicio") {
-    if (errorDashboard) return (
-      <section className="security-page" role="alert">
-        <p>{errorDashboard}</p>
-        <button className="primary-button" onClick={obtenerDashboard}>Reintentar</button>
-        <button className="secondary-button" onClick={onLogout}>Cerrar sesión</button>
-      </section>
-    );
-
-
-
-    return (
-
-
-
-      <h2 className="loading">
-
-
-
-        Cargando dashboard...
-
-
-
-      </h2>
-
-
-
-    );
-
-
-
-  }
-
-
-
-
-
-
-
   const {
 
 
@@ -3724,14 +3686,20 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
       <main className="main" tabIndex={0} aria-label="Contenido principal">
-        {seccionActiva === "inicio" && errorDashboard && (
+        {seccionActiva === "inicio" && datos && errorDashboard && (
           <div className="security-feedback security-feedback--error dashboard-refresh-error" role="alert">
             <p>No se pudo actualizar el inicio. Los datos mostrados corresponden a la última carga correcta.</p>
             <button type="button" onClick={obtenerDashboard}>Reintentar actualización</button>
           </div>
         )}
 
-        {seccionActiva === "notificaciones" && tienePermiso('notificaciones.ver') ? (
+        {seccionActiva === "inicio" && !datos ? (errorDashboard ? (
+          <section className="security-page" role="alert">
+            <p>{errorDashboard}</p>
+            <button className="primary-button" onClick={obtenerDashboard}>Reintentar</button>
+            <button className="secondary-button" onClick={onLogout}>Cerrar sesión</button>
+          </section>
+        ) : <CargaPagina variante="dashboard" />) : seccionActiva === "notificaciones" && tienePermiso('notificaciones.ver') ? (
           <Suspense fallback={<p role="status">Cargando notificaciones…</p>}><Notificaciones onNavegar={cambiarSeccion} /></Suspense>
         ) : seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />

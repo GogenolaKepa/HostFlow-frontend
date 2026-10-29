@@ -19,6 +19,7 @@ import {crearApiJornadaMonetaria} from './api-jornada-monetaria.js';
 import {probarJornadaMonetaria} from './casos-jornada-monetaria.js';
 import {probarCierreNocturno} from './casos-cierre-nocturno.js';
 import {probarPulidoUX} from './casos-pulido-ux.js';
+import {probarEstabilizacion} from './casos-estabilizacion.js';
 import {probarReportesVisuales} from './casos-reportes-visuales.js';
 import { fechaNegocio } from '../../src/services/monedasCalculos.js';
 import { TIPOS_NOTIFICACION } from '../../src/services/notificaciones.js';
@@ -71,6 +72,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   const dialogosNativos = [];
   let falloUsuarios = false;
   let datosVisuales = false;
+  let reservasEstabilizacion = null;
+  const soloEstabilizacion=process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1';
   let configuracionActivada = true, falloGuardarConfiguracion = false, conflictoConfiguracion = false, demoraPredeterminados = 0;
   let demoraGuardarConfiguracion = 0, respuestaConfiguracionIncompleta = false;
   let predeterminadosInvalidos = false, falloCargaConfiguracion = false, caducaEn = null;
@@ -148,6 +151,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     const sesion = () => ({ token, usuario: { ...current, ...(sinNotificaciones?{permisos:current.permisos.filter(p=>!p.startsWith('notificaciones.'))}:{}), debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if(reservasEstabilizacion && method==='GET' && ruta==='/reservas')return [200,{reservas:reservasEstabilizacion}];
       if(apiUniversitaria&&/^\/(?:propiedades|huespedes|reservas|calendario|limpiezas|dashboard\/reportes)(?:\/|$)/.test(ruta))return apiUniversitaria.pedir(ruta+(params.size?'?'+params.toString():''),method,['GET','HEAD'].includes(method)?undefined:body,current.rol).then(r=>apiUniversitaria.transformar?.({method,ruta,params,respuesta:r})||[r.status,r.data]);
       const respuestaJornada=jornada.responder(method,ruta,body,params,current);if(respuestaJornada)return respuestaJornada;
       if(ruta.startsWith('/monedas/')){
@@ -292,7 +296,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if (ruta === "/dashboard/reportes/opciones") return [200, { opciones: { propiedades: [], canales: [], estados: [] } }];
       if (ruta === "/dashboard/reportes") return [200, { reportes: datosVisuales ? reportesVisuales : { periodo: { fechaDesde: "2026-10-01", fechaHasta: "2026-10-31", tipo: "mensual" }, filtros: {}, resumen: { totalReservasPeriodo: 0, totalReservasOperativas: 0, reservasConIngreso: 0, ingresosEstimados: 0, nochesOcupadas: 0, nochesDisponibles: 0, ocupacionPromedio: 0 }, historico: [], porCanal: [], porEstado: [], porPropiedad: [] } }];
       if (ruta === "/calendario") return [200, datosVisuales ? calendarioVisual : { anio: 2026, mes: 10, diasMes: 31, propiedades: [], resumen: { reservas: 0 } }];
-      if (ruta === "/recomendaciones") return falloFlowIA ? [503, { mensaje: 'Análisis ficticio no disponible' }] : [200, modoFlowIA === 'incompleto' ? { recomendaciones: {} } : { recomendaciones: datosVisuales ? [{ ...recomendacionVisual, ...(destinoFlowIA ? { destino: destinoFlowIA } : {}) }] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {} }];
+      if (ruta === "/recomendaciones") return falloFlowIA ? [503, { mensaje: 'Análisis ficticio no disponible' }] : [200, modoFlowIA === 'incompleto' ? { recomendaciones: {} } : { recomendaciones: datosVisuales ? [{ ...recomendacionVisual, ...(destinoFlowIA ? { destino: destinoFlowIA } : {}) }] : [], resumen: { total: datosVisuales ? 1 : 0 }, contexto: {iaGenerativa:{aplicada:params.get('ia')==='true'}} }];
       const detalleReserva = /^\/reservas\/(\d+)\/(eventos|mensajes|incidencias|observaciones)$/.exec(ruta);
       if (method === 'GET' && detalleReserva) {
         const [,id,campo] = detalleReserva;
@@ -444,7 +448,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
-    if (process.env.HOSTFLOW_TEST_PRIORITY_ONLY !== '1'&&!soloJornada&&!soloNocturno&&!soloPulido) {
+    if (!soloEstabilizacion && process.env.HOSTFLOW_TEST_PRIORITY_ONLY !== '1'&&!soloJornada&&!soloNocturno&&!soloPulido) {
     await t.test("Administrador inicia en Inicio y recarga sin sincronizar otros módulos", async () => {
       fase = "inicio Admin"; await login(); await esperar(inicioVisible);
       assert.equal(await evaluate("document.querySelector('.sidebar-nav').textContent.includes('Usuarios')"),true);
@@ -1014,6 +1018,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     }
     const contexto={t,evaluate,send,click,fill,esperar,login,inicioVisible,capturar,requests,modulosCliente,altasReservas,cambiosReservas,snapshotJornada:jornada.snapshot,activarApiUniversitaria:async crear=>{apiUniversitaria=await crear();return apiUniversitaria;},denegarDescargas:()=>cdp.send('Browser.setDownloadBehavior',{behavior:'deny'}),fase:valor=>{fase=valor;},fixture:valores=>{
       jornada.configurar(valores);
+      if(Object.hasOwn(valores,'reservasEstabilizacion'))reservasEstabilizacion=valores.reservasEstabilizacion;
       if(Object.hasOwn(valores,'monedasActivas'))monedasActivas=valores.monedasActivas;
       if(Object.hasOwn(valores,'monedasEscritura'))monedasEscritura=valores.monedasEscritura;
       if(Object.hasOwn(valores,'falloBcraMonedas'))falloBcraMonedas=valores.falloBcraMonedas;
@@ -1050,6 +1055,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'demoraPreferencias'))demoraPreferencias=valores.demoraPreferencias;
       if(Object.hasOwn(valores,'sinNotificaciones'))sinNotificaciones=valores.sinNotificaciones;
     }};
+    if(!soloJornada&&!soloNocturno&&!soloPulido)await probarEstabilizacion(contexto);
+    if(!soloEstabilizacion){
     if(!soloJornada&&!soloNocturno)await probarPulidoUX(contexto);
     if(!soloJornada&&!soloNocturno)await probarReportesVisuales(contexto);
     if(!soloJornada&&!soloNocturno&&!soloPulido){
@@ -1063,6 +1070,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     }
     if(!soloNocturno&&!soloPulido)await probarJornadaMonetaria(contexto);
     if(!soloJornada&&!soloPulido)await probarCierreNocturno(contexto);
+    }
     assert.equal(excepciones.length, 0, "El navegador no debe tener excepciones en los flujos probados.");
   } catch { if(excepciones.length)process.stderr.write(JSON.stringify({excepcionesAisladas:excepciones})+'\n');throw new Error(`Falló el navegador aislado en ${fase} (estado del proceso: ${child?.exitCode ?? "activo"}); no se imprimieron credenciales ni tokens.`); }
   finally {

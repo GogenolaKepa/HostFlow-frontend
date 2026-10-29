@@ -264,15 +264,18 @@ function FlowIA({
     );
 
 
+  const solicitudEnCurso = useRef(false);
   const cargarRecomendaciones =
-    useCallback(async () => {
+    useCallback(async (usarIA = false) => {
+      if (solicitudEnCurso.current) return;
+      solicitudEnCurso.current = true;
       try {
         setCargando(true);
         setError("");
 
         const response =
           await api.get(
-            "/recomendaciones"
+            "/recomendaciones", { params: { ia: usarIA === true ? "true" : "false" } }
           );
 
         setDatos(
@@ -286,6 +289,7 @@ function FlowIA({
           "FlowIA no pudo actualizar el análisis."
         );
       } finally {
+        solicitudEnCurso.current = false;
         setCargando(false);
       }
     }, []);
@@ -389,9 +393,7 @@ function FlowIA({
               <button
                 type="button"
                 className="flowia-refresh"
-                onClick={
-                  cargarRecomendaciones
-                }
+                onClick={() => cargarRecomendaciones(false)}
                 disabled={cargando}
               >
                 {cargando
@@ -402,6 +404,12 @@ function FlowIA({
 
 
             <div className="flowia-panel-body">
+              <div className="flowia-state">
+                <p>El análisis habitual usa reglas de HostFlow, sin IA externa.</p>
+                <p id="flowia-gemini-aviso">Al consultar con Gemini, se envían las señales operativas y recomendaciones permitidas a tu cuenta al proveedor externo.</p>
+                <button type="button" className="flowia-refresh" aria-describedby="flowia-gemini-aviso"
+                  disabled={cargando} onClick={() => cargarRecomendaciones(true)}>Consultar con Gemini</button>
+              </div>
               {cargando &&
               !datos ? (
                 <div className="flowia-loading">
@@ -431,9 +439,7 @@ function FlowIA({
 
                   <button
                     type="button"
-                    onClick={
-                      cargarRecomendaciones
-                    }
+                    onClick={() => cargarRecomendaciones(false)}
                   >
                     Reintentar
                   </button>

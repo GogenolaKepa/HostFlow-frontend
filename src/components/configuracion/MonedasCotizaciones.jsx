@@ -6,6 +6,7 @@ import {useBorradorProtegido} from '../../context/BorradoresContext';
 import {SecurityDialog} from '../security/SecurityUI';
 import {convertir,unidades,decimal,fechaNegocio,fijarCheckin,cotizacionValida} from '../../services/monedasCalculos';
 import {formatearImporte} from '../../services/importes';
+import {tarifaModificada} from '../../services/borradorTarifa';
 import {vistaBnaValida} from '../../services/vistaBna';
 import {MAX_NOCHES,resolverTarifa,presupuestoEstadia,referenciaInformativa} from '../../services/simuladorEstadia';
 const ADVERTENCIA='Esta cotización fue establecida manualmente por el administrador y puede diferir de los valores publicados por entidades financieras. HostFlow no verifica su exactitud. Se recomienda utilizar fuentes oficiales y revisar los importes antes de confirmar operaciones.';
@@ -15,14 +16,16 @@ const cotizacionVisible=valor=>{const [entero,decimales='']=valor.split('.');ret
 export default function MonedasCotizaciones() {
  const {estado,tarifas,error:errorEstado,recargar}=useMonedas(),permite=usePermisos();
  const [fuente,setFuente]=useState('MANUAL'),[valor,setValor]=useState(''),[cotizacion,setCotizacion]=useState(null),[config,setConfig]=useState(null),[configLeida,setConfigLeida]=useState(false);
- const [error,setError]=useState(''),[mensaje,setMensaje]=useState(''),[ocupado,setOcupado]=useState(false),[confirmar,setConfirmar]=useState(null),[dirty,setDirty]=useState(false);
+ const [error,setError]=useState(''),[mensaje,setMensaje]=useState(''),[ocupado,setOcupado]=useState(false),[confirmar,setConfirmar]=useState(null),[referenciaDirty,setReferenciaDirty]=useState(false);
  const [propiedades,setPropiedades]=useState([]),[id,setId]=useState(''),[moneda,setMoneda]=useState(''),[precio,setPrecio]=useState('');
+ const [tarifaBase,setTarifaBase]=useState(null),[propiedadPendiente,setPropiedadPendiente]=useState(null);
+ const tarifaDirty=tarifaModificada(moneda,precio,tarifaBase);
  const [importe,setImporte]=useState(''),[origen,setOrigen]=useState('USD'),[equivalencia,setEquivalencia]=useState(null);
  const [noches,setNoches]=useState('1'),[importeCheckin,setImporteCheckin]=useState('');
  const [fechaCheckin,setFechaCheckin]=useState(''),[acuerdo,setAcuerdo]=useState(false),[ultima,setUltima]=useState(false),[fijacion,setFijacion]=useState(null);
  const bloqueo=useRef(false),referenciaEditada=useRef(false),[invalida,setInvalida]=useState(false);
  const editable=estado?.escritura===true&&configLeida&&permite('configuracion.modificar')&&!invalida;
- useBorradorProtegido(dirty,ocupado);
+ useBorradorProtegido(referenciaDirty||tarifaDirty,ocupado);
  useEffect(()=>{const c=new AbortController();api.get('/propiedades',{signal:c.signal}).then(({data})=>{
   if(!Array.isArray(data.propiedades))throw Error('Lista incompleta');if(!c.signal.aborted)setPropiedades(data.propiedades);
  }).catch(()=>{if(!c.signal.aborted)setError('No se pudieron cargar las propiedades para seleccionar su tarifa.');});return()=>c.abort();},[]);
@@ -32,7 +35,7 @@ export default function MonedasCotizaciones() {
    if(!c.signal.aborted){setConfig(data.configuracion);if(!referenciaEditada.current){setCotizacion(data.configuracion);setFuente(data.configuracion?.fuente||'MANUAL');setValor(data.configuracion?.fuente==='MANUAL'?data.configuracion.valor:'');}setConfigLeida(true);}
   }).catch(()=>{if(!c.signal.aborted){setConfigLeida(false);setError('No se pudo cargar la configuración monetaria. El guardado permanece bloqueado.');}});return()=>c.abort();
  },[estado?.activado]);
- const cambiar=(setter,v)=>{setter(v);setDirty(true);setMensaje('');setError('');};
+ const cambiar=(setter,v)=>{setter(v);setReferenciaDirty(true);setMensaje('');setError('');};
  const ejecutar=async accion=>{if(bloqueo.current)return;bloqueo.current=true;setOcupado(true);setError('');setMensaje('');try{await accion();}catch(e){setError(e.response?.data?.mensaje||e.message||'No se pudo completar la operación.');if(e.response?.status===409||e.response?.data?.codigo==='OPERACION_RESULTADO_INCIERTO')setInvalida(true);}finally{bloqueo.current=false;setOcupado(false);setConfirmar(null);}};
  const consultar=()=>ejecutar(async()=>{setCotizacion(null);setEquivalencia(null);setFijacion(null);const {data}=await api.post('/monedas/consultar-bcra',{confirmar:true});if(!cotizacionValida(data.cotizacion)||data.persistida!==false)throw Error('La fuente devolvió una respuesta incompleta.');setCotizacion(data.cotizacion);setMensaje('Consulta oficial informativa, todavía no guardada.');});
  const consultarBna=()=>ejecutar(async()=>{setCotizacion(null);setEquivalencia(null);setFijacion(null);const {data}=await api.post('/monedas/consultar-bna',{confirmar:true}).catch(e=>{if(!e.response)throw Error('No se pudo consultar Banco Nación vía MonedAPI. No hay una referencia nueva disponible.');throw e;});if(!vistaBnaValida(data.cotizacion)||data.persistida!==false)throw Error('MonedAPI devolvió una respuesta incompatible. Contrastá en la web oficial del Banco Nación.');setCotizacion(data.cotizacion);setMensaje('Venta informativa reportada por MonedAPI; no guardada.');});
@@ -42,8 +45,11 @@ export default function MonedasCotizaciones() {
   const body=cotizacion.fuente==='MANUAL'?{fuente:'MANUAL',valor:cotizacion.valor,confirmarManual:true,revision:config?.versionRegistro||null}:{fuente:'BCRA',cotizacionId:cotizacion.id,revision:config?.versionRegistro||null};
   const {data}=await api.put('/monedas/configuracion',body);
   if(!cotizacionValida(data.configuracion)||!revisionValida(data.configuracion.versionRegistro)){setInvalida(true);throw Error('No se recibió confirmación válida. Recargá para comprobar el estado antes de reintentar.');}
-  setConfig(data.configuracion);setCotizacion(data.configuracion);setDirty(false);setMensaje('Cotización guardada con autor y revisión.');
+  setConfig(data.configuracion);setCotizacion(data.configuracion);setReferenciaDirty(false);setMensaje('Cotización guardada con autor y revisión.');
  });
+ const cargarTarifa=valor=>{const t=tarifas.find(x=>x.idPropiedad===Number(valor));setId(valor);setTarifaBase(t||null);setMoneda(t?.moneda||'');setPrecio(t?.precio??'');setMensaje('');setError('');setEquivalencia(null);setFijacion(null);};
+ const seleccionarPropiedad=valor=>{if(tarifaDirty){setPropiedadPendiente(valor);return;}cargarTarifa(valor);};
+ const editarTarifa=(setter,valor)=>{setter(valor);setMensaje('');setError('');};
  const tarifa=tarifas.find(t=>t.idPropiedad===Number(id));
  const tarifaActual=resolverTarifa({id,moneda,precio,guardada:tarifa});
  const porNoche=presupuestoEstadia(tarifaActual,1,cotizacion);
@@ -56,7 +62,7 @@ export default function MonedasCotizaciones() {
   if(!editable||!permite('propiedades.gestionar'))throw Error('El guardado todavía no está habilitado.');
   const {data}=await api.put(`/monedas/tarifas/${id}`,{moneda,precio:decimal(unidades(precio)),revision:tarifa?.versionRegistro||null,confirmar:true});
   if(!data.tarifa||data.tarifa.idPropiedad!==Number(id)||!revisionValida(data.tarifa.versionRegistro)||data.tarifa.moneda!==moneda||data.tarifa.precio!==decimal(unidades(precio))){setInvalida(true);throw Error('No se recibió una confirmación válida. Recargá los datos.');}
-  await recargar();setDirty(false);setMensaje('Tarifa declarada guardada. No se publicaron canales ni se cambiaron reservas.');
+  setTarifaBase(data.tarifa);await recargar();setMensaje('Tarifa declarada guardada. No se publicaron canales ni se cambiaron reservas.');
  });
  const calcular=()=>{try{if(!cotizacionValida(cotizacion)&&!vistaBnaValida(cotizacion))throw Error('Consultá o confirmá una cotización válida.');setEquivalencia(convertir(importe,origen,origen==='USD'?'ARS':'USD',cotizacion.valor));setError('');}catch(e){setEquivalencia(null);setError(e.message);}};
  const simularCheckin=()=>{try{if(fuente==='BNA')throw Error('BNA vía MonedAPI solo admite consulta y equivalencia informativa. No se usa para check-in.');if(!importeCheckin)throw Error('Indicá un importe original en USD para simular el acuerdo de check-in.');if(cotizacion?.fuente==='BCRA'&&cotizacion.fecha!==fechaCheckin&&!cotizacion.id)throw Error('Consultá BCRA nuevamente para acreditar la última cotización disponible.');setFijacion(fijarCheckin({canal:'Manual',moneda:'USD',importe:importeCheckin,pagoEquivalenteARS:acuerdo,fechaIngreso:fechaCheckin,cotizacion,aceptarUltimaOficial:ultima}));setError('');}catch(e){setFijacion(null);setError(e.message);}};
@@ -80,8 +86,8 @@ export default function MonedasCotizaciones() {
    <article className="currency-card currency-card--rate" aria-labelledby="rate-title">
     <header className="currency-card-heading"><span className="currency-step" aria-hidden="true">02</span><div><h3 id="rate-title">Tarifa por propiedad</h3><p>Un precio por noche, en su moneda original.</p></div><span className="currency-badge">{editable?'Revisión previa':'Vista previa'}</span></header>
     <div className="currency-symbols" aria-hidden="true"><span>ARS</span><span>USD</span></div>
-    <div className="form-grid"><div className="currency-field-wide"><label htmlFor="monedas-propiedad">Propiedad</label><select id="monedas-propiedad" value={id} disabled={ocupado} onChange={e=>{const t=tarifas.find(x=>x.idPropiedad===Number(e.target.value));cambiar(setId,e.target.value);setMoneda(t?.moneda||'');setPrecio(t?.precio||'');setEquivalencia(null);setFijacion(null);}}><option value="">Seleccioná una propiedad</option>{propiedades.map(p=><option key={p.idPropiedad} value={p.idPropiedad}>{p.nombre} (#{p.idPropiedad})</option>)}</select></div>
-     <div><label htmlFor="monedas-moneda">Moneda de publicación</label><select id="monedas-moneda" value={moneda} disabled={ocupado} onChange={e=>cambiar(setMoneda,e.target.value)}><option value="">Elegí una moneda</option><option>ARS</option><option>USD</option></select></div><div><label htmlFor="monedas-precio">Precio por noche</label><input id="monedas-precio" inputMode="decimal" value={precio} disabled={ocupado} onChange={e=>cambiar(setPrecio,e.target.value)} /></div></div>
+    <div className="form-grid"><div className="currency-field-wide"><label htmlFor="monedas-propiedad">Propiedad</label><select id="monedas-propiedad" value={id} disabled={ocupado} onChange={e=>seleccionarPropiedad(e.target.value)}><option value="">Seleccioná una propiedad</option>{propiedades.map(p=><option key={p.idPropiedad} value={p.idPropiedad}>{p.nombre} (#{p.idPropiedad})</option>)}</select></div>
+     <div><label htmlFor="monedas-moneda">Moneda de publicación</label><select id="monedas-moneda" value={moneda} disabled={ocupado} onChange={e=>editarTarifa(setMoneda,e.target.value)}><option value="">Elegí una moneda</option><option>ARS</option><option>USD</option></select></div><div><label htmlFor="monedas-precio">Precio por noche</label><input id="monedas-precio" inputMode="decimal" value={precio} disabled={ocupado} onChange={e=>editarTarifa(setPrecio,e.target.value)} /></div></div>
     {tarifa?<p className="currency-result">Tarifa guardada: <strong>{formatearImporte(tarifa.precio,tarifa.moneda)}</strong>. Su importe y moneda se conservan hasta guardar una revisión.</p>:<p className="currency-hint">{id?'Esta propiedad no tiene tarifa declarada. Su precio histórico conserva la moneda sin declarar.':'Seleccioná una propiedad para consultar su tarifa.'}</p>}
     {tarifaActual.disponible?<div className="currency-result currency-rate-equivalence" aria-live="polite">
      <span className="currency-badge">{tarifaActual.borrador?'Vista previa de tarifa — sin guardar':'Tarifa guardada'}</span>
@@ -128,6 +134,10 @@ export default function MonedasCotizaciones() {
    </article>
   </div>
   <details className="currency-help currency-sources"><summary>Fuentes y alcance de la información</summary><p>Banco Nación se consulta mediante MonedAPI, un intermediario no oficial. La venta reportada solo se usa en vistas previas y equivalencias, nunca como BCRA/Manual ni para guardar o fijar check-in. La web oficial permite contrastar billetes y divisas, con compra y venta distintas.</p><p>Fuentes: <a href="https://www.bcra.gob.ar/apis-banco-central/" target="_blank" rel="noreferrer">BCRA</a> · <a href="https://www.bna.com.ar/Personas" target="_blank" rel="noreferrer">Banco Nación</a>. Fechas y horas se muestran en Buenos Aires. Datos públicos con fines informativos y académicos.</p></details>
+  {propiedadPendiente!==null&&<SecurityDialog title="Cambiar de propiedad" description="La tarifa que estás preparando tiene cambios sin guardar. Si continuás, se descartará solo ese borrador; la referencia de cotización se conserva." busy={ocupado} onClose={()=>setPropiedadPendiente(null)}>
+   <button type="button" className="secondary-button" onClick={()=>setPropiedadPendiente(null)}>Seguir editando tarifa</button>
+   <button type="button" className="primary-button" onClick={()=>{cargarTarifa(propiedadPendiente);setPropiedadPendiente(null);}}>Descartar tarifa y cambiar</button>
+  </SecurityDialog>}
   {confirmar&&<SecurityDialog title={confirmar==='manual'?'Confirmar cotización manual':confirmar==='tarifa'?'Revisar tarifa':'Guardar cotización'} description={confirmar==='manual'?ADVERTENCIA:confirmar==='tarifa'?`${formatearImporte(precio,moneda)}. ${editable?'Se usará la cotización GUARDADA, no la vista previa.':'Es una vista previa, no se guardará.'}`:'Se registrará la fuente, fecha, valor y autor. Las reservas no cambian.'} busy={ocupado} onClose={()=>{if(!ocupado)setConfirmar(null);}}>
    <button type="button" className="secondary-button" disabled={ocupado} onClick={()=>setConfirmar(null)}>Cancelar</button><button type="button" className="primary-button" disabled={ocupado} onClick={()=>{
     if(confirmar==='manual'){setCotizacion({fuente:'MANUAL',tipo:'MANUAL',valor:decimal(unidades(valor,8),8),fecha:estado?.fechaNegocio||fechaNegocio(),horaPublicacion:null,consultadaEn:new Date().toISOString()});setConfirmar(null);setMensaje('Vista previa manual confirmada; no guardada.');}

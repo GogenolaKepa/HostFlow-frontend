@@ -7,7 +7,7 @@ import usePredeterminadosReserva from "../hooks/usePredeterminadosReserva";
 import useCatalogosReserva from "../hooks/useCatalogosReserva";
 import SelectorReserva from "../components/reservas/SelectorReserva";
 import { formularioReservaVacio, payloadReserva, seleccionReservaValida,confirmacionReservaValida } from "../services/formularioReserva";
-import {formatearImporte} from '../services/importes';
+import ImportesReserva from '../components/reservas/ImportesReserva';
 import { useConfirmarOperacion } from '../hooks/useConfirmarOperacion';
 import {useMonedas} from '../context/MonedasContext';
 import {useProtectorBorradores,useBorradorProtegido} from '../context/BorradoresContext';
@@ -4155,7 +4155,7 @@ function Reservas() {
                   </td>
 
                   <td>
-                    {formatearImporte(reserva.montoEstimado,reserva.monedaAcordada)}
+                    <ImportesReserva reserva={reserva} puedeVerImportes={tienePermiso('reservas.importes')} />
                   </td>
 
                   <td>
@@ -4481,7 +4481,7 @@ function Reservas() {
                   </span>
 
                   <strong>
-                    {formatearImporte(reserva.montoEstimado,reserva.monedaAcordada)}
+                    <ImportesReserva reserva={reserva} puedeVerImportes={tienePermiso('reservas.importes')} />
                   </strong>
                 </div>
               </div>

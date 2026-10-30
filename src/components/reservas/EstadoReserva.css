@@ -1,0 +1,8 @@
+.reserva-estados { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; max-width: 100%; }
+.reserva-estados > .estado { max-width: 100%; }
+.reserva-finalizacion-pendiente { display: inline-block; padding: 4px 8px; border: 1px solid var(--hf-warning-border); border-radius: 999px; color: var(--hf-warning-text); background: var(--hf-warning-soft); font-size: 11px; line-height: 1.35; font-weight: 600; text-align: left; max-width: 100%; overflow-wrap: anywhere; }
+.reservas-mobile-card .reserva-estados { flex-shrink: 0; max-width: 45%; }
+@media (min-width: 701px) {
+  .reservas-desktop-list .reserva-estados { min-width: 138px; }
+  .reservas-desktop-list .reserva-finalizacion-pendiente { white-space: nowrap; }
+}

@@ -14,13 +14,13 @@ before(async () => {
 });
 after(async () => { await vite?.close(); cache.limpiar(); });
 
-for (const variante of ['dashboard', 'propiedades', 'reservas', 'limpiezas', 'huespedes', 'calendario', 'reportes', 'empresa', 'operativas', 'preferencias']) {
+for (const variante of ['flowia', 'dashboard', 'propiedades', 'reservas', 'limpiezas', 'huespedes', 'calendario', 'reportes', 'empresa', 'operativas', 'preferencias']) {
   test(`${variante}: carga accesible sin controles ficticios ni datos expuestos`, () => {
     const html = renderToStaticMarkup(createElement(CargaPagina, { variante }));
     assert.match(html, /role="status"/);
     assert.match(html, /aria-busy="true"/);
     assert.match(html, /aria-hidden="true"/);
-    assert.match(html, /Cargando /);
+    assert.match(html, variante === 'flowia' ? /FlowIA está analizando tu operación/ : /Cargando /);
     assert.doesNotMatch(html, /<(button|input|a|select)\b/);
     assert.match(html, new RegExp(`hf-skeleton--${['empresa','operativas','preferencias'].includes(variante)?'formulario':variante}`));
   });

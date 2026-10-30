@@ -1,3 +1,5 @@
+import CargaPagina from '../components/CargaPagina';
+import '../styles/flowia-premium.css';
 import {
   useEffect,
   useLayoutEffect,
@@ -208,6 +210,18 @@ function FlowIA({
   ] = useState("");
 
 
+  const [consentimiento, setConsentimiento] = useState(false);
+  const [externaSolicitada, setExternaSolicitada] = useState(false);
+  const cancelarConsentimiento = useRef(null), potenciar = useRef(null), consentimientoAnterior = useRef(false);
+  useEffect(() => { if (!abierta) setConsentimiento(false); }, [abierta]);
+  useLayoutEffect(() => {
+    if (abierta && consentimiento) cancelarConsentimiento.current?.focus();
+    else if (abierta && consentimientoAnterior.current) {
+      if (potenciar.current && !potenciar.current.disabled) potenciar.current.focus();
+      else document.querySelector('.flowia-panel .flowia-close')?.focus();
+    }
+    consentimientoAnterior.current = consentimiento;
+  }, [consentimiento, abierta]);
   const overlay = useOverlayPresence({ incluirMenu: false });
   const aperturaConsultada = useRef(false);
   useEffect(() => { if (abierta && (overlay || menuAbierto)) onCerrar(); }, [abierta, overlay, menuAbierto, onCerrar]);
@@ -281,6 +295,7 @@ function FlowIA({
         setDatos(
           validarAnalisisFlowIA(response.data)
         );
+        setExternaSolicitada(usarIA === true);
       } catch (err) {
         setError(
           err.response
@@ -387,7 +402,7 @@ function FlowIA({
 
                 {iaAplicada
                   ? "IA activa"
-                  : "Análisis HostFlow"}
+                  : "Análisis FlowIA"}
               </span>
 
               <button
@@ -404,31 +419,35 @@ function FlowIA({
 
 
             <div className="flowia-panel-body">
-              <div className="flowia-state">
-                <p>El análisis habitual usa reglas de HostFlow, sin IA externa.</p>
-                <p id="flowia-gemini-aviso">Al consultar con Gemini, se envían las señales operativas y recomendaciones permitidas a tu cuenta al proveedor externo.</p>
-                <button type="button" className="flowia-refresh" aria-describedby="flowia-gemini-aviso"
-                  disabled={cargando} onClick={() => cargarRecomendaciones(true)}>Consultar con Gemini</button>
+              <div className="flowia-enhance">
+                <button ref={potenciar} type="button" className="flowia-enhance-button" disabled={cargando || consentimiento || !datos || recomendaciones.length === 0}
+                  onClick={() => setConsentimiento(true)} aria-expanded={consentimiento} aria-controls="flowia-consentimiento">
+                  <span aria-hidden="true">✦</span> Potenciar FlowIA
+                </button>
+                <span>Opcional · vos controlás qué compartís</span>
               </div>
+              {consentimiento && <section id="flowia-consentimiento" className="flowia-consent" aria-labelledby="flowia-consent-title"
+                onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setConsentimiento(false); } }}>
+                <span className="flowia-summary-eyebrow">VOS DECIDÍS</span>
+                <h2 id="flowia-consent-title">Potenciar FlowIA</h2>
+                <p>FlowIA utilizará procesamiento externo para potenciar tu análisis. Se compartirán los datos operativos indicados en los detalles de privacidad.</p>
+                <details className="flowia-privacy">
+                  <summary>Datos compartidos y privacidad</summary>
+                  <p>Proveedor: <strong>Google Gemini</strong>. Recibirá la fecha de negocio y las recomendaciones operativas permitidas a tu cuenta.</p>
+                  <p>Incluye identificadores, tipos, prioridades, títulos, descripciones, acciones y evidencias. Pueden identificar propiedades, reservas o huéspedes; no se consideran datos anonimizados.</p>
+                  <p>La autorización vale solo para esta consulta. Cancelar no envía datos. Las próximas consultas requieren una nueva confirmación.</p>
+                </details>
+                <div className="flowia-consent-actions">
+                  <button ref={cancelarConsentimiento} type="button" onClick={() => setConsentimiento(false)}>Cancelar</button>
+                  <button type="button" className="flowia-consent-confirm" disabled={cargando} onClick={() => { setConsentimiento(false); cargarRecomendaciones(true); }}>Confirmar y potenciar</button>
+                </div>
+              </section>}
               {cargando &&
               !datos ? (
-                <div className="flowia-loading">
-                  <span className="flowia-loading-icon">
-                    ✦
-                  </span>
-
-                  <strong>
-                    FlowIA está analizando tu operación
-                  </strong>
-
-                  <p>
-                    Estoy revisando ocupación, conflictos,
-                    limpiezas y métricas de HostFlow.
-                  </p>
-                </div>
+                <CargaPagina variante="flowia" />
               ) : error &&
                 !datos ? (
-                <div className="flowia-state flowia-state--error">
+                <div className="flowia-state flowia-state--error" role="alert">
                   <strong>
                     No pude actualizar el análisis
                   </strong>
@@ -446,7 +465,7 @@ function FlowIA({
                 </div>
               ) : (
                 <>
-                  <div className="flowia-summary">
+                  <div className="flowia-summary" aria-live="polite">
                     <span className="flowia-summary-eyebrow">
                       ANÁLISIS OPERATIVO
                     </span>
@@ -469,8 +488,9 @@ function FlowIA({
                   </div>
 
 
+                  {externaSolicitada && !iaAplicada && <p className="flowia-fallback" role="status">El proveedor no enriqueció este análisis. Se conservan las recomendaciones de HostFlow.</p>}
                   {error && (
-                    <div className="flowia-inline-warning">
+                    <div className="flowia-inline-warning" role="alert">
                       {error} Se conserva el último análisis disponible.
                     </div>
                   )}
@@ -597,8 +617,7 @@ function FlowIA({
 
             <div className="flowia-panel-footer">
               <span>
-                FlowIA combina reglas de HostFlow con IA para explicar
-                señales operativas. Revisá la información antes de actuar.
+                Análisis informativo de FlowIA. Revisá las recomendaciones antes de actuar.
               </span>
             </div>
     </PanelFlowIA>

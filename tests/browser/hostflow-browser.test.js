@@ -1,3 +1,7 @@
+import {probarSesionPremium} from './casos-sesion-premium.js';
+import {probarEstadosReserva} from './casos-estados-reserva.js';
+import {probarLoginPremium} from './casos-login-premium.js';
+import {probarFlowIAPremium} from './casos-flowia-premium.js';
 import { probarSkeletons } from './casos-skeletons.js';
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -74,7 +78,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloUsuarios = false;
   let datosVisuales = false;
   let reservasEstabilizacion = null;
-  const soloEstabilizacion=process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1';
+  const soloEstabilizacion=(process.env.HOSTFLOW_TEST_SESION_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1'||process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'||process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1');
   let configuracionActivada = true, falloGuardarConfiguracion = false, conflictoConfiguracion = false, demoraPredeterminados = 0;
   let demoraGuardarConfiguracion = 0, respuestaConfiguracionIncompleta = false;
   let predeterminadosInvalidos = false, falloCargaConfiguracion = false, caducaEn = null;
@@ -99,6 +103,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let revisionConfiguracion = 2;
   let empresaConfiguracion = {nombreComercial:'Alojamientos ficticios',razonSocial:'',correoContacto:'contacto@example.invalid',telefono:'',pais:'',provincia:'',ciudad:'',direccion:'',informacionAdicional:'',versionRegistro:'0000000000000001'};
   let operativasConfiguracion = {horaIngreso:'15:00',horaEgreso:'10:00',zonaHoraria:'America/Argentina/Buenos_Aires',versionRegistro:'0000000000000002'};
+  let loginFotoModo='normal', demoraSesion=0;
   let skeletonDemora=0,skeletonModo='datos';
   const rutasSkeleton=['/dashboard/resumen','/propiedades','/reservas','/huespedes','/limpiezas','/limpiezas/resumen','/calendario','/dashboard/reportes','/configuracion/empresa','/configuracion/operativas','/notificaciones/preferencias'];
   const requests = []; const excepciones = []; const modulosCliente = [];
@@ -351,6 +356,10 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       let etapa='origen';
       try {
         const url = new URL(request.url);
+        if (url.origin === base && url.pathname.includes('/assets/login/hero') && url.pathname.endsWith('.webp') && !url.searchParams.has('import')) {
+          if(loginFotoModo==='error'){await send('Fetch.failRequest',{requestId,errorReason:'Failed'});return;}
+          if(loginFotoModo==='lenta')await new Promise(r=>setTimeout(r,3400));
+        }
         if (url.origin === base) { modulosCliente.push(url.pathname);await send("Fetch.continueRequest", { requestId }); return; }
         if (url.hostname !== "127.0.0.1" || !url.pathname.startsWith("/api/")) {
           await send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" }); return;
@@ -360,6 +369,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         // Solo payloads ficticios de negocio de la jornada. Nunca auth/contraseñas/tokens.
         const cuerpoJornada=(jornada.esActiva()||apiUniversitaria)&&/^\/(monedas|reservas|propiedades|huespedes)(\/|$)/.test(ruta)&&request.postData?JSON.parse(request.postData):undefined;
         requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams),...(cuerpoJornada?{body:cuerpoJornada}:{}) });
+        if(ruta==='/auth/me' && request.method==='GET' && demoraSesion)await new Promise(r=>setTimeout(r,demoraSesion));
         if(formularioRealPrueba && request.method==='GET' && ['/propiedades','/huespedes'].includes(ruta) && demoraCatalogosReserva) await new Promise(r=>setTimeout(r,demoraCatalogosReserva));
         if(ruta==='/configuracion/predeterminados-reserva' && falloRedPredeterminados) {
           await send('Fetch.failRequest',{requestId,errorReason:'ConnectionFailed'});return;
@@ -453,6 +463,14 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
+    if(process.env.HOSTFLOW_TEST_SESION_ONLY==='1'){
+      await probarSesionPremium({t,evaluate,send,fill,click,esperar,login,inicioVisible,requests,
+        configurar:({demora=0,fallo=false,caduca=false}={})=>{demoraSesion=demora;falloSesion=fallo;caducada=caduca;},
+        fase:n=>{fase=n;}});assert.equal(excepciones.length,0);return;
+    }
+    if(process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'){
+      await probarLoginPremium({t,evaluate,send,click,fill,esperar,login,inicioVisible,requests,excepciones,modoFoto:m=>{loginFotoModo=m;},fase:n=>{fase=n;}});return;
+    }
     if(process.env.HOSTFLOW_TEST_SKELETON_ONLY==='1') {
       await probarSkeletons({t,send,evaluate,esperar,click,login,inicioVisible,requests,excepciones,
         configurar:({demora=0,modo='datos'}={})=>{skeletonDemora=demora;skeletonModo=modo;datosVisuales=modo!=='vacio';modoPreferencias=modo==='vacio'?'pendiente':'lectura';},
@@ -1043,6 +1061,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'falloEdicionReserva'))falloEdicionReserva=valores.falloEdicionReserva;
       if(Object.hasOwn(valores,'falloCancelacionReserva'))falloCancelacionReserva=valores.falloCancelacionReserva;
       if(Object.hasOwn(valores,'rol'))current=[...users.values()].find(u=>u.rol===valores.rol&&u.estado==='Activo');
+      if(Object.hasOwn(valores,'sinFlowIA')&&valores.sinFlowIA)current={...current,permisos:current.permisos.filter(p=>p!=='flowia.ver')};
       if(Object.hasOwn(valores,'datosVisuales'))datosVisuales=valores.datosVisuales;
       if(Object.hasOwn(valores,'listaLarga'))listaHuespedesLarga=valores.listaLarga;
       if(Object.hasOwn(valores,'demoraDetalle'))demoraDetalleHuesped=valores.demoraDetalle;
@@ -1065,6 +1084,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'demoraPreferencias'))demoraPreferencias=valores.demoraPreferencias;
       if(Object.hasOwn(valores,'sinNotificaciones'))sinNotificaciones=valores.sinNotificaciones;
     }};
+    if(process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1'){await probarEstadosReserva(contexto);assert.equal(excepciones.length,0);return;}
+    if(process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'){await probarFlowIAPremium(contexto);assert.equal(excepciones.length,0);return;}
     if(!soloJornada&&!soloNocturno&&!soloPulido)await probarEstabilizacion(contexto);
     if(!soloEstabilizacion){
     if(!soloJornada&&!soloNocturno)await probarPulidoUX(contexto);

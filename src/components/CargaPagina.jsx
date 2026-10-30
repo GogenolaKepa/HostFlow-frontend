@@ -2,6 +2,7 @@ import './CargaPagina.css';
 
 const etiquetas = {
   dashboard: 'Cargando dashboard...',
+  flowia: 'FlowIA está analizando tu operación...',
   huespedes: 'Cargando huéspedes...',
   calendario: 'Cargando calendario...',
   reportes: 'Cargando reportes...',
@@ -55,7 +56,7 @@ export default function CargaPagina({ variante = 'dashboard' }) {
           {Array.from({ length: 5 }, (_, j) => <Trazo key={j} ancho={j === 0 ? '85%' : '65%'} />)}
         </div>)}
       </div> : <div className="hf-skeleton-tarjetas">
-        {Array.from({ length: ['dashboard', 'reportes'].includes(variante) ? 2 : 4 }, (_, i) => <Tarjeta key={i} imagen={variante === 'propiedades'} />)}
+        {Array.from({ length: ['dashboard', 'reportes', 'flowia'].includes(variante) ? 2 : 4 }, (_, i) => <Tarjeta key={i} imagen={variante === 'propiedades'} />)}
       </div>}
     </div>
   </section>;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {reservaVisual} from '../fixtures/visual-modulos.js';
 
 export async function probarEstabilizacion({t,evaluate,send,fill,click,esperar,login,inicioVisible,fixture,requests,fase}) {
-  const boton=(texto,raiz='body')=>evaluate(`[...document.querySelectorAll(${JSON.stringify(raiz+' button')})].find(e=>e.textContent.trim()===${JSON.stringify(texto)}).click()`);
+  const boton=(texto,raiz='body')=>evaluate(`[...document.querySelectorAll(${JSON.stringify(raiz+' button')})].find(e=>e.textContent.replace('✦','').trim()===${JSON.stringify(texto)}).click()`);
   const seleccionar=(id,valor)=>evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(id)});e.value=${JSON.stringify(valor)};e.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   const recargar=async()=>{await evaluate('globalThis.__estabilizacion=true');await send('Page.reload');await esperar(`globalThis.__estabilizacion===undefined && (${inicioVisible})`);};
   const preparar=async(rol='Administrador',escritura=false)=>{
@@ -49,13 +49,13 @@ export async function probarEstabilizacion({t,evaluate,send,fill,click,esperar,l
     assert.deepEqual(consultas().map(r=>r.params.ia),['false']);
     await boton('Actualizar análisis','.flowia-panel');await esperar("!document.querySelector('.flowia-panel-statusbar button').disabled");
     assert.deepEqual(consultas().map(r=>r.params.ia),['false','false']);
-    fixture({demoraFlowIA:250});await boton('Consultar con Gemini','.flowia-panel');await boton('Consultar con Gemini','.flowia-panel');
+    fixture({demoraFlowIA:250});await boton('Potenciar FlowIA','.flowia-panel');await boton('Confirmar y potenciar','.flowia-panel');
     await esperar("document.querySelector('.flowia-mode').textContent.includes('IA activa')");
     assert.equal(consultas().filter(r=>r.params.ia==='true').length,1);
-    fixture({falloFlowIA:true});await boton('Consultar con Gemini','.flowia-panel');await esperar("document.querySelector('.flowia-panel').textContent.includes('Análisis ficticio no disponible')");
+    fixture({falloFlowIA:true});await boton('Potenciar FlowIA','.flowia-panel');await boton('Confirmar y potenciar','.flowia-panel');await esperar("document.querySelector('.flowia-panel').textContent.includes('Análisis ficticio no disponible')");
     await click('.flowia-close');await esperar("!document.querySelector('.flowia-panel')");await click('.sidebar-flowia');await esperar("Boolean(document.querySelector('.flowia-panel'))");
     assert.equal(consultas().filter(r=>r.params.ia==='true').length,2);
-    fixture({falloFlowIA:false,demoraFlowIA:0});await boton('Actualizar análisis','.flowia-panel');await esperar("document.querySelector('.flowia-mode').textContent.includes('Análisis HostFlow')");
+    fixture({falloFlowIA:false,demoraFlowIA:0});await boton('Actualizar análisis','.flowia-panel');await esperar("document.querySelector('.flowia-mode').textContent.includes('Análisis FlowIA')");
     assert.equal(consultas().at(-1).params.ia,'false');
     await click('.flowia-close');await recargar();await click('.sidebar-flowia');await esperar("Boolean(document.querySelector('.flowia-card'))");
     assert.equal(consultas().at(-1).params.ia,'false');assert.equal(consultas().filter(r=>r.params.ia==='true').length,2);

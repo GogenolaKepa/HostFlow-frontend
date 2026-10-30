@@ -1,3 +1,4 @@
+import EstadoReserva from "../components/reservas/EstadoReserva";
 import CargaPagina from "../components/CargaPagina";
 import { usePermisos } from "../context/PermisosContext";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
@@ -4158,21 +4159,8 @@ function Reservas() {
                   </td>
 
                   <td>
-                    <span
-                      className={`estado ${String(
-                        reserva.estado
-                      )
-                        .toLowerCase()
-                        .replace(
-                          /\s+/g,
-                          "-"
-                        )}`}
-                    >
-                      {
-                        reserva.estado
-                      }
-                    </span>
-                    {reserva.finalizacionPendiente && <small>Finalización pendiente</small>}
+                    <EstadoReserva estado={reserva.estado} finalizacionPendiente={reserva.finalizacionPendiente} />
+
                   </td>
 
                   <td>
@@ -4405,20 +4393,7 @@ function Reservas() {
                   </p>
                 </div>
 
-                <span
-                  className={`estado ${String(
-                    reserva.estado
-                  )
-                    .toLowerCase()
-                    .replace(
-                      /\s+/g,
-                      "-"
-                    )}`}
-                >
-                  {
-                    reserva.estado
-                  }
-                </span>
+                <EstadoReserva estado={reserva.estado} finalizacionPendiente={reserva.finalizacionPendiente} />
               </div>
 
               <div className="reservas-mobile-stay">

@@ -1,0 +1,35 @@
+/* Ajustes limitados al asistente, respetando los tokens del tema. */
+.flowia-panel .flowia-panel-header { padding-block: 18px; background: linear-gradient(120deg, var(--hf-primary-deep), var(--hf-nav-bg)); }
+.flowia-panel .flowia-panel-statusbar { padding-block: 10px; }
+.flowia-panel .flowia-panel-body { padding-top: 16px; }
+.flowia-panel .flowia-enhance { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 20px; }
+.flowia-enhance > span { color: var(--hf-text-muted); font-size: 11px; }
+.flowia-panel .flowia-enhance-button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 12px; border: 1px solid var(--hf-border); border-radius: 10px; color: var(--hf-text-secondary); background: var(--hf-surface-soft); font: inherit; font-size: 12px; cursor: pointer; }
+.flowia-panel button:disabled { cursor: default; opacity: .55; }
+.flowia-panel .flowia-summary { margin-bottom: 18px; }
+.flowia-panel .flowia-summary h2 { font-size: 21px; letter-spacing: -.025em; }
+.flowia-panel .flowia-card { padding: 18px; border-color: var(--hf-border-soft); box-shadow: none; }
+.flowia-panel .flowia-card h3 { margin-block: 12px 8px; }
+.flowia-panel .flowia-action-copy { margin-top: 12px; }
+.flowia-panel .flowia-card-action { margin-top: 14px; }
+.flowia-consent { background: var(--hf-info-soft); border: 1px solid var(--hf-info-border); border-radius: 14px; padding: 18px; margin-bottom: 20px; }
+.flowia-consent h2 { color: var(--hf-text); margin: 8px 0 12px; font-size: 19px; line-height: 1.35; }
+.flowia-consent p { color: var(--hf-text-secondary); font-size: 13px; line-height: 1.65; margin: 10px 0; overflow-wrap: anywhere; }
+.flowia-consent-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.flowia-consent-actions button { flex: 1 1 120px; min-height: 44px; border: 1px solid var(--hf-border); border-radius: 10px; padding: 10px; color: var(--hf-text); background: var(--hf-surface); font: inherit; font-size: 12px; cursor: pointer; }
+.flowia-consent-actions .flowia-consent-confirm { background: var(--hf-primary); color: var(--hf-on-brand); border-color: var(--hf-primary); }
+.flowia-panel .flowia-fallback { color: var(--hf-text-muted); font-size: 12px; line-height: 1.6; }
+.flowia-panel .hf-skeleton--flowia .hf-skeleton-cabecera { display: none; }
+.flowia-panel .hf-skeleton--flowia .hf-skeleton-tarjetas { grid-template-columns: minmax(0, 1fr); }
+.flowia-panel .hf-skeleton--flowia .hf-skeleton-tarjeta { min-height: 190px; }
+.flowia-panel .flowia-panel-footer { padding-block: 12px; }
+@media (max-width: 500px) { .flowia-panel .flowia-panel-body { padding-inline: 16px; } .flowia-consent { padding: 16px; } }
+.flowia-panel .flowia-privacy { margin: -6px 0 18px; font-size: 12px; color: var(--hf-text-muted); }
+.flowia-privacy summary { cursor: pointer; padding: 6px 0; width: fit-content; }
+.flowia-privacy summary:focus-visible { outline: 2px solid var(--hf-primary); outline-offset: 3px; }
+.flowia-privacy p { line-height: 1.6; margin: 8px 0; }
+.flowia-panel .flowia-consent { padding: 16px; margin-bottom: 18px; }
+.flowia-panel .flowia-consent h2 { margin: 6px 0 10px; font-size: 18px; }
+.flowia-panel .flowia-consent p { line-height: 1.55; }
+.flowia-panel .flowia-consent .flowia-privacy { margin: 10px 0 0; }
+.flowia-panel .flowia-consent-actions { margin-top: 12px; }

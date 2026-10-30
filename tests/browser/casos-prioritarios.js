@@ -147,7 +147,7 @@ export async function probarPrioridades({ t, evaluate, send, click, fill, espera
 
   await t.test('FlowIA: error/reintento, actualización, diálogo compacto y cambios de tamaño',async()=>{
     fase('FlowIA teclado y estados');fixture({falloFlowIA:true,demoraFlowIA:350});await viewport(1280,800);await recargar();
-    await abrirFlowIA();await esperar("Boolean(document.querySelector('.flowia-loading'))");
+    await abrirFlowIA();await esperar("Boolean(document.querySelector('.hf-skeleton--flowia'))");
     await esperar("Boolean(document.querySelector('.flowia-state--error'))");
     const intentos=requests.filter(r=>r.ruta==='/recomendaciones'&&r.method==='GET').length;
     await new Promise(r=>setTimeout(r,450));assert.equal(requests.filter(r=>r.ruta==='/recomendaciones'&&r.method==='GET').length,intentos,'Sin reintento automático en bucle.');

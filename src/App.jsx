@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Login from "./pages/Login";
+import ValidandoSesion from "./components/ValidandoSesion";
 import Dashboard from "./pages/Dashboard";
 import MiCuenta from "./pages/MiCuenta";
 import api from "./services/api";
@@ -112,7 +113,7 @@ function App() {
   }, [expiraEn, cerrarSesion]);
 
   if (estadoSesion === "validando") {
-    return <div className="login-container" role="status">Validando sesión…</div>;
+    return <ValidandoSesion />;
   }
 
   if (estadoSesion === "error") {

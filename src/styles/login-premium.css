@@ -1,0 +1,31 @@
+.login-container.login-premium { position: relative; isolation: isolate; overflow: hidden; padding: 64px max(32px, 6vw); gap: clamp(48px, 8vw, 150px); }
+.login-hero { position: absolute; z-index: -1; inset: 0; background-position: center; background-size: cover; opacity: 0; transition: opacity .45s ease; pointer-events: none; }
+.login-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(5 16 32 / 65%), rgb(5 16 32 / 18%) 60%, rgb(5 16 32 / 35%)); }
+.login-premium[data-fondo="foto"] .login-hero { opacity: 1; }
+.login-premium .login-info { flex: 1 1 400px; max-width: 470px; }
+.login-premium .login-info h1 { font-size: clamp(44px, 5vw, 72px); letter-spacing: -.045em; margin-bottom: 22px; }
+.login-premium .login-info p { font-size: clamp(18px, 2vw, 24px); max-width: 360px; line-height: 1.5; }
+.login-premium .login-info h1, .login-premium .login-info p { text-shadow: 0 2px 18px rgb(0 0 0 / 40%); }
+.login-premium .login-card { flex: 0 1 410px; width: 410px; max-width: 100%; min-width: 0; padding: 38px; border: 1px solid var(--hf-border-soft); border-radius: 22px; box-shadow: 0 24px 70px rgb(0 0 0 / 28%); background: var(--hf-surface-raised); }
+.login-premium .login-card h2 { font-size: 25px; margin: 0 0 20px; letter-spacing: -.025em; }
+.login-premium .login-card label { font-size: 14px; font-weight: 600; }
+.login-premium .login-card input { width: 100%; min-height: 48px; font: inherit; font-size: 16px; }
+.login-premium .login-card button { min-height: 48px; font-size: 15px; margin-top: 20px; }
+.login-premium .login-card button:focus-visible, .login-premium .login-card input:focus-visible { outline: 3px solid var(--hf-info-text); outline-offset: 3px; }
+.login-premium .login-card .error { margin: 4px 0; font-size: 14px; line-height: 1.5; }
+@media (max-width: 700px) {
+  .login-container.login-premium { flex-direction: column; padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); gap: 28px; }
+  .login-premium .login-info { flex: 0 0 auto; width: 100%; max-width: 410px; }
+  .login-premium .login-info h1 { font-size: 42px; margin-bottom: 12px; }
+  .login-premium .login-info p { font-size: 16px; }
+  .login-premium .login-card { flex: 0 0 auto; padding: 28px; width: min(410px, 100%); }
+  .login-hero { background-position: 42% center; }
+  .login-hero::after { background: rgb(5 16 32 / 58%); }
+}
+@media (prefers-reduced-motion: reduce) { .login-hero { transition: none; } }
+:root[data-reduce-motion="true"] .login-hero { transition: none; }
+/* Pulido de marca: halo suave sin una caja visible. */
+.login-premium .login-info { position: relative; isolation: isolate; text-align: center; transform: translateY(-22px); }
+.login-premium .login-info p { margin-inline: auto; }
+.login-premium .login-info::before { content: ''; position: absolute; z-index: -1; inset: -45px -50px; background: radial-gradient(ellipse at center, rgb(4 14 28 / 20%), transparent 72%); pointer-events: none; }
+@media (max-width: 700px) { .login-premium .login-info { transform: translateY(-6px); } .login-premium .login-info::before { inset: -24px -16px; } }

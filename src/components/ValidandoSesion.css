@@ -1,0 +1,14 @@
+.login-container.sesion-preparando {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 32px 24px;
+  color: var(--hf-on-brand);
+}
+.sesion-preparando-contenido { width: min(100%, 320px); text-align: center; }
+.sesion-preparando-marca { display: block; font-size: clamp(36px, 6vw, 48px); font-weight: 750; letter-spacing: -.045em; line-height: 1.2; }
+.sesion-preparando-contenido p { margin: 18px 0 0; font-size: 15px; line-height: 1.5; }
+.sesion-preparando-actividad { width: 128px; height: 3px; margin: 30px auto 0; overflow: hidden; border-radius: 999px; background: rgb(255 255 255 / 16%); }
+.sesion-preparando-actividad span { display: block; width: 45%; height: 100%; border-radius: inherit; background: rgb(255 255 255 / 85%); animation: sesion-actividad 1.8s ease-in-out infinite; }
+@keyframes sesion-actividad { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(225%); } }
+@media (prefers-reduced-motion: reduce) { .sesion-preparando-actividad span { animation: none; margin-inline: auto; } }
+:root[data-reduce-motion="true"] .sesion-preparando-actividad span { animation: none; margin-inline: auto; }

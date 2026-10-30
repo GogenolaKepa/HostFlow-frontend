@@ -1,8 +1,11 @@
+import { useFondoLogin } from '../hooks/useFondoLogin';
+import '../styles/login-premium.css';
 import { useState } from "react";
 import api from "../services/api";
 import { guardarSesion } from "../services/session";
 
 function Login({ onLogin, aviso }) {
+  const fondo = useFondoLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +34,8 @@ function Login({ onLogin, aviso }) {
   };
 
   return (
-    <div className="login-container">
+    <div className="login-container login-premium" data-fondo={fondo.estado}>
+      <div className="login-hero" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
       <div className="login-info">
         <h1>HostFlow</h1>
         <p>
@@ -73,7 +77,7 @@ function Login({ onLogin, aviso }) {
         />
 
         {error && (
-          <p className="error">
+          <p className="error" role="alert">
             {error}
           </p>
         )}

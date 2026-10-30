@@ -1,0 +1,45 @@
+/* Presentación del listado; sin afectar formularios, detalle u otros módulos. */
+.reservas-page .reservas-desktop-list table { table-layout: fixed; width: 100%; }
+.reservas-page .reservas-desktop-list th,
+.reservas-page .reservas-desktop-list td { text-align: center; vertical-align: middle; padding: 14px 8px; overflow-wrap: anywhere; font-size: 13px; line-height: 1.45; }
+.reservas-page .reservas-desktop-list th { padding-block: 13px; font-size: 12px; }
+.reservas-page .reservas-desktop-list th:nth-child(1),
+.reservas-page .reservas-desktop-list th:nth-child(2) { width: 15%; }
+.reservas-page .reservas-desktop-list th:nth-child(3) { width: 7%; }
+.reservas-page .reservas-desktop-list th:nth-child(4),
+.reservas-page .reservas-desktop-list th:nth-child(5) { width: 8%; }
+.reservas-page .reservas-desktop-list th:nth-child(6) { width: 21%; }
+.reservas-page .reservas-desktop-list th:nth-child(7) { width: 11%; }
+.reservas-page .reservas-desktop-list th:nth-child(8) { width: 15%; }
+.reservas-page .reservas-desktop-list th:last-child,
+.reservas-page .reservas-desktop-list td:last-child { min-width: 0; }
+.reservas-page .reservas-desktop-list .reserva-estados { align-items: center; min-width: 0; width: 100%; gap: 6px; }
+.reservas-page .reservas-desktop-list .reserva-finalizacion-pendiente { white-space: normal; text-align: center; }
+.reservas-page .reservas-desktop-list .table-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; width: 100%; }
+.reservas-page .reservas-desktop-list .table-actions button { margin: 0; max-width: 100%; min-height: 34px; padding: 8px 10px; white-space: normal; overflow-wrap: anywhere; }
+.reservas-page .reservas-desktop-list .reservation-date-with-time { align-items: center; gap: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.reservas-page .reservas-desktop-list .reservation-date-with-time strong { font-size: 12px; }
+.reservas-page .reservas-desktop-list .reservation-date-with-time span { font-size: 11px; color: var(--hf-text-muted); }
+.reservas-page .reserva-importes { max-width: 100%; line-height: 1.5; text-transform: none; letter-spacing: normal; }
+.reservas-page .reservas-desktop-list .reserva-importes > span:first-child { color: var(--hf-text-secondary); font-size: 12px; }
+.reservas-page .reservas-desktop-list .reserva-importes strong { color: var(--hf-text); font-size: 13px; }
+.reservas-page .reservas-desktop-list tbody tr:hover { background: var(--hf-surface-soft); }
+.reservas-page .reservas-desktop-list button:focus-visible,
+.reservas-page .reservas-mobile-actions button:focus-visible { outline: 2px solid var(--hf-info-text); outline-offset: 3px; }
+@media (max-width: 1100px) {
+  .reservas-page > .section-header { flex-direction: column; align-items: stretch; gap: 18px; }
+  .reservas-page .reservas-header-actions { width: 100%; min-width: 0; }
+  .reservas-page .reservas-mobile-card-top > div:first-child { overflow-wrap: anywhere; }
+  .reservas-page .reservas-mobile-card-top p { overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+  .reservas-page .reservas-mobile-card .reserva-estados { align-items: center; flex: 0 0 auto; min-width: 0; max-width: 45%; }
+  .reservas-page .reservas-mobile-card .reserva-estados .estado { max-width: 100%; white-space: normal; text-align: center; }
+  .reservas-page .reservas-mobile-card .reserva-finalizacion-pendiente { text-align: center; }
+  .reservas-page .reservas-mobile-meta .reserva-importes,
+  .reservas-page .reservas-mobile-meta .reserva-importes span,
+  .reservas-page .reservas-mobile-meta .reserva-importes strong { white-space: normal; overflow: visible; text-overflow: clip; text-transform: none; letter-spacing: normal; font-size: 12px; line-height: 1.5; }
+  .reservas-page .reservas-mobile-actions button { overflow-wrap: anywhere; }
+  .reservas-page .reservas-mobile-meta .reserva-importes > span:first-child { font-weight: 400; }
+}
+@media (max-width: 420px) {
+  .reservas-page .reservas-mobile-meta { grid-template-columns: minmax(0, 1fr); }
+}

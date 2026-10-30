@@ -1,3 +1,4 @@
+import "../styles/reservas-listado.css";
 import EstadoReserva from "../components/reservas/EstadoReserva";
 import CargaPagina from "../components/CargaPagina";
 import { usePermisos } from "../context/PermisosContext";

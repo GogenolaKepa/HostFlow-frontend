@@ -78,7 +78,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloUsuarios = false;
   let datosVisuales = false;
   let reservasEstabilizacion = null;
-  const soloEstabilizacion=(process.env.HOSTFLOW_TEST_SESION_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1'||process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'||process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1');
+  const soloEstabilizacion=(process.env.HOSTFLOW_TEST_W3_ONLY==='1'||process.env.HOSTFLOW_TEST_SESION_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1'||process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'||process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1');
   let configuracionActivada = true, falloGuardarConfiguracion = false, conflictoConfiguracion = false, demoraPredeterminados = 0;
   let demoraGuardarConfiguracion = 0, respuestaConfiguracionIncompleta = false;
   let predeterminadosInvalidos = false, falloCargaConfiguracion = false, caducaEn = null;
@@ -1084,6 +1084,11 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       if(Object.hasOwn(valores,'demoraPreferencias'))demoraPreferencias=valores.demoraPreferencias;
       if(Object.hasOwn(valores,'sinNotificaciones'))sinNotificaciones=valores.sinNotificaciones;
     }};
+    if(process.env.HOSTFLOW_TEST_W3_ONLY==='1'){
+      await login();await esperar(inicioVisible);
+      await probarFormularioReservas({...contexto,t:{test:(nombre,fn)=>/catálogos reales|edición\/cancelación/.test(nombre)?t.test(nombre,fn):Promise.resolve()}});
+      assert.equal(excepciones.length,0);return;
+    }
     if(process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1'){await probarEstadosReserva(contexto);assert.equal(excepciones.length,0);return;}
     if(process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'){await probarFlowIAPremium(contexto);assert.equal(excepciones.length,0);return;}
     if(!soloJornada&&!soloNocturno&&!soloPulido)await probarEstabilizacion(contexto);

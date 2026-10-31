@@ -1,0 +1,7 @@
+body { margin:0; background:var(--hf-canvas); }
+.lab-bar { display:flex; flex-wrap:wrap; gap:8px; padding:12px 20px; background:var(--hf-surface); color:var(--hf-text); font:12px system-ui; align-items:center; }
+.lab-bar strong { margin-right:auto; }
+.lab-bar button { color:var(--hf-text); background:var(--hf-surface-muted); border:1px solid var(--hf-border); border-radius:8px; padding:8px; cursor:pointer; min-height:36px; }
+.lab-bar button:focus-visible { outline:3px solid var(--hf-info-text); }
+.lab-correo { margin:0; padding:0 20px; color:var(--hf-text); font:13px/1.5 system-ui; overflow-wrap:anywhere; }
+.lab-correo:not(:empty) { padding-block:10px; background:var(--hf-surface-muted); }

@@ -7,6 +7,12 @@ antes del primer render. Volver desde ellas lleva a `/login`.
 
 ## Alcance actual
 
+La ruta pública `/demo` dispone de ocho secciones con fixtures sintéticos y acciones
+solo en memoria. Su entrada carga un módulo separado: no monta App, sesión JWT,
+proveedor comercial ni páginas con API. Recargar reinicia la demo; no crea cuentas.
+La landing enlaza a esa experiencia y permite comparar/orientar modalidades desde
+el mismo catálogo, sin precios inventados, envío de consultas ni contratación.
+
 - Landing cargada en un chunk independiente; fotografía ya autorizada del login.
 - Vista del producto con datos ilustrativos, sin llamadas a datos operativos.
 - Modalidades orientativas en `src/services/catalogoComercial.js`: id, nombre,

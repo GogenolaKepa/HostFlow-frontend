@@ -4,8 +4,23 @@ const modalidad=(id,nombre,descripcion,caracteristicas,destacado=false)=>Object.
   id,nombre,descripcion,estado:'propuesta',precio:null,moneda:null,periodicidad:null,
   limites:Object.freeze({alojamientos:null,usuarios:null}),
   caracteristicas:Object.freeze(caracteristicas),destacado,
+  orientacion:destacado?'equipo':'individual',
   cta:Object.freeze({tipo:'preparar-solicitud',texto:'Consultar esta modalidad'}),
 });
+
+export function presentarModalidad(plan){
+ return Object.freeze({
+  precio:plan.precio===null||plan.moneda===null?'A consultar':`${plan.moneda} ${new Intl.NumberFormat('es-AR').format(plan.precio)}`,
+  periodicidad:plan.periodicidad||'A definir',
+  disponibilidad:plan.estado==='propuesta'?'Propuesta a confirmar':plan.estado,
+  alojamientos:plan.limites.alojamientos===null?'A definir':String(plan.limites.alojamientos),
+  usuarios:plan.limites.usuarios===null?'A definir':String(plan.limites.usuarios),
+ });
+}
+export function orientarModalidad(formaTrabajo){
+ if(!['individual','equipo'].includes(formaTrabajo))return null;
+ return catalogoComercial.planes.find(p=>p.orientacion===formaTrabajo)?.id||null;
+}
 export const catalogoComercial=Object.freeze({
   version:1,canalContacto:null,contratacionHabilitada:false,
   planes:Object.freeze([

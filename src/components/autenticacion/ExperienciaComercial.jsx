@@ -11,10 +11,13 @@ function useOperacion() {
   async function ejecutar(tarea, despues) {
     if (bloqueo.current) return;
     bloqueo.current = true; setEstado('cargando'); setError('');
+    let incierta = false;
     controlador.current = new AbortController();
     try { const r = await tarea(controlador.current.signal); if (activo.current) { setEstado('lista'); despues?.(r); } }
-    catch (e) { if (activo.current) { setError(e.message || 'No pudimos completar la operación.'); setEstado(['INCIERTO','RESPUESTA_INVALIDA'].includes(e.codigo) ? 'incierto' : e.codigo === 'ENLACE_INVALIDO' ? 'invalido' : 'error'); } }
-    finally { if (activo.current) bloqueo.current = false; }
+    catch (e) { incierta = ['INCIERTO','RESPUESTA_INVALIDA'].includes(e.codigo); if (activo.current) { setError(e.message || 'No pudimos completar la operación.'); setEstado(incierta ? 'incierto' : e.codigo === 'ENLACE_INVALIDO' ? 'invalido' : 'error'); } }
+    // Un botón disabled no impide un submit programático/Enter. Tras un resultado
+    // incierto conservar también el bloqueo síncrono hasta abandonar este flujo.
+    finally { if (activo.current && !incierta) bloqueo.current = false; }
   }
   return { estado, error, ejecutar, ocupado: estado === 'cargando' || estado === 'incierto' };
 }

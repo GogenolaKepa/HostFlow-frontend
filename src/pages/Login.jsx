@@ -3,8 +3,11 @@ import '../styles/login-premium.css';
 import { useState } from "react";
 import api from "../services/api";
 import { guardarSesion } from "../services/session";
+import {useComercial} from '../context/ComercialContext';
+import {EnlaceRecuperacionPreparado} from '../components/autenticacion/EntradaComercialPreparada';
 
-function Login({ onLogin, aviso }) {
+function Login({ onLogin, aviso, abrirRecuperacion }) {
+  const comercial=useComercial();
   const fondo = useFondoLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -85,6 +88,8 @@ function Login({ onLogin, aviso }) {
         <button type="submit" disabled={ocupado}>
           {ocupado ? "Ingresando…" : "Ingresar"}
         </button>
+
+        <EnlaceRecuperacionPreparado capacidades={comercial?.capacidades} abrir={abrirRecuperacion}/>
 
       </form>
     </div>

@@ -18,3 +18,13 @@ test('no admite HTTP y propaga cancelación sin reenviar solicitudes',async()=>{
   const c=crearConexionComercial({origen:'https://cuentas.example.invalid',timeoutMs:100,transportar:(_u,{signal})=>{n++;return new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(Error('fallo ficticio'))));}});
   await assert.rejects(c.cliente.solicitar('persona@example.invalid'),e=>e.codigo==='INCIERTO');assert.equal(n,1);
 });
+test('contacto requiere capacidad propia y lleva JWT solo a sus rutas autenticadas',async()=>{
+  const llamadas=[],c=crearConexionComercial({origen:'https://cuentas.example.invalid',obtenerToken:()=> 'jwt-ficticio',transportar:async(url,opts)=>{
+    llamadas.push(opts);return {status:url.endsWith('capacidades')?200:204,json:async()=>({version:1,recuperacion:true,invitaciones:true,contactos:true})};
+  }});
+  assert.equal((await c.capacidades()).contactos,true);
+  await c.cliente.solicitarContacto('Contraseña ficticia');assert.equal(llamadas[1].headers.Authorization,'Bearer jwt-ficticio');
+  await c.cliente.validar('contacto','a'.repeat(43));assert.equal(llamadas[2].headers.Authorization,'Bearer jwt-ficticio');
+  await c.cliente.validar('recuperacion','a'.repeat(43));assert.equal(llamadas[3].headers.Authorization,undefined);
+  let retirada;assert.equal(prepararEntradaComercial('https://cuentas.example.invalid/cuenta/contacto#token='+'a'.repeat(43),r=>retirada=r).tipo,'contacto');assert.equal(retirada,'/cuenta/contacto');
+});

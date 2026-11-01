@@ -2,6 +2,7 @@ import { useState } from "react";
 import api from "../services/api";
 import { mensajeCuenta, validarPasswordNueva } from "../services/cuentas";
 import { AccountAvatar, PasswordField, PasswordRules, RoleBadge, SecurityFeedback, SecurityIcon } from "../components/security/SecurityUI";
+import {ContactoDelProducto} from '../components/autenticacion/ProductoComercial';
 
 function MiCuenta({ usuario, onSesionActualizada, onLogout, obligatorio = false }) {
   const [nombre, setNombre] = useState(usuario.nombre);
@@ -72,6 +73,7 @@ function MiCuenta({ usuario, onSesionActualizada, onLogout, obligatorio = false 
           </form>
         </div>
       )}
+      {!obligatorio && <ContactoDelProducto usuario={usuario}/>}
     </section>
   );
 }

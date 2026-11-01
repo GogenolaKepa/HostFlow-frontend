@@ -16,8 +16,35 @@ import {
   obtenerToken,
 } from "./services/session";
 import "./App.css";
+import {ProveedorComercial} from './components/autenticacion/ProductoComercial';
+import {EntradaComercialPreparada} from './components/autenticacion/EntradaComercialPreparada';
+import {prepararEntradaComercial,conexionComercialDelProducto} from './services/conexionComercialPreparada';
 
-function App() {
+function App({entradaComercial=null,conexionComercial}={}) {
+  const [conexion]=useState(()=>conexionComercial===undefined?conexionComercialDelProducto():conexionComercial);
+  return <ProveedorComercial conexion={conexion}><Aplicacion entradaInicial={entradaComercial} conexionComercial={conexion}/></ProveedorComercial>;
+}
+
+function Aplicacion({entradaInicial,conexionComercial}) {
+  const [entrada,setEntrada]=useState(entradaInicial);
+  const ultimaURLRetirada=useRef(entradaInicial?window.location.href:null);
+  const revisionEntrada=useRef(0);
+  const volverAlLogin=()=>{ultimaURLRetirada.current=null;window.history.replaceState(null,'','/');setEntrada(null);};
+  useEffect(()=>{
+    const leerEnlace=evento=>{
+      // Una navegación de fragmento puede emitir popstate y hashchange. El
+      // segundo evento no debe reemplazar el token recién retirado por null.
+      if(evento.type==='popstate'&&window.location.hash)return;
+      const href=evento.type==='hashchange'?evento.newURL:window.location.href;
+      if(href===ultimaURLRetirada.current)return;
+      const siguiente=prepararEntradaComercial(href,url=>window.history.replaceState(null,'',url));
+      ultimaURLRetirada.current=siguiente?window.location.href:null;
+      setEntrada(siguiente?{...siguiente,revision:++revisionEntrada.current}:null);
+    };
+    window.addEventListener('hashchange',leerEnlace);
+    window.addEventListener('popstate',leerEnlace);
+    return()=>{window.removeEventListener('hashchange',leerEnlace);window.removeEventListener('popstate',leerEnlace);};
+  },[]);
   const [usuario, setUsuario] = useState(null);
   const [expiraEn, setExpiraEn] = useState(null);
   const [estadoSesion, setEstadoSesion] = useState("validando");
@@ -83,6 +110,8 @@ function App() {
   }, [cerrarSesion]);
 
   useEffect(() => {
+    // Un enlace de recuperación público no depende de una sesión JWT previa.
+    if(entrada)return undefined;
     const alCambiarAlmacenamiento = (event) => {
       if (event.storageArea === localStorage &&
           (event.key === "token" || event.key === null)) {
@@ -101,7 +130,7 @@ function App() {
       window.removeEventListener(CAMBIO_PASSWORD_REQUERIDO, validarSesion);
       window.removeEventListener("storage", alCambiarAlmacenamiento);
     };
-  }, [reiniciarEstado, validarSesion]);
+  }, [reiniciarEstado, validarSesion,entrada]);
 
   useEffect(() => {
     if (!expiraEn) return;
@@ -111,6 +140,11 @@ function App() {
     );
     return () => window.clearTimeout(temporizador);
   }, [expiraEn, cerrarSesion]);
+
+  if(entrada){
+    if(!conexionComercial)return <div className="login-container"><div className="login-card"><h2>Este acceso aún no está disponible</h2><p>Contactá al administrador de tu equipo.</p><button onClick={volverAlLogin}>Volver al inicio de sesión</button></div></div>;
+    return <EntradaComercialPreparada key={entrada.revision||0} entrada={entrada} conexion={conexionComercial} volver={volverAlLogin}/>;
+  }
 
   if (estadoSesion === "validando") {
     return <ValidandoSesion />;
@@ -135,7 +169,7 @@ function App() {
           <MiCuenta obligatorio usuario={usuario} onSesionActualizada={actualizarSesion} onLogout={cerrarSesionRemota} />
         ) : <Dashboard usuario={usuario} onLogout={cerrarSesionRemota} onSesionActualizada={actualizarSesion} />
       ) : (
-        <Login aviso={aviso} onLogin={() => { setAviso(""); validarSesion(); }} />
+        <Login aviso={aviso} abrirRecuperacion={()=>{window.history.replaceState(null,'','/cuenta/solicitar');setEntrada({tipo:'solicitar',tokenInicial:null});}} onLogin={() => { setAviso(""); validarSesion(); }} />
       )}
     </PermisosContext.Provider>
   );

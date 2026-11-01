@@ -4,6 +4,7 @@ import { usePermisos } from "../context/PermisosContext";
 import { limpiarSesion } from "../services/session";
 import { mensajeCuenta, validarPasswordNueva } from "../services/cuentas";
 import { AccountAvatar, PasswordField, PasswordRules, RoleBadge, SecurityDialog, SecurityFeedback, SecurityIcon } from "../components/security/SecurityUI";
+import {InvitacionesDelProducto} from '../components/autenticacion/ProductoComercial';
 
 function Usuarios({ usuarioActual, onSesionActualizada }) {
   const permite = usePermisos();
@@ -110,6 +111,7 @@ function Usuarios({ usuarioActual, onSesionActualizada }) {
         <div><span className="security-eyebrow"><SecurityIcon name="shield" />Equipo y acceso</span><h1>Usuarios</h1><p>Organizá tu equipo y gestioná quién puede acceder a HostFlow.</p></div>
         {permite("usuarios.crear") && <button type="button" className="primary-button" disabled={ocupado || cargando} onClick={() => abrirFormulario(null)}><SecurityIcon name="plus" />Nuevo usuario</button>}
       </header>
+      <InvitacionesDelProducto usuario={usuarioActual}/>
       {error && !formulario && !reset && <SecurityFeedback error>{error}<button type="button" disabled={ocupado} onClick={() => setRecarga(n => n + 1)}>Recargar datos</button></SecurityFeedback>}
       {mensaje && <SecurityFeedback>{mensaje}</SecurityFeedback>}
 

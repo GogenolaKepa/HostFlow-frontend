@@ -30,6 +30,25 @@ export function MarcoCuenta({ children, volver }) {
   </main>;
 }
 function Aviso({ children }) { return children ? <p className="ac-aviso" role="alert">{children}</p> : null; }
+export function SolicitarVerificacionContacto({cliente}){
+  const [password,setPassword]=useState(''),[enviado,setEnviado]=useState(false),op=useOperacion();
+  return <section className="ac-gestion ac-contacto"><h2>Verificá tu correo de recuperación</h2><p>Confirmá tu contraseña actual y luego abrí el enlace que recibirás con tu sesión iniciada. Tu correo y contraseña no cambian.</p>
+    {enviado?<p role="status">Revisá tu correo. La verificación se completa únicamente al confirmar el enlace.</p>:<form onSubmit={e=>{e.preventDefault();op.ejecutar(s=>cliente.solicitarContacto(password,s),()=>{setPassword('');setEnviado(true);});}}>
+      <label htmlFor="ac-contacto-password">Contraseña actual para verificar el correo</label><input id="ac-contacto-password" type="password" autoComplete="current-password" required maxLength={72} value={password} disabled={op.ocupado} onChange={e=>setPassword(e.target.value)}/>
+      <button className="ac-primario" disabled={op.ocupado}>{op.estado==='cargando'?'Solicitando…':'Solicitar verificación de correo'}</button><Aviso>{op.error}</Aviso>
+    </form>}
+  </section>;
+}
+export function ConfirmarContacto({cliente,tokenInicial,volver}){
+  const [valido,setValido]=useState(false),[cargando,setCargando]=useState(true),[error,setError]=useState(''),[hecho,setHecho]=useState(false),op=useOperacion();
+  useEffect(()=>{let vivo=true;const abort=new AbortController();
+    if(!tokenValido(tokenInicial)){setCargando(false);setError('Este enlace no es válido.');return()=>abort.abort();}
+    cliente.validar('contacto',tokenInicial,abort.signal).then(()=>{if(vivo)setValido(true);}).catch(e=>{if(vivo)setError(e.message);}).finally(()=>{if(vivo)setCargando(false);});
+    return()=>{vivo=false;abort.abort();};
+  },[cliente,tokenInicial]);
+  return <MarcoCuenta volver={volver}>{hecho?<Resultado titulo="Tu correo fue verificado" volver={volver}>Ahora podés solicitar recuperación de acceso para esta cuenta Operador.</Resultado>:<><h2>Confirmá tu correo</h2><p>Mantené iniciada la sesión de la cuenta que solicitó este enlace. No cambia tu contraseña.</p>
+    {cargando?<p role="status">Comprobando el enlace y tu sesión…</p>:valido?<button className="ac-primario" disabled={op.ocupado} onClick={()=>op.ejecutar(s=>cliente.confirmarContacto(tokenInicial,s),()=>setHecho(true))}>{op.estado==='cargando'?'Confirmando…':'Confirmar mi correo'}</button>:null}<Aviso>{error||op.error}</Aviso></>}</MarcoCuenta>;
+}
 function Resultado({ titulo, children, volver }) { const ref = useRef(null); useEffect(() => { ref.current?.focus(); }, []); return <div className="ac-resultado"><span className="ac-icono" aria-hidden="true">✓</span><h2 ref={ref} tabIndex={-1}>{titulo}</h2><p>{children}</p><button className="ac-primario" onClick={volver}>Volver al inicio de sesión</button></div>; }
 
 export function SolicitarRecuperacion({ cliente, volver }) {

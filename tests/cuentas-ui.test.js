@@ -11,7 +11,7 @@ const cache = cacheViteAislada();
 before(async () => {
   // SSR local: sin backend ni peticiones API; los efectos React no se ejecutan.
   globalThis.window = { location: { protocol: "http:", hostname: "localhost" } };
-  vite = await createServer({ configFile: false, envDir: false, cacheDir: cache.ruta, plugins: [react()],
+  vite = await createServer({ configFile: false, envDir: false, cacheDir: cache.ruta, plugins: [react()], optimizeDeps: { noDiscovery: true, include: [] },
     server: { middlewareMode: true, ws: false, watch: null } });
   MiCuenta = (await vite.ssrLoadModule("/src/pages/MiCuenta.jsx")).default;
   Usuarios = (await vite.ssrLoadModule("/src/pages/Usuarios.jsx")).default;

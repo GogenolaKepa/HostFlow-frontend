@@ -44,5 +44,7 @@ export function crearClienteComercial(transportar) {
     },
     invitar: (nombre, email, signal) => pedir('/invitaciones', { nombre: nombre.trim(), email: email.trim().toLowerCase() }, 202, signal),
     revocar: (id, signal) => pedir(`/invitaciones/${encodeURIComponent(id)}/revocar`, {}, 204, signal),
+    solicitarContacto:(passwordActual,signal)=>pedir('/contacto/solicitar',{passwordActual},204,signal),
+    confirmarContacto:(token,signal)=>pedir('/contacto/confirmar',{token},204,signal),
   });
 }

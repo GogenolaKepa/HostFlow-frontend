@@ -394,7 +394,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     await send("Runtime.enable"); await send("Page.enable"); await send('Network.enable'); await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
     await send("Page.bringToFront");
     await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
-    await send("Page.navigate", { url: base });
+    await send("Page.navigate", { url: base + '/login' });
     await esperar("Boolean(document.querySelector('#login-email'))");
     const login = async () => {
       await fill("#login-email", current.email); await fill("#login-password", password);

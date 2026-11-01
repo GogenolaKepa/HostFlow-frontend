@@ -40,6 +40,7 @@ function Login({ onLogin, aviso, abrirRecuperacion }) {
     <div className="login-container login-premium" data-fondo={fondo.estado}>
       <div className="login-hero" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
       <div className="login-info">
+        <a className="login-volver-publico" href="/">← Conocer HostFlow</a>
         <h1>HostFlow</h1>
         <p>
           Gestión centralizada de alquileres temporarios

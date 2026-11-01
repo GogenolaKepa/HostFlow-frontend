@@ -27,5 +27,7 @@
 /* Pulido de marca: halo suave sin una caja visible. */
 .login-premium .login-info { position: relative; isolation: isolate; text-align: center; transform: translateY(-22px); }
 .login-premium .login-info p { margin-inline: auto; }
+.login-volver-publico { display:inline-block; color:inherit; font-size:13px; margin-bottom:24px; text-decoration:none; border-bottom:1px solid currentColor; padding-bottom:3px; }
+.login-volver-publico:focus-visible { outline:3px solid currentColor; outline-offset:5px; }
 .login-premium .login-info::before { content: ''; position: absolute; z-index: -1; inset: -45px -50px; background: radial-gradient(ellipse at center, rgb(4 14 28 / 20%), transparent 72%); pointer-events: none; }
 @media (max-width: 700px) { .login-premium .login-info { transform: translateY(-6px); } .login-premium .login-info::before { inset: -24px -16px; } }

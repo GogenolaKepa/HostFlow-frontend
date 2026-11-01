@@ -19,7 +19,7 @@ test('producto React→Express→cuentas→workers→Resend ficticio→enlace→
   let server,vite,b;
   try{
     server=e.app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
-    vite=await createServer({root:frontend,configFile:false,envDir:false,cacheDir:cache.ruta,plugins:[react(),{name:'entrada-e2e',configureServer(s){s.middlewares.use((req,_res,next)=>{if(req.url==='/'||req.url.startsWith('/cuenta/'))req.url='/tests/manual/autenticacion/producto.html';next();});}}],
+    vite=await createServer({root:frontend,configFile:false,envDir:false,cacheDir:cache.ruta,plugins:[react(),{name:'entrada-e2e',configureServer(s){s.middlewares.use((req,_res,next)=>{if(req.url==='/'||req.url==='/login'||req.url.startsWith('/cuenta/'))req.url='/tests/manual/autenticacion/producto.html';next();});}}],
       define:{'import.meta.env.VITE_API_URL':JSON.stringify('/api')},server:{host:'127.0.0.1',port:Number(new URL(base).port),strictPort:true,ws:false,watch:null,proxy:{'/api':`http://127.0.0.1:${server.address().port}`}}});
     await vite.listen();b=await abrirNavegador(ejecutable);const {command,evaluate}=b;
     const esperar=expr=>b.esperar(`(()=>{try{return ${expr};}catch{return false;}})()`);
@@ -35,7 +35,7 @@ test('producto React→Express→cuentas→workers→Resend ficticio→enlace→
     const nueva='Clave E2E ficticia 2026 segura';
     const capturas=path.join(frontend,'../revision/integracion-producto-authcom-2026-10-31/capturas');fs.mkdirSync(capturas,{recursive:true});
     // Enrolamiento de un Operador legacy: contraseña + sesión + enlace, sin backfill.
-    await navegar('/');await esperar("!!document.getElementById('login-email')");
+    await navegar('/login');await esperar("!!document.getElementById('login-email')");
     await fill('login-email',e.operador.usuario.email);await fill('login-password',e.operador.password);await click('Ingresar');
     await esperar("!!document.querySelector('button[title=\"Mi cuenta\"]')");await evaluate("document.querySelector('button[title=\"Mi cuenta\"]').click()");
     await esperar("!!document.getElementById('ac-contacto-password')");
@@ -48,7 +48,7 @@ test('producto React→Express→cuentas→workers→Resend ficticio→enlace→
     await click('Confirmar mi correo');await esperar("document.body.innerText.includes('Tu correo fue verificado')");
     assert.ok(e.repository.filas.get(2).emailVerificadoEn);assert.equal(e.repository.filas.get(2).versionSesion,1);
     await evaluate('localStorage.clear()');
-    await navegar('/');await esperar("!!document.getElementById('login-email')");await esperar("document.body.innerText.includes('¿Olvidaste tu contraseña?')");
+    await navegar('/login');await esperar("!!document.getElementById('login-email')");await esperar("document.body.innerText.includes('¿Olvidaste tu contraseña?')");
     await click('¿Olvidaste tu contraseña?');await esperar("!!document.getElementById('ac-email')");await fill('ac-email',e.operador.usuario.email);await click('Solicitar enlace seguro');await esperar("document.body.innerText.includes('Revisá tu correo')");
     assert.equal(e.repository.ingresos.size,1);assert.equal(e.correos.length,1);
     const {SupervisorComercial}=require('./src/services/SupervisorComercial');
@@ -92,7 +92,7 @@ test('producto React→Express→cuentas→workers→Resend ficticio→enlace→
     assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));
     fs.writeFileSync(path.join(capturas,'respuesta-incierta-movil.png'),Buffer.from((await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
     e.desactivar();await evaluarLoginCerrado();
-    async function evaluarLoginCerrado(){await evaluate('localStorage.clear()');await navegar('/');await esperar("!!document.getElementById('login-email')");assert.equal(await evaluate("document.body.innerText.includes('¿Olvidaste tu contraseña?')"),false);}
+    async function evaluarLoginCerrado(){await evaluate('localStorage.clear()');await navegar('/');await esperar("!!document.getElementById('hf-hero-title')");await navegar('/login');await esperar("!!document.getElementById('login-email')");assert.equal(await evaluate("document.body.innerText.includes('¿Olvidaste tu contraseña?')"),false);}
     assert.deepEqual(externos,[]);
   }catch(error){if(b)console.error('Pantalla al fallar:',await b.evaluate('document.body?.innerText'));throw error;}
   finally{await b?.cerrar();await vite?.close();if(server)await new Promise(r=>server.close(r));cache.limpiar();}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Login from "./pages/Login";
 import ValidandoSesion from "./components/ValidandoSesion";
 import Dashboard from "./pages/Dashboard";
@@ -19,6 +19,7 @@ import "./App.css";
 import {ProveedorComercial} from './components/autenticacion/ProductoComercial';
 import {EntradaComercialPreparada} from './components/autenticacion/EntradaComercialPreparada';
 import {prepararEntradaComercial,conexionComercialDelProducto} from './services/conexionComercialPreparada';
+const Landing=lazy(()=>import('./pages/Landing'));
 
 function App({entradaComercial=null,conexionComercial}={}) {
   const [conexion]=useState(()=>conexionComercial===undefined?conexionComercialDelProducto():conexionComercial);
@@ -27,11 +28,13 @@ function App({entradaComercial=null,conexionComercial}={}) {
 
 function Aplicacion({entradaInicial,conexionComercial}) {
   const [entrada,setEntrada]=useState(entradaInicial);
+  const [rutaPublica,setRutaPublica]=useState(()=>window.location.pathname);
   const ultimaURLRetirada=useRef(entradaInicial?window.location.href:null);
   const revisionEntrada=useRef(0);
-  const volverAlLogin=()=>{ultimaURLRetirada.current=null;window.history.replaceState(null,'','/');setEntrada(null);};
+  const volverAlLogin=()=>{ultimaURLRetirada.current=null;window.history.replaceState(null,'','/login');setRutaPublica('/login');setEntrada(null);};
   useEffect(()=>{
     const leerEnlace=evento=>{
+      setRutaPublica(window.location.pathname);
       // Una navegación de fragmento puede emitir popstate y hashchange. El
       // segundo evento no debe reemplazar el token recién retirado por null.
       if(evento.type==='popstate'&&window.location.hash)return;
@@ -169,6 +172,7 @@ function Aplicacion({entradaInicial,conexionComercial}) {
           <MiCuenta obligatorio usuario={usuario} onSesionActualizada={actualizarSesion} onLogout={cerrarSesionRemota} />
         ) : <Dashboard usuario={usuario} onLogout={cerrarSesionRemota} onSesionActualizada={actualizarSesion} />
       ) : (
+        rutaPublica==='/' ? <Suspense fallback={<ValidandoSesion/>}><Landing/></Suspense> :
         <Login aviso={aviso} abrirRecuperacion={()=>{window.history.replaceState(null,'','/cuenta/solicitar');setEntrada({tipo:'solicitar',tokenInicial:null});}} onLogin={() => { setAviso(""); validarSesion(); }} />
       )}
     </PermisosContext.Provider>

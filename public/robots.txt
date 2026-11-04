@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /cuenta
+Disallow: /api/
+
+Sitemap: https://hostflow.com.ar/sitemap.xml

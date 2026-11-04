@@ -1,3 +1,4 @@
+import MarcaHostFlow from '../MarcaHostFlow';
 import { useEffect, useRef, useState } from 'react';
 import { useFondoLogin } from '../../hooks/useFondoLogin';
 import { emailValido, tokenValido, validarPasswordNueva, MENSAJE_NEUTRAL } from '../../services/autenticacionComercial';
@@ -25,7 +26,7 @@ export function MarcoCuenta({ children, volver }) {
   const fondo = useFondoLogin();
   return <main className="ac-experiencia" data-fondo={fondo.estado}>
     <div className="ac-foto" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
-    <section className="ac-marca" aria-label="HostFlow"><span className="ac-sello">TU OPERACIÓN, EN BUENAS MANOS</span><h1>HostFlow<span>Sentite en casa.</span></h1><p>Un acceso seguro a todo lo que necesitás para gestionar tus alojamientos.</p><div className="ac-confianza"><span aria-hidden="true">◇</span> Privacidad y control, en cada paso.</div></section>
+    <section className="ac-marca" aria-label="HostFlow"><span className="ac-sello">TU OPERACIÓN, EN BUENAS MANOS</span><h1><MarcaHostFlow/><span>Sentite en casa.</span></h1><p>Un acceso seguro a todo lo que necesitás para gestionar tus alojamientos.</p><div className="ac-confianza"><span aria-hidden="true">◇</span> Privacidad y control, en cada paso.</div></section>
     <section className="ac-panel" aria-label="Acceso a tu cuenta"><button className="ac-volver" onClick={volver}>← Volver al inicio de sesión</button>{children}<footer>Tu contraseña es personal. HostFlow nunca te la pedirá por correo.</footer></section>
   </main>;
 }

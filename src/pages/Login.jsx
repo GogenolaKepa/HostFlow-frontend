@@ -1,3 +1,4 @@
+import MarcaHostFlow from '../components/MarcaHostFlow';
 import { useFondoLogin } from '../hooks/useFondoLogin';
 import '../styles/login-premium.css';
 import { useState } from "react";
@@ -39,7 +40,7 @@ function Login({ onLogin, aviso, abrirRecuperacion }) {
       <div className="login-hero" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
       <div className="login-info">
         <a className="login-volver-publico" href="/">← Conocer HostFlow</a>
-        <h1>HostFlow</h1>
+        <h1><MarcaHostFlow/></h1>
         <p>
           Gestión centralizada de alquileres temporarios
         </p>

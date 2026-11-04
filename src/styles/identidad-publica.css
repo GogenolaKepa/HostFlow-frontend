@@ -1,0 +1,56 @@
+/* Propuesta C: identidad pública; no redefine los tokens del panel operativo. */
+:root {
+  --brand-night: #0b1626;
+  --brand-primary: #78cee8;
+  --brand-secondary: #a9eacc;
+  --brand-white: #f3f8fc;
+  --brand-ink: #0b1626;
+  --brand-muted: #b8c8d9;
+  --brand-line: #35475d;
+  --brand-surface: #132337;
+}
+.hf-marca { display:inline-flex; align-items:center; gap:12px; vertical-align:middle; white-space:nowrap; line-height:1; font-family:Arial,sans-serif; letter-spacing:-.045em; font-weight:800; color:inherit; }
+.hf-marca-isotipo { display:block; width:32px; height:52px; object-fit:contain; flex-shrink:0; }
+.hf-marca-nombre { color:inherit; }
+.hf-marca .hf-marca-nombre>span { color:var(--brand-primary); }
+:root .hf-landing {
+  --lp-bg:var(--brand-night); --lp-surface:var(--brand-surface);
+  --lp-text:var(--brand-white); --lp-muted:var(--brand-muted);
+  --lp-line:var(--brand-line); --lp-mint:var(--brand-primary);
+}
+.hf-landing .hf-public-header { background:var(--brand-night); }
+.hf-landing .hf-public-brand { gap:0; }
+.hf-landing .hf-public-brand>.hf-marca { margin:0; color:var(--brand-white); }
+.hf-landing .hf-eyebrow, .hf-landing .hf-feature-icon { color:var(--brand-secondary); }
+.hf-landing .hf-button-mint { color:var(--brand-ink)!important; }
+.hf-landing .hf-button-mint:hover { background:var(--brand-secondary); }
+.hf-landing .hf-hero-shade { background:linear-gradient(90deg,#0b1626ed,#0b1626bf 37%,#0b162640 72%,#0b16265e),linear-gradient(0deg,var(--brand-night),transparent 27%); }
+.hf-landing .hf-flow-section, .hf-landing .hf-contact { background:linear-gradient(125deg,#182f3e,var(--brand-surface)); border-color:var(--brand-line); }
+:root .hf-landing .hf-contact form input, :root .hf-landing .hf-contact form select, :root .hf-landing .hf-contact form textarea { background:var(--brand-night); border-color:#647b90; color:var(--brand-white); }
+.hf-landing .hf-plan-featured { border-color:var(--brand-secondary); }
+.hf-landing .hf-plan-label { background:var(--brand-secondary); color:var(--brand-ink); }
+.login-premium .login-info .hf-marca-isotipo { width:58px; height:94px; }
+.login-premium .login-info .hf-marca { gap:20px; }
+.login-premium .login-card button[type=submit], .ac-experiencia .ac-primario { background:var(--brand-primary); color:var(--brand-ink); border-color:var(--brand-primary); font-weight:700; }
+.login-premium .login-card button[type=submit]:hover:not(:disabled), .ac-experiencia .ac-primario:hover:not(:disabled) { background:var(--brand-secondary); }
+.login-premium .login-card button:disabled, .ac-experiencia button:disabled { opacity:.65; cursor:not-allowed; }
+.ac-experiencia .ac-marca h1>.hf-marca { display:inline-flex; font-size:inherit; font-weight:800; }
+.ac-experiencia .ac-marca h1 .hf-marca-nombre { display:inline; font:inherit; margin:0; letter-spacing:inherit; }
+.ac-experiencia .hf-marca-nombre>span { display:inline; font:inherit; color:var(--brand-primary); }
+.ac-experiencia .ac-marca .hf-marca-isotipo { width:50px; height:82px; }
+.demo-app .demo-marca { display:flex; flex-wrap:wrap; align-items:center; gap:0; }
+.demo-app .demo-marca>.hf-marca { color:var(--brand-white); font-size:25px; }
+.demo-app .demo-marca small { width:100%; }
+.demo-app .demo-sidebar nav button[aria-current=page] { background:var(--brand-primary); border-color:var(--brand-primary); color:var(--brand-ink); box-shadow:none; }
+.demo-app .demo-sidebar nav button[aria-current=page]>span { background:var(--brand-night); color:var(--brand-white); }
+:is(.hf-landing,.login-premium,.ac-experiencia,.demo-app) :is(a,button,input,select,textarea,summary):focus-visible { outline:3px solid var(--brand-primary); outline-offset:4px; }
+:is(.login-premium .login-card,.ac-experiencia .ac-panel) :is(a,button,input,select,textarea):focus-visible { outline-color:var(--hf-primary); }
+@media(max-width:760px) {
+ .hf-landing .hf-public-header nav { background:var(--brand-night); }
+ .hf-landing .hf-hero-shade { background:linear-gradient(90deg,#0b1626df,#0b162688),linear-gradient(0deg,var(--brand-night),transparent 40%); }
+ .login-premium .login-info .hf-marca-isotipo { width:36px; height:58px; }
+ .login-premium .login-info .hf-marca { gap:14px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ :is(.hf-landing,.login-premium,.ac-experiencia,.demo-app) * { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+}

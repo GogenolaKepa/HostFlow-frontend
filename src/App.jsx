@@ -4,6 +4,7 @@ import ValidandoSesion from "./components/ValidandoSesion";
 import Dashboard from "./pages/Dashboard";
 import MiCuenta from "./pages/MiCuenta";
 import api from "./services/api";
+import {SERVICIO_DESCONECTADO} from './services/disponibilidadApi';
 import { PermisosContext } from "./context/PermisosContext";
 import {
   SESION_CERRADA,
@@ -157,7 +158,7 @@ function Aplicacion({entradaInicial,conexionComercial}) {
     return (
       <div className="login-container">
         <div className="login-card" role="alert">
-          <p>No se pudo verificar la sesión. Comprobá la conexión y reintentá.</p>
+          <p>{SERVICIO_DESCONECTADO} No se eliminó tu sesión guardada.</p>
           <button onClick={validarSesion}>Reintentar</button>
           <button onClick={cerrarSesion}>Volver al login</button>
         </div>

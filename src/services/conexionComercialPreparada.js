@@ -1,9 +1,11 @@
 import {crearClienteComercial,retirarTokenDelEnlace} from './autenticacionComercial.js';
 import {obtenerToken} from './session.js';
+import {resolverBaseApi,validarBaseApi} from './configuracionApiPublica.js';
 // No hay flags Vite que habiliten capacidades. Solo respuesta del servidor HTTPS.
 export function conexionComercialDelProducto(){
   if(window.location.protocol!=='https:')return null;
   return crearConexionComercial({origen:window.location.origin,
+    apiBase:resolverBaseApi({env:import.meta.env??{},ubicacion:window.location}),
     transportar:window.fetch.bind(window),obtenerToken});
 }
 // Se llama antes de React/telemetría en una futura entrada autorizada, nunca al importar.
@@ -13,12 +15,14 @@ export function prepararEntradaComercial(href,reemplazar){
   const token=retirarTokenDelEnlace(href,reemplazar);
   return Object.freeze({tipo,tokenInicial:tipo==='solicitar'?null:token});
 }
-export function crearConexionComercial({origen,transportar,obtenerToken=()=>null,timeoutMs=10000}={}){
+export function crearConexionComercial({origen,apiBase=origen+'/api',transportar,obtenerToken=()=>null,timeoutMs=10000}={}){
   const u=new URL(origen);
   if(u.protocol!=='https:'||u.origin!==origen||u.username||u.password||typeof transportar!=='function'||!Number.isInteger(timeoutMs)||timeoutMs<100||timeoutMs>30000)throw TypeError('Conexión comercial no acreditada.');
+  validarBaseApi(apiBase);
+  const apiOrigen=new URL(apiBase,origen).origin;
   async function pedir({ruta,metodo='GET',body,signal}){
     if(!ruta.startsWith('/api/cuentas-comerciales/')||!['GET','POST'].includes(metodo))throw Error('Ruta no admitida.');
-    const destino=new URL(ruta,origen);if(destino.origin!==origen||!destino.pathname.startsWith('/api/cuentas-comerciales/')||destino.hash||destino.searchParams.has('token'))throw Error('Destino no admitido.');
+    const destino=new URL(ruta,apiOrigen);if(destino.origin!==apiOrigen||!destino.pathname.startsWith('/api/cuentas-comerciales/')||destino.hash||destino.searchParams.has('token'))throw Error('Destino no admitido.');
     const admin=/^\/api\/cuentas-comerciales\/invitaciones(?:\?|$|\/[a-f0-9-]+\/revocar$)/.test(ruta);
     const contacto=/^\/api\/cuentas-comerciales\/contacto\/(solicitar|validar|confirmar)$/.test(ruta);
     const token=admin||contacto?obtenerToken():null;

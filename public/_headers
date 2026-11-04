@@ -1,0 +1,10 @@
+/*
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+
+/cuenta/*
+  Cache-Control: no-store
+
+/login
+  Cache-Control: no-store

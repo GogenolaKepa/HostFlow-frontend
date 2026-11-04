@@ -3,6 +3,7 @@ import '../styles/login-premium.css';
 import { useState } from "react";
 import api from "../services/api";
 import { guardarSesion } from "../services/session";
+import {mensajeErrorAcceso} from '../services/disponibilidadApi';
 import {useComercial} from '../context/ComercialContext';
 import {EnlaceRecuperacionPreparado} from '../components/autenticacion/EntradaComercialPreparada';
 
@@ -24,15 +25,12 @@ function Login({ onLogin, aviso, abrirRecuperacion }) {
       const response = await api.post("/auth/login", {
         email,
         password,
-      });
+      }, {timeout:15000});
 
       guardarSesion(response.data.token, response.data.usuario);
       onLogin();
     } catch (error) {
-      setError(
-        error.response?.data?.mensaje ||
-          "Error al iniciar sesión"
-      );
+      setError(mensajeErrorAcceso(error));
     } finally { setOcupado(false); }
   };
 

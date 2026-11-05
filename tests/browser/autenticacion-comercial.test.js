@@ -12,7 +12,7 @@ import {puertoAislado} from '../helpers/puertoAislado.js';
 const browserPath=process.env.HOSTFLOW_TEST_BROWSER||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 test('cuentas premium: navegador aislado, contratos ficticios y responsive',{skip:!fs.existsSync(browserPath),timeout:180000},async t=>{
   const frontend=fileURLToPath(new URL('../..',import.meta.url)),cache=cacheViteAislada();
-  const capturas=path.resolve(frontend,'../revision/autenticacion-comercial-fases3-5-2026-10-30/capturas');fs.mkdirSync(capturas,{recursive:true});
+  const capturas=path.resolve(frontend,'../revision/login-real-preparacion-2026-11-04/CAPTURAS-CUENTA');fs.mkdirSync(capturas,{recursive:true});
   let vite,browser;let invitaciones=[],rol='Administrador',valido=true,ultimoTipo='recuperacion',llamadas=[],demora=0,fallo=false,falloValidar=false;
   const token='a'.repeat(43);
   const plugin={name:'api-ficticia-cuentas',configureServer(server){server.middlewares.use(async(req,res,next)=>{
@@ -33,7 +33,7 @@ test('cuentas premium: navegador aislado, contratos ficticios y responsive',{ski
     res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.statusCode=status;res.end(status===204?'':JSON.stringify(data));
   });}};
   try{
-    vite=await createServer({root:path.join(frontend,'tests/manual/autenticacion'),configFile:false,envDir:false,publicDir:false,cacheDir:cache.ruta,plugins:[react(),plugin],server:{host:'127.0.0.1',port:await puertoAislado(),strictPort:true,ws:false,watch:null,fs:{allow:[frontend]}}});await vite.listen();
+    vite=await createServer({root:path.join(frontend,'tests/manual/autenticacion'),configFile:false,envDir:false,publicDir:path.join(frontend,'public'),cacheDir:cache.ruta,plugins:[react(),plugin],server:{host:'127.0.0.1',port:await puertoAislado(),strictPort:true,ws:false,watch:null,fs:{allow:[frontend]}}});await vite.listen();
     const base=`http://127.0.0.1:${vite.httpServer.address().port}`;
     browser=await abrirNavegador(browserPath);const {command,evaluate,esperar}=browser;
     const externos=[];browser.on('Fetch.requestPaused',async p=>{if(p.request.url.startsWith(base)||p.request.url.startsWith('data:'))await command('Fetch.continueRequest',{requestId:p.requestId});else{externos.push('bloqueado');await command('Fetch.failRequest',{requestId:p.requestId,errorReason:'BlockedByClient'});}});

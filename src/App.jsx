@@ -155,6 +155,11 @@ function Aplicacion({entradaInicial,conexionComercial}) {
   }
 
   if (estadoSesion === "error") {
+    // La caída de la API no debe bloquear el sitio público ni borrar el JWT.
+    // El acceso privado sigue exigiendo una validación correcta del servidor.
+    if (rutaPublica === "/") {
+      return <Suspense fallback={<ValidandoSesion />}><Landing /></Suspense>;
+    }
     return (
       <div className="login-container">
         <div className="login-card" role="alert">

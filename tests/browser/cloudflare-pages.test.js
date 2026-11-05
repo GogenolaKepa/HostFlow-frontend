@@ -6,14 +6,14 @@ import {fileURLToPath} from 'node:url';
 import {abrirNavegador} from '../helpers/navegadorComercial.js';
 const frontend=fileURLToPath(new URL('../..',import.meta.url));
 const ejecutable=process.env.HOSTFLOW_TEST_BROWSER||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-test('build Pages: rutas directas, API separada apagada, sesión conservada y enlaces sin filtración',{skip:!fs.existsSync(ejecutable),timeout:90000},async()=>{
+test('build Pages: rutas directas, API separada apagada, sesión conservada y enlaces sin filtración',{skip:!fs.existsSync(ejecutable),timeout:90000},async t=>{
   const dist=path.join(frontend,'dist');assert.ok(fs.existsSync(path.join(dist,'index.html')),'Construir primero con --mode cloudflare.');
   const b=await abrirNavegador(ejecutable),peticiones=[],bloqueadas=[],fallos=[],canceladas=new Set();
   let sesionFicticiaHabilitada=false;
   const sesionFicticia={token:'JWT-SOLO-FICTICIO-LOGIN',expiraEn:Math.floor(Date.now()/1000)+3600,usuario:{idUsuario:707,nombre:'Operador ficticio',email:'ficticio@example.invalid',rol:'Operador',permisos:[],debeCambiarPassword:false,gestionCuentasDisponible:false,origenAutenticacion:'mock'}};
   const {command,evaluate,esperar}=b;
   const origen='https://hostflow.com.ar',api='https://api.hostflow.com.ar';
-  const capturas=path.join(frontend,'../revision/preparacion-cloudflare-2026-11-04/capturas');fs.mkdirSync(capturas,{recursive:true});
+  const capturas=path.join(frontend,'../revision/login-real-preparacion-2026-11-04/CAPTURAS');fs.mkdirSync(capturas,{recursive:true});
   const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon'};
   async function responder(p,status,contenido,headers={}){
     await command('Fetch.fulfillRequest',{requestId:p.requestId,responseCode:status,responseHeaders:Object.entries(headers).map(([name,value])=>({name,value})),body:Buffer.from(contenido).toString('base64')});
@@ -58,6 +58,18 @@ test('build Pages: rutas directas, API separada apagada, sesión conservada y en
     // Esperar la respuesta, no una demora artificial del producto.
     await esperar("document.body.innerText.includes('No se eliminó tu sesión guardada')");
     assert.equal(peticiones.filter(p=>p.ruta==='/api/auth/me'&&p.metodo==='GET').length,antes+1);
+    await t.test('landing y demo siguen accesibles con sesión guardada y API apagada',async()=>{
+      await navegar('/');await esperar("!!document.querySelector('.hf-landing')");
+      assert.equal(await evaluate("localStorage.getItem('token')"),'JWT-SOLO-FICTICIO');
+      assert.equal(await evaluate("!!document.querySelector('.sidebar')"),false);
+      const consultas=peticiones.filter(p=>p.ruta==='/api/auth/me'&&p.metodo==='GET').length;
+      await new Promise(r=>setTimeout(r,200));
+      assert.equal(peticiones.filter(p=>p.ruta==='/api/auth/me'&&p.metodo==='GET').length,consultas);
+      fs.writeFileSync(path.join(capturas,'landing-api-apagada-sesion-conservada.png'),Buffer.from((await command('Page.captureScreenshot',{format:'png'})).data,'base64'));
+      await navegar('/demo');await esperar("!!document.querySelector('.demo-app')");
+      assert.equal(await evaluate("localStorage.getItem('token')"),'JWT-SOLO-FICTICIO');
+      assert.equal(peticiones.filter(p=>p.ruta==='/api/auth/me'&&p.metodo==='GET').length,consultas);
+    });
     await evaluate('localStorage.clear()');
     await command('Emulation.setDeviceMetricsOverride',{width:375,height:812,deviceScaleFactor:1,mobile:true});
     await navegar('/cuenta/solicitar');await esperar("!!document.getElementById('ac-email')");

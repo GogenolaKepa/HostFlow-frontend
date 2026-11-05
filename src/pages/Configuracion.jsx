@@ -20,17 +20,17 @@ const sections = [
   { id: 'seguridad', title: 'Seguridad y acceso', icon: 'shield', disponible: true },
 ];
 
-export default function Configuracion({ onNavegar, gestionCuentasDisponible = false, apartadoInicial = 'apariencia' }) {
+export default function Configuracion({ onNavegar, onCambiarApartado, gestionCuentasDisponible = false, apartadoInicial = 'apariencia' }) {
   const permite = usePermisos();
   const general = permite('usuarios.ver');
   const empresarial = permite('configuracion.ver');
-  const [section,setSection] = useState(apartadoInicial==='monedas'&&empresarial?'monedas':'apariencia');
   const { protector, ocupado: busy } = useProtectorBorradores();
-  const current = sections.find(item=>item.id===section);
   const visibles = sections.filter(item=>['apariencia','generales'].includes(item.id) || (item.id==='notificaciones'?permite('notificaciones.preferencias'):['empresa','operativas','monedas'].includes(item.id)?empresarial:general));
+  const [section,setSection] = useState(() => visibles.some(item=>item.id===apartadoInicial) ? apartadoInicial : 'apariencia');
+  const current = sections.find(item=>item.id===section);
   const navegar = id => {
     if(id===section||busy)return;
-    protector.solicitar(() => setSection(id));
+    protector.solicitar(() => { setSection(id); onCambiarApartado?.(id); });
   };
   const contenido = () => {
     if(section==='apariencia')return <Apariencia />;

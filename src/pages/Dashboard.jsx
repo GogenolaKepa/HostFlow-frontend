@@ -1,4 +1,5 @@
 import CargaPagina from "../components/CargaPagina";
+import { useNavegacionSistema } from "../hooks/useNavegacionSistema";
 import { usePermisos } from "../context/PermisosContext";
 import Usuarios from "./Usuarios";
 import MiCuenta from "./MiCuenta";
@@ -856,8 +857,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-  const [seccionActiva, setSeccionActiva] = useState("inicio");
-  const [apartadoConfiguracion, setApartadoConfiguracion] = useState('apariencia');
+  const { seccion: seccionActiva, apartado: apartadoConfiguracion, navegar: setSeccionActiva } = useNavegacionSistema(usuario, protector);
   const [flowIAAbierta, setFlowIAAbierta] = useState(false);
   const flowIAPanelId = useId();
   const flowIAOpener = useRef(null);
@@ -2077,7 +2077,6 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
     protector.solicitar(() => ejecutarCambioSeccion(seccion));
   };
   const ejecutarCambioSeccion = (seccion, apartado = 'apariencia') => {
-    setApartadoConfiguracion(apartado);
 
 
 
@@ -2105,7 +2104,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-    setSeccionActiva(seccion);
+    setSeccionActiva(seccion, apartado);
 
 
 
@@ -3704,7 +3703,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
         ) : seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
         ) : seccionActiva === "configuracion" ? (
-          <Configuracion key={apartadoConfiguracion} apartadoInicial={apartadoConfiguracion} onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />
+          <Configuracion key={apartadoConfiguracion} apartadoInicial={apartadoConfiguracion} onCambiarApartado={apartado => setSeccionActiva('configuracion', apartado)} onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />
         ) : seccionActiva === "mi-cuenta" ? (
           <MiCuenta usuario={usuario} onSesionActualizada={onSesionActualizada} onLogout={onLogout} />
         ) : (<>
@@ -3850,23 +3849,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-            onVerPropiedades={() =>
-
-
-
-              setSeccionActiva(
-
-
-
-                "propiedades"
-
-
-
-              )
-
-
-
-            }
+            onVerPropiedades={() => cambiarSeccion("propiedades")}
 
 
 

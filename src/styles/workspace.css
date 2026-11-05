@@ -1,5 +1,6 @@
 /* FlowIA vive en la capa modal nativa: nunca reserva ancho o altura al contenido. */
-.dashboard {
+/* Prioridad frente a los overrides históricos de App.css, cargado después. */
+.dashboard.dashboard {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
@@ -9,7 +10,7 @@
   overflow: hidden;
 }
 .dashboard.dashboard--sidebar-collapsed { padding-left: var(--hostflow-sidebar-collapsed); }
-.dashboard > .main {
+.dashboard.dashboard > .main {
   grid-area: 1 / 1;
   min-width: 0;
   min-height: 0;
@@ -19,7 +20,8 @@
   scroll-padding-block: 24px;
   scrollbar-gutter: stable;
 }
-body:has(dialog[open], [aria-modal="true"], .reservation-detail-backdrop, .calendar-day-modal-backdrop, .property-image-preview-backdrop, .reportes-export-overlay, .dashboard-metric-overlay, .mobile-nav-drawer) .dashboard > .main { overflow: hidden; }
+/* Un dialog cerrado puede conservar aria-modal: solo las capas abiertas bloquean. */
+body:has(dialog[open], .reservation-detail-backdrop, .calendar-day-modal-backdrop, .property-image-preview-backdrop, .reportes-export-overlay, .dashboard-metric-overlay, .mobile-nav-drawer) .dashboard > .main { overflow: hidden; }
 .sidebar-nav .sidebar-flowia, .mobile-nav-list .mobile-flowia { margin-top: 4px; }
 .sidebar-flowia.is-open, .mobile-flowia.is-open { background: var(--hf-primary); color: var(--hf-on-brand); }
 .sidebar-flowia .sidebar-nav-icon, .mobile-flowia .mobile-nav-icon { font-size: 21px; }
@@ -119,12 +121,12 @@ body:has(dialog[open], [aria-modal="true"], .reservation-detail-backdrop, .calen
   }
   .flowia-panel .flowia-panel-header { padding-inline: 20px; }
   .flowia-panel .flowia-panel-body, .flowia-panel .flowia-panel-statusbar, .flowia-panel .flowia-panel-footer { padding-inline: 20px; }
-  .dashboard, .dashboard.dashboard--sidebar-collapsed {
+  .dashboard.dashboard, .dashboard.dashboard--sidebar-collapsed {
     padding-left: 0;
     grid-template-rows: auto minmax(0, 1fr);
   }
   .dashboard > .mobile-appbar { position: relative; grid-area: 1 / 1 / 2 / -1; }
-  .dashboard > .main { grid-area: 2 / 1; }
+  .dashboard.dashboard > .main { grid-area: 2 / 1; }
 }
 @media (max-height: 500px) {
   .flowia-panel .flowia-panel-header, .flowia-panel .flowia-panel-statusbar { padding-block: 8px; }

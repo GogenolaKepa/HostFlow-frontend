@@ -54,6 +54,27 @@ function Aplicacion({entradaInicial,conexionComercial}) {
   const [estadoSesion, setEstadoSesion] = useState("validando");
   const [aviso, setAviso] = useState("");
   const intentoValidacion = useRef(0);
+  const tuvoSesion = useRef(false);
+
+  useEffect(() => {
+    if (usuario) {
+      tuvoSesion.current = true;
+      if (usuario.debeCambiarPassword) {
+        window.history.replaceState(null, '', '/mi-cuenta');
+        document.title = 'Mi cuenta | HostFlow';
+      }
+      return;
+    }
+    if (estadoSesion === 'lista' && tuvoSesion.current && !entrada) {
+      tuvoSesion.current = false;
+      window.history.replaceState(null, '', '/login');
+      setRutaPublica('/login');
+    }
+    if (entrada) document.title = `${entrada.tipo === 'invitaciones' ? 'Invitación' : 'Recuperar acceso'} | HostFlow`;
+    else if (estadoSesion === 'validando') document.title = 'Validando sesión | HostFlow';
+    else if (estadoSesion === 'error' && rutaPublica !== '/') document.title = 'Servicio no disponible | HostFlow';
+    else document.title = rutaPublica === '/' ? 'HostFlow | Gestión de alojamientos temporarios' : 'Acceso a tu cuenta | HostFlow';
+  }, [usuario, estadoSesion, entrada, rutaPublica]);
 
   const reiniciarEstado = useCallback(() => {
     intentoValidacion.current += 1;

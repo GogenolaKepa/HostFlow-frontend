@@ -9,13 +9,14 @@ const ejecutable = process.env.HOSTFLOW_TEST_BROWSER || 'C:/Program Files/Google
 
 test('landing híbrida y login real con API completamente simulada', {skip: !fs.existsSync(ejecutable), timeout: 120000}, async t => {
   const frontend = fileURLToPath(new URL('../..', import.meta.url));
-  const capturas = path.resolve(frontend, '../evidencia-hibrida');
+  const capturas = path.resolve(process.env.HOSTFLOW_TEST_ARTIFACTS_DIR || path.join(frontend, '../evidencia-hibrida'));
   fs.mkdirSync(capturas, {recursive: true});
   const dist = path.join(frontend, 'dist');
   const base = 'https://hostflow.com.ar', api = 'https://api.hostflow.com.ar';
   const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon'};
   assert.ok(fs.existsSync(path.join(dist, 'index.html')), 'Construir primero con configuración Cloudflare.');
   const llamadas = [], externos = [], errores = [], confirmaciones = [];
+  const tipografiasLanding = new Map();
   let navegador, foto = true, revision = 0;
   const usuario = {idUsuario: 9001, nombre: 'Persona ficticia', email: 'laboratorio@example.invalid', rol: 'Administrador', permisos: ['dashboard.ver'], origenAutenticacion: 'sql', gestionCuentasDisponible: true, debeCambiarPassword: false, versionRegistro: '0000000000000001'};
   try {
@@ -77,6 +78,18 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
     };
     const llenar = (selector, valor) => evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,${JSON.stringify(valor)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
     const captura = async (nombre, completa = true) => fs.writeFileSync(path.join(capturas, nombre+'.png'), Buffer.from((await command('Page.captureScreenshot', {format: 'png', captureBeyondViewport: completa})).data, 'base64'));
+    const tipografia = selector => evaluate(`(${function(selector) {
+      const elemento = document.querySelector(selector);
+      const estilo = getComputedStyle(elemento);
+      const tamano = parseFloat(estilo.fontSize);
+      return {
+        familia: estilo.fontFamily, peso: estilo.fontWeight, estilo: estilo.fontStyle,
+        stretch: estilo.fontStretch, sintesis: estilo.fontSynthesis,
+        espaciadoRelativo: parseFloat(estilo.letterSpacing) / tamano,
+        alturaRelativa: parseFloat(estilo.lineHeight) / tamano,
+        anchoRelativo: elemento.getBoundingClientRect().width / tamano,
+      };
+    }.toString()})(${JSON.stringify(selector)})`);
 
     for (const width of [1440, 768, 390, 320]) await t.test('landing responsive, accesible y sin fixtures públicos '+width, async () => {
       await command('Emulation.setDeviceMetricsOverride', {width, height: 950, deviceScaleFactor: 1, mobile: width < 760});
@@ -91,6 +104,12 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       assert.ok(await evaluate("[...document.querySelectorAll('form input,form select,form textarea')].every(e=>!!e.closest('label'))"));
       assert.equal(await evaluate("getComputedStyle(document.querySelector('[name=nombre]')).backgroundColor"), 'rgb(15, 33, 53)');
       assert.ok(await evaluate("[...document.querySelectorAll('.cabecera span')].every(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(e).padding==='0px')"));
+      tipografiasLanding.set(width, await Promise.all(['.cabecera .hf-marca-nombre','.pie .hf-marca-nombre'].map(tipografia)));
+      assert.equal(await evaluate("document.getElementById('hf-hero-title').textContent"), 'Tu operación.En un solo lugar.');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .marca')).fontSize"), width<=760?'26px':width<=1100?'27px':'30px');
+      assert.equal(await evaluate("document.querySelector('.cabecera .marca img').getAttribute('src')"), '/brand/isotipo.svg');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre')).color"), 'rgb(243, 248, 252)');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre>span')).color"), 'rgb(120, 206, 232)');
       if (width < 760) {
         await evaluate("document.querySelector('.menu-movil').click()");
         assert.equal(await evaluate("document.querySelector('.menu-movil').getAttribute('aria-expanded')"), 'true');
@@ -109,6 +128,9 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
     });
     await t.test('contacto prepara correo, nunca POST ni falso acuse, invalida borrador al cambiar', async () => {
       assert.ok(llamadas.every(x=>x.metodo==='GET'&&x.ruta==='/api/cuentas-comerciales/capacidades'));
+      assert.match(await evaluate("document.querySelector('.canal-contacto').textContent"), /Recepción de correos habilitada/);
+      assert.doesNotMatch(await evaluate("document.querySelector('.canal-contacto').textContent"), /pendiente de confirmación/);
+      assert.match(await evaluate("document.querySelector('.canal-contacto p').textContent"), /No lo envía ni confirma su recepción/);
       await evaluate("document.querySelectorAll('.tarjeta-plan a')[1].click()");
       await llenar('[name=nombre]', 'Persona ficticia');
       await llenar('[name=correo]', 'consulta@example.invalid');
@@ -151,6 +173,14 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       if (width < 760) assert.ok(medidas.ratio>0.85&&medidas.ratio<0.89);
       assert.equal(await evaluate("document.body.innerText.includes('Conocer HostFlow')"), false);
       assert.equal(await evaluate("!!document.querySelector('.login-volver-publico[href=\"/\"]')"), true);
+      const referencia = await tipografia('.nombre-login');
+      assert.equal(referencia.peso, '800');
+      for (const marca of tipografiasLanding.get(width)) {
+        const {anchoRelativo, ...estilos} = marca;
+        const {anchoRelativo: anchoLogin, ...estilosLogin} = referencia;
+        assert.deepEqual(estilos, estilosLogin);
+        assert.ok(Math.abs(anchoRelativo-anchoLogin)<0.002, 'La proporción de la palabra coincide con el login.');
+      }
       await captura('login-'+width);
     });
     await t.test('imagen lenta no bloquea ni desplaza el formulario y conserva fallback', async () => {

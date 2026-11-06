@@ -49,7 +49,7 @@ export default function ContactoComercial({plan, setPlan, ciclo, setCiclo}) {
   return <section id="contacto" className="contacto ancho" aria-labelledby="contacto-titulo">
     <div className="contacto-presentacion"><span className="ceja">CONVERSEMOS SOBRE TU GESTIÓN</span><h2 id="contacto-titulo">Tu gestión puede<br/>verse más clara.</h2><p>Contanos sobre tus alojamientos y lo que necesitás organizar. Prepará una consulta para coordinar el alcance y tu incorporación.</p>
       <ul className="contacto-pasos"><li><span>01</span>Elegí un plan y una periodicidad de interés.</li><li><span>02</span>Compartí el contexto de tu operación.</li><li><span>03</span>Prepará un correo para conversar sobre tu propuesta.</li></ul>
-      <div className="canal-contacto"><strong>contacto@hostflow.com.ar</strong><span>Canal comercial · Recepción pendiente de confirmación</span><p>La página prepara el mensaje en tu navegador. No lo envía ni confirma su recepción.</p></div>
+      <div className="canal-contacto"><strong>contacto@hostflow.com.ar</strong><span>Canal comercial · Recepción de correos habilitada</span><p>La página prepara el mensaje en tu navegador. No lo envía ni confirma su recepción.</p></div>
     </div>
     <form className="formulario" onSubmit={preparar} onChange={limpiar}>
       <h3>Solicitar información</h3><p>Los campos marcados con * son obligatorios.</p>

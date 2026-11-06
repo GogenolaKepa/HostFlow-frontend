@@ -30,11 +30,12 @@
 .hf-hibrido :focus-visible { outline: 3px solid var(--celeste); outline-offset: 5px; }
 .hf-hibrido .ancho { width: min(1180px, calc(100% - 96px)); margin-inline: auto; }
 .hf-hibrido .ceja { font-size: 10px; letter-spacing: .13em; font-weight: 700; color: var(--celeste); display: block; line-height: 1.6; }
-.hf-hibrido .marca { display: inline-flex; align-items: center; gap: 11px; white-space: nowrap; font-size: 30px; font-weight: 800; letter-spacing: -.045em; }
+.hf-hibrido .marca { display: inline-flex; align-items: center; gap: 11px; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -.05em; }
 .hf-hibrido .marca > img { width: 29px; height: 47px; object-fit: contain; }
 .hf-hibrido .marca > span > span { color: #78CEE8; }
 .hf-hibrido .cabecera { position: sticky; top: 0; z-index: 20; background: #102035B8; border-bottom: 1px solid #C1D9EF26; backdrop-filter: blur(16px); }
 .hf-hibrido .cabecera span { padding: 0; border-radius: 0; background: transparent; font-weight: inherit; }
+.hf-hibrido .cabecera .marca { font-weight: 800; }
 .hf-hibrido .nav-fila { min-height: 84px; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
 .hf-hibrido .nav-fila nav { display: flex; align-items: center; gap: 28px; font-size: 13px; }
 .hf-hibrido .nav-fila nav a { display: flex; align-items: center; min-height: 44px; }

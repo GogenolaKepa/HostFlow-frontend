@@ -1,9 +1,23 @@
-import {useState} from 'react';
-import {catalogoComercial,presentarModalidad,orientarModalidad} from '../services/catalogoComercial';
-
-export default function ModalidadesComparadas({elegir}){
- const [forma,setForma]=useState('');
- const id=orientarModalidad(forma),orientada=catalogoComercial.planes.find(p=>p.id===id);
- const filas=[['Precio','precio'],['Periodicidad','periodicidad'],['Alojamientos','alojamientos'],['Usuarios','usuarios'],['Disponibilidad','disponibilidad']];
- return <details className="hf-comparador"><summary>Comparar modalidades y orientarme</summary><div className="hf-comparador-grid"><div><h3>¿Cómo organizás tu gestión?</h3><p>Una orientación por tu forma de trabajo, sin estimar precios ni aplicar límites.</p><label htmlFor="hf-forma-trabajo">Forma de trabajo</label><select id="hf-forma-trabajo" value={forma} onChange={e=>setForma(e.target.value)}><option value="">Todavía estoy explorando</option><option value="individual">Gestiono por mi cuenta</option><option value="equipo">Coordino con un equipo</option></select><div role="status">{orientada?<><p>Podés empezar por <strong>{orientada.nombre}</strong>. El alcance se confirma en una propuesta.</p><a href="#solicitar" className="hf-button hf-button-mint" onClick={()=>elegir(id)}>Preparar consulta sobre {orientada.nombre}</a></>:<p>Explorá ambas modalidades. No hace falta elegir ahora.</p>}</div></div><div className="hf-comparador-tabla" tabIndex={0} role="region" aria-label="Comparación de modalidades"><table><thead><tr><th>Aspecto</th>{catalogoComercial.planes.map(p=><th key={p.id}>{p.nombre}</th>)}</tr></thead><tbody>{filas.map(([nombre,campo])=><tr key={campo}><th scope="row">{nombre}</th>{catalogoComercial.planes.map(p=><td key={p.id}>{presentarModalidad(p)[campo]}</td>)}</tr>)}<tr><th scope="row">Enfoque</th>{catalogoComercial.planes.map(p=><td key={p.id}>{p.descripcion}</td>)}</tr><tr><th scope="row">Características orientativas</th>{catalogoComercial.planes.map(p=><td key={p.id}><ul>{p.caracteristicas.map(c=><li key={c}>{c}</li>)}</ul></td>)}</tr></tbody></table></div></div></details>;
+import {planes,precioPlan,descuentoAnualPuntosBase,herramientas} from '../services/catalogoComercial';
+export default function ModalidadesComparadas({ciclo='mensual'}){
+ const puntosBase=descuentoAnualPuntosBase(planes[0]);
+ const descuento=Math.floor(puntosBase/100)+','+String(puntosBase%100).padStart(2,'0')+' %';
+ return (        <details className="comparador">
+          <summary>Comparar los tres planes <span aria-hidden="true">⌄</span></summary>
+          <div className="tabla-scroll" tabIndex={0} role="region" aria-label="Comparación de planes">
+            <table>
+              <caption>Planes por empresa · Usuarios con acceso al sistema, sin contar huéspedes</caption>
+              <thead><tr><th scope="col">Para tu gestión</th>{planes.map(plan => <th scope="col" key={plan.id}>{plan.nombre}</th>)}</tr></thead>
+              <tbody>
+                <tr><th scope="row">Orientación</th>{planes.map(plan => <td key={plan.id}>{plan.enfoque}</td>)}</tr>
+                <tr><th scope="row">Propiedades</th>{planes.map(plan => <td key={plan.id}>Hasta {plan.propiedades}</td>)}</tr>
+                <tr><th scope="row">Usuarios del sistema</th>{planes.map(plan => <td key={plan.id}>{plan.usuarios === 1 ? '1 usuario' : 'Hasta ' + plan.usuarios}</td>)}</tr>
+                {herramientas.map(texto => <tr key={texto}><th scope="row">{texto}</th>{planes.map(plan => <td key={plan.id}>Contemplado</td>)}</tr>)}
+                <tr><th scope="row">Periodicidad elegida</th>{planes.map(plan => <td key={plan.id}>{ciclo === 'mensual' ? 'Mensual' : 'Anual'}</td>)}</tr>
+                <tr><th scope="row">{ciclo === 'anual' ? 'Total anual por adelantado' : 'Importe mensual'}</th>{planes.map(plan => <td className="precio-comparacion" key={plan.id}>{precioPlan(plan, ciclo)}</td>)}</tr>
+                <tr><th scope="row">Modalidad anual</th>{planes.map(plan => <td key={plan.id}>1 mes bonificado · {descuento}</td>)}</tr>
+              </tbody>
+            </table>
+          </div>
+        </details>);
 }

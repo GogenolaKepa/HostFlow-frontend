@@ -1,4 +1,3 @@
-import MarcaHostFlow from '../components/MarcaHostFlow';
 import { useFondoLogin } from '../hooks/useFondoLogin';
 import '../styles/login-premium.css';
 import { useState } from "react";
@@ -36,64 +35,27 @@ function Login({ onLogin, aviso, abrirRecuperacion }) {
   };
 
   return (
-    <div className="login-container login-premium" data-fondo={fondo.estado}>
-      <div className="login-hero" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
-      <div className="login-info">
-        <a className="login-volver-publico" href="/">← Conocer HostFlow</a>
-        <h1><MarcaHostFlow/></h1>
-        <p>
-          Gestión centralizada de alquileres temporarios
-        </p>
+    <main className="login-container login-premium" data-fondo={fondo.estado}>
+      <div className="login-hero" aria-hidden="true" style={fondo.url ? {backgroundImage: `url("${fondo.url}")`} : undefined}/>
+      <a className="login-volver-publico" href="/">← Volver a HostFlow</a>
+      <div className="login-contenido">
+        <section className="login-info" aria-labelledby="marca-login"><div className="identidad-login">
+          <img src="/brand/isotipo.svg" width="52" height="85" alt=""/>
+          <h1 id="marca-login"><span className="marca"><span className="nombre-login">Host<span>Flow</span></span></span></h1>
+          <p>Gestión centralizada de alquileres temporarios</p>
+        </div></section>
+        <form className="login-card" onSubmit={iniciarSesion} aria-busy={ocupado}>
+          <span className="login-ceja">TU ESPACIO DE TRABAJO</span><h2>Iniciar sesión</h2><p className="login-intro">Accedé con tu cuenta autorizada.</p>
+          {aviso&&<p role="status">{aviso}</p>}
+          <label htmlFor="login-email">Correo electrónico</label><input id="login-email" type="email" value={email} autoComplete="email" placeholder="tu@empresa.com" onChange={e=>setEmail(e.target.value)}/>
+          <label htmlFor="login-password">Contraseña</label><input id="login-password" type="password" value={password} autoComplete="current-password" placeholder="Ingresá tu contraseña" onChange={e=>setPassword(e.target.value)}/>
+          {error&&<p className="error" role="alert">{error}</p>}
+          <button type="submit" disabled={ocupado}>{ocupado?'Ingresando…':'Ingresar'}<span aria-hidden="true">→</span></button>
+          <div className="login-ayuda"><EnlaceRecuperacionPreparado capacidades={comercial?.capacidades} abrir={abrirRecuperacion}/></div>
+          <div className="login-contacto"><span>¿Todavía no tenés acceso?</span><a href="/#contacto">Solicitar información →</a></div>
+        </form>
       </div>
-
-      <form
-        className="login-card"
-        onSubmit={iniciarSesion}
-      >
-        <h2>Iniciar sesión</h2>
-        {aviso && <p role="status">{aviso}</p>}
-
-        <label htmlFor="login-email">
-          Correo electrónico
-        </label>
-        <input
-          id="login-email"
-          type="email"
-          value={email}
-          autoComplete="email"
-          onChange={(e) =>
-            setEmail(e.target.value)
-          }
-        />
-
-        <label htmlFor="login-password">
-          Contraseña
-        </label>
-        <input
-          id="login-password"
-          type="password"
-          value={password}
-          autoComplete="current-password"
-          onChange={(e) =>
-            setPassword(e.target.value)
-          }
-        />
-
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-
-        <button type="submit" disabled={ocupado}>
-          {ocupado ? "Ingresando…" : "Ingresar"}
-        </button>
-
-        <EnlaceRecuperacionPreparado capacidades={comercial?.capacidades} abrir={abrirRecuperacion}/>
-
-      </form>
-    </div>
+    </main>
   );
 }
-
 export default Login;

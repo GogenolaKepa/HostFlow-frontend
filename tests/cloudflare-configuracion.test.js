@@ -35,6 +35,14 @@ test('servicio apagado tiene explicación útil; credenciales incorrectas conser
 test('Pages conserva configuración SWA y prepara cabeceras para enlaces sensibles',()=>{
   const h=fs.readFileSync(new URL('../public/_headers',import.meta.url),'utf8');
   assert.match(h,/Referrer-Policy: no-referrer/);assert.match(h,/\/cuenta\/\*[\s\S]*Cache-Control: no-store/);
+  const sensibles=h.split('/cuenta/*')[1].split(/\n(?=\S)/)[0];
+  assert.match(sensibles,/Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'/);
+  assert.doesNotMatch(sensibles,/unsafe-inline|unsafe-eval|static\.cloudflareinsights\.com/);
   assert.ok(fs.existsSync(new URL('../public/staticwebapp.config.json',import.meta.url)));
   assert.ok(!fs.existsSync(new URL('../public/404.html',import.meta.url)));
+});
+
+test('entrada desde login solicita documento protegido: cambiar solo history no aplica cabeceras CSP',()=>{
+  const app=fs.readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
+  assert.match(app,/abrirRecuperacion=\{\(\)=>window\.location\.assign\('\/cuenta\/solicitar'\)\}/);
 });

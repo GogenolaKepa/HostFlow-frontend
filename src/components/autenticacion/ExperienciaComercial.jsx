@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useFondoLogin } from '../../hooks/useFondoLogin';
 import { emailValido, tokenValido, validarPasswordNueva, MENSAJE_NEUTRAL } from '../../services/autenticacionComercial';
 import './autenticacion-comercial.css';
+import CampoPassword from './CampoPassword';
 
 function useOperacion() {
   const [estado, setEstado] = useState('lista');
@@ -35,7 +36,7 @@ export function SolicitarVerificacionContacto({cliente}){
   const [password,setPassword]=useState(''),[enviado,setEnviado]=useState(false),op=useOperacion();
   return <section className="ac-gestion ac-contacto"><h2>Verificá tu correo de recuperación</h2><p>Confirmá tu contraseña actual y luego abrí el enlace que recibirás con tu sesión iniciada. Tu correo y contraseña no cambian.</p>
     {enviado?<p role="status">Revisá tu correo. La verificación se completa únicamente al confirmar el enlace.</p>:<form onSubmit={e=>{e.preventDefault();op.ejecutar(s=>cliente.solicitarContacto(password,s),()=>{setPassword('');setEnviado(true);});}}>
-      <label htmlFor="ac-contacto-password">Contraseña actual para verificar el correo</label><input id="ac-contacto-password" type="password" autoComplete="current-password" required maxLength={72} value={password} disabled={op.ocupado} onChange={e=>setPassword(e.target.value)}/>
+      <CampoPassword id="ac-contacto-password" label="Contraseña actual para verificar el correo" autoComplete="current-password" required maxLength={72} value={password} disabled={op.ocupado} onChange={e=>setPassword(e.target.value)}/>
       <button className="ac-primario" disabled={op.ocupado}>{op.estado==='cargando'?'Solicitando…':'Solicitar verificación de correo'}</button><Aviso>{op.error}</Aviso>
     </form>}
   </section>;
@@ -81,9 +82,9 @@ export function ConfirmarCuenta({ tipo, tokenInicial, cliente, volver }) {
   return <MarcoCuenta volver={volver}>{hecho ? <Resultado titulo={invitacion ? 'Ya sos parte del equipo' : 'Tu contraseña fue actualizada'} volver={volver}>{invitacion ? 'Tu cuenta de Operador está lista. Iniciá sesión para continuar.' : 'Tus sesiones anteriores fueron invalidadas. Iniciá sesión con tu nueva contraseña.'}</Resultado> : validando ? <div className="ac-validando" role="status"><span className="ac-linea" /><h2>Comprobando tu enlace</h2><p>Un momento, estamos verificando que siga vigente.</p></div> : errorEnlace ? <div><h2>No pudimos verificar el enlace</h2><Aviso>{errorEnlace}</Aviso><button className="ac-primario" onClick={()=>setRevisionEnlace(r=>r+1)}>Reintentar verificación</button></div> : !valido || op.estado === 'invalido' ? <div className="ac-resultado"><span className="ac-icono ac-icono-aviso" aria-hidden="true">↗</span><h2>Este enlace ya no está disponible</h2><p>Puede haber vencido, haber sido revocado o haberse utilizado. {invitacion ? 'Pedile una nueva invitación al administrador.' : 'Solicitá un nuevo enlace para recuperar tu acceso.'}</p><button className="ac-primario" onClick={volver}>Volver al inicio</button></div> : <>
     <span className="ac-paso">{invitacion ? 'INVITACIÓN A TU EQUIPO' : 'RECUPERÁ TU ACCESO · 2 DE 2'}</span><h2>{titulo}</h2><p className="ac-intro">{invitacion ? 'Definí tu contraseña para aceptar la invitación. Accederás como Operador; los permisos los administra tu equipo.' : 'Creá una contraseña personal y segura. Este enlace solo se puede utilizar una vez.'}</p>
     <form noValidate onSubmit={e => { e.preventDefault(); const error = validarPasswordNueva(password,confirmacion); if(error) { setValidacion(error); return; } setValidacion(''); op.ejecutar(s => cliente.confirmar(tipo,token,password,s), () => { setPassword(''); setConfirmacion(''); setToken(null); setHecho(true); }); }}>
-      <label htmlFor="ac-password">Nueva contraseña</label><input id="ac-password" type="password" autoComplete="new-password" required value={password} onChange={e => setPassword(e.target.value)} aria-describedby="ac-password-ayuda" />
+      <CampoPassword id="ac-password" label="Nueva contraseña" autoComplete="new-password" required value={password} disabled={op.ocupado} onChange={e => setPassword(e.target.value)} aria-invalid={!!validacion} aria-describedby="ac-password-ayuda" />
       <small id="ac-password-ayuda">Al menos 12 caracteres y hasta 72 bytes. Usá una frase larga y única.</small>
-      <label htmlFor="ac-confirmacion">Confirmar contraseña</label><input id="ac-confirmacion" type="password" autoComplete="new-password" required value={confirmacion} onChange={e => setConfirmacion(e.target.value)} aria-invalid={!!validacion} />
+      <CampoPassword id="ac-confirmacion" label="Confirmar contraseña" autoComplete="new-password" required value={confirmacion} disabled={op.ocupado} onChange={e => setConfirmacion(e.target.value)} aria-invalid={!!validacion} />
       <Aviso>{validacion || op.error}</Aviso><button className="ac-primario" disabled={op.ocupado}>{op.estado === 'cargando' ? 'Confirmando…' : invitacion ? 'Aceptar invitación' : 'Actualizar contraseña'}</button>
     </form>
   </>}</MarcoCuenta>;

@@ -59,8 +59,24 @@ test('cuentas premium: navegador aislado, contratos ficticios y responsive',{ski
     });
     await t.test('enlace validado, contraseñas coincidentes, error incierto sin repetir',async()=>{
       await click('Abrir último enlace ficticio');await esperar("!!document.getElementById('ac-password')");assert.equal(await evaluate('location.hash'),'');
+      await fill('ac-password','Una frase ficticia segura');
+      assert.equal(await evaluate("document.getElementById('ac-password').type"),'password');
+      assert.equal(await evaluate("document.getElementById('ac-password').autocomplete"),'new-password');
+      await evaluate("document.querySelector('[aria-controls=\"ac-password\"]').focus()");
+      await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r',unmodifiedText:'\r'});
+      await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      await esperar("document.getElementById('ac-password').type==='text'");
+      assert.equal(await evaluate("document.getElementById('ac-password').value"),'Una frase ficticia segura');
+      assert.equal(await evaluate("document.querySelector('[aria-controls=\"ac-password\"]').getAttribute('aria-pressed')"),'true');
+      await click('Ocultar');
+      assert.equal(await evaluate("document.getElementById('ac-password').type"),'password');
+      assert.equal(llamadas.filter(r=>r.url.endsWith('/confirmar')).length,0);
       await fill('ac-password','Una frase ficticia segura');await fill('ac-confirmacion','otra frase');await click('Actualizar contraseña');assert.match(await texto(),/no coinciden/);
-      fallo=true;await fill('ac-confirmacion','Una frase ficticia segura');await click('Actualizar contraseña');await esperar("document.body.innerText.includes('No pudimos confirmar')");assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).find(e=>e.textContent==='Actualizar contraseña').disabled"),true);fallo=false;
+      fallo=true;await fill('ac-confirmacion','Una frase ficticia segura');await click('Actualizar contraseña');await esperar("document.body.innerText.includes('No pudimos confirmar')");assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).find(e=>e.textContent==='Actualizar contraseña').disabled"),true);
+      assert.ok(await evaluate("Array.from(document.querySelectorAll('.ac-password-campo input,.ac-password-campo button')).every(e=>e.disabled)"));
+      const confirmaciones=llamadas.filter(r=>r.url.endsWith('/confirmar')).length;
+      await evaluate("document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))");
+      assert.equal(llamadas.filter(r=>r.url.endsWith('/confirmar')).length,confirmaciones);fallo=false;
     });
     await t.test('confirmación exitosa muestra retorno al login sin iniciar sesión automáticamente',async()=>{
       await click('Recuperación');await click('Abrir último enlace ficticio');await esperar("!!document.getElementById('ac-password')");

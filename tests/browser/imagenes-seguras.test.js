@@ -1,0 +1,9 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {createServer} from 'vite';import react from '@vitejs/plugin-react';import {fileURLToPath} from 'node:url';import {abrirNavegador} from '../helpers/navegadorComercial.js';import {puertoAislado} from '../helpers/puertoAislado.js';import {cacheViteAislada} from '../helpers/cacheVite.js';
+test('imagen Blob autorizada carga y revoca al cerrar sesión, sin tráfico externo',{timeout:60000},async()=>{
+ const cache=cacheViteAislada(),port=await puertoAislado();let vite,b;let externos=0;
+ try{vite=await createServer({root:fileURLToPath(new URL('../..',import.meta.url)),configFile:false,envDir:false,cacheDir:cache.ruta,plugins:[react()],optimizeDeps:{include:['react','react-dom/client','react/jsx-runtime']},server:{host:'127.0.0.1',port,strictPort:true,ws:false,watch:null}});await vite.listen();b=await abrirNavegador('C:/Program Files/Google/Chrome/Application/chrome.exe');
+  b.on('Fetch.requestPaused',async p=>{const local=p.request.url.startsWith('http://127.0.0.1:'+port+'/')||p.request.url.startsWith('blob:');if(!local)externos++;await b.command(local?'Fetch.continueRequest':'Fetch.failRequest',{requestId:p.requestId,...(local?{}:{errorReason:'BlockedByClient'})});});await b.command('Fetch.enable',{patterns:[{urlPattern:'*',requestStage:'Request'}]});
+  await b.command('Page.navigate',{url:'http://127.0.0.1:'+port+'/tests/manual/imagen-segura.html'});await b.esperar('document.querySelector("img")?.naturalWidth===1');assert.equal(await b.evaluate('window.fixture.llamadas'),1);
+  await b.evaluate('document.querySelector("button").click()');await b.esperar('!document.querySelector("img").getAttribute("src")');assert.equal(await b.evaluate('window.fixture.revocadas'),1);assert.equal(externos,0);
+ }finally{await b?.cerrar();await vite?.close();cache.limpiar();}
+});

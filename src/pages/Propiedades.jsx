@@ -1,3 +1,4 @@
+import ImagenPropiedadSegura from "../components/ImagenPropiedadSegura";
 import CargaPagina from "../components/CargaPagina";
 import { desplazarAlInicio } from "../services/navegacion";
 import ImportePropiedad from '../components/monedas/ImportePropiedad';
@@ -1309,7 +1310,7 @@ function Propiedades({onVerMonedas}={}) {
 
       return (
         <>
-          <img
+          <ImagenPropiedadSegura
             src={resolverUrlImagen(
               propiedad
                 .imagenPrincipal
@@ -2311,7 +2312,7 @@ function Propiedades({onVerMonedas}={}) {
                           }
                         }}
                       >
-                        <img
+                        <ImagenPropiedadSegura
                           src={resolverUrlImagen(
                             imagen.urlImagen
                           )}
@@ -2463,7 +2464,7 @@ function Propiedades({onVerMonedas}={}) {
                               }
                             }}
                           >
-                            <img
+                            <ImagenPropiedadSegura
                               src={resolverUrlImagen(
                                 imagen.urlImagen
                               )}
@@ -2561,7 +2562,7 @@ function Propiedades({onVerMonedas}={}) {
                 </button>
 
                 <div className="property-image-preview-media">
-                  <img
+                  <ImagenPropiedadSegura
                     src={resolverUrlImagen(
                       imagenPrevisualizando
                         .urlImagen

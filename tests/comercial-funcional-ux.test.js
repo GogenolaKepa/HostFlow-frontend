@@ -15,7 +15,7 @@ before(async()=>{
 after(async()=>{await vite?.close();cache.limpiar();delete globalThis.window;});
 test('recuperación identifica su alcance sin revelar si existe una cuenta',()=>{
  const html=renderToStaticMarkup(createElement(ui.SolicitarRecuperacion,{cliente:{},volver(){}}));
- assert.match(html,/Operadores con correo verificado/);assert.match(html,/Si sos Administrador/);assert.match(html,/la respuesta es la misma para todas las cuentas/);
+ assert.match(html,/Administrador y Operador con correo verificado/);assert.doesNotMatch(html,/Si sos Administrador/);assert.match(html,/la respuesta es la misma para todas las cuentas/);
 });
 test('invitaciones distinguen aceptación pendiente de entrega de correo y conservan permiso Admin',()=>{
  const html=renderToStaticMarkup(createElement(ui.GestionInvitaciones,{cliente:{},usuario:{rol:'Administrador',permisos:['usuarios.crear']}}));

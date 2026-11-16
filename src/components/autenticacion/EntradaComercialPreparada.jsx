@@ -11,9 +11,10 @@ export function EntradaComercialPreparada({entrada,conexion,volver,usuario}){
     conexion.capacidades(abort.signal).then(capacidades=>{if(vigente)setEstado({cargando:false,capacidades});}).catch(()=>{if(vigente)setEstado({cargando:false,capacidades:null});});
     return()=>{vigente=false;abort.abort();};
   },[conexion]);
-  if(estado.cargando)return <MarcoCuenta volver={volver}><div className="ac-validando" role="status"><span className="ac-linea"/><h2>Preparando tu acceso</h2></div></MarcoCuenta>;
+  const recuperacion=['solicitar','recuperacion'].includes(entrada?.tipo);
+  if(estado.cargando)return <MarcoCuenta volver={volver} recuperacion={recuperacion}><div className="ac-validando" role="status"><span className="ac-linea"/><h2>Preparando tu acceso</h2></div></MarcoCuenta>;
   const invitacion=['invitaciones','gestion'].includes(entrada?.tipo);
-  if(!estado.capacidades?.[entrada?.tipo==='contacto'?'contactos':invitacion?'invitaciones':'recuperacion'])return <MarcoCuenta volver={volver}><h2>Este acceso aún no está disponible</h2><p>Contactá al administrador de tu equipo para continuar.</p></MarcoCuenta>;
+  if(!estado.capacidades?.[entrada?.tipo==='contacto'?'contactos':invitacion?'invitaciones':'recuperacion'])return <MarcoCuenta volver={volver} recuperacion={recuperacion}><h2>{recuperacion?'Recuperación no disponible':'Este acceso aún no está disponible'}</h2><p>{recuperacion?'Podés volver al inicio de sesión o intentarlo más tarde.':'Contactá al administrador de tu equipo para continuar.'}</p></MarcoCuenta>;
   if(entrada.tipo==='contacto')return <ConfirmarContacto key={entrada.tokenInicial} cliente={conexion.cliente} tokenInicial={entrada.tokenInicial} volver={volver}/>;
   if(entrada.tipo==='gestion')return <GestionInvitaciones cliente={conexion.cliente} usuario={usuario}/>;
   if(entrada.tipo==='solicitar')return <SolicitarRecuperacion cliente={conexion.cliente} volver={volver}/>;

@@ -52,7 +52,7 @@ test('invitación→aceptación→login→recuperación en producto real, persis
   assert.equal(JSON.parse(await evaluate("localStorage.getItem('usuario')")).rol,'Operador');
   const anterior=await evaluate("localStorage.getItem('token')");
   await evaluate('localStorage.clear()');await navegar('/cuenta/solicitar');await esperar("!!document.getElementById('ac-email')");
-  assert.ok(await evaluate("document.body.innerText.includes('Operadores con correo verificado')"));
+  assert.ok(await evaluate("document.body.innerText.includes('Administrador y Operador con correo verificado')"));
   await fill('ac-email',correo);await click('Solicitar enlace seguro');await esperar("document.body.innerText.includes('Revisá tu correo')");
   await e.procesar();const token=e.tokenCorreo();await navegar('/cuenta/recuperacion#token='+token);await esperar("!!document.getElementById('ac-password')");
   await command('Emulation.setDeviceMetricsOverride',{width:375,height:812,deviceScaleFactor:1,mobile:true});

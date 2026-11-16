@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useFondoLogin } from '../../hooks/useFondoLogin';
 import { emailValido, tokenValido, validarPasswordNueva, MENSAJE_NEUTRAL } from '../../services/autenticacionComercial';
 import './autenticacion-comercial.css';
+import './recuperacion-cuenta.css';
 import CampoPassword from './CampoPassword';
 
 function useOperacion() {
@@ -23,11 +24,11 @@ function useOperacion() {
   }
   return { estado, error, ejecutar, ocupado: estado === 'cargando' || estado === 'incierto' };
 }
-export function MarcoCuenta({ children, volver }) {
+export function MarcoCuenta({ children, volver, recuperacion = false }) {
   const fondo = useFondoLogin();
-  return <main className="ac-experiencia" data-fondo={fondo.estado}>
+  return <main className={`ac-experiencia${recuperacion ? ' ac-recuperacion' : ''}`} data-fondo={fondo.estado}>
     <div className="ac-foto" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
-    <section className="ac-marca" aria-label="HostFlow"><span className="ac-sello">TU OPERACIÓN, EN BUENAS MANOS</span><h1><MarcaHostFlow/><span>Sentite en casa.</span></h1><p>Un acceso seguro a todo lo que necesitás para gestionar tus alojamientos.</p><div className="ac-confianza"><span aria-hidden="true">◇</span> Privacidad y control, en cada paso.</div></section>
+    {recuperacion ? <section className="ac-marca" aria-label="HostFlow"><MarcaHostFlow className="ac-identidad"/><span className="ac-sello">TU CUENTA, SIEMPRE PERSONAL</span><h1>Volvé a tu espacio.</h1><p>Recuperá tu acceso de forma segura y seguí con lo que importa: tu gestión.</p><div className="ac-confianza"><span aria-hidden="true">◇</span> Un enlace temporal. Tu acceso, en tus manos.</div></section> : <section className="ac-marca" aria-label="HostFlow"><span className="ac-sello">TU OPERACIÓN, EN BUENAS MANOS</span><h1><MarcaHostFlow/><span>Sentite en casa.</span></h1><p>Un acceso seguro a todo lo que necesitás para gestionar tus alojamientos.</p><div className="ac-confianza"><span aria-hidden="true">◇</span> Privacidad y control, en cada paso.</div></section>}
     <section className="ac-panel" aria-label="Acceso a tu cuenta"><button className="ac-volver" onClick={volver}>← Volver al inicio de sesión</button>{children}<footer>Tu contraseña es personal. HostFlow nunca te la pedirá por correo.</footer></section>
   </main>;
 }
@@ -56,13 +57,13 @@ function Resultado({ titulo, children, volver }) { const ref = useRef(null); use
 export function SolicitarRecuperacion({ cliente, volver }) {
   const [email, setEmail] = useState(''), [enviada, setEnviada] = useState(false), [validacion, setValidacion] = useState('');
   const op = useOperacion();
-  return <MarcoCuenta volver={volver}>{enviada ? <Resultado titulo="Revisá tu correo" volver={volver}>{MENSAJE_NEUTRAL} Puede tardar unos minutos. Revisá también spam. El enlace es temporal y de un solo uso.</Resultado> : <>
-    <span className="ac-paso">RECUPERÁ TU ACCESO · 1 DE 2</span><h2>¿Olvidaste tu contraseña?</h2><p className="ac-intro">Te ayudamos a volver a HostFlow. Ingresá el correo de tu cuenta para solicitar un enlace seguro.</p><p>Disponible para Operadores con correo verificado. Si sos Administrador, contactá al responsable del sistema.</p>
-    <form noValidate onSubmit={e => { e.preventDefault(); if (!emailValido(email)) { setValidacion('Ingresá un correo electrónico válido.'); return; } setValidacion(''); op.ejecutar(s => cliente.solicitar(email,s), () => { setEmail(''); setEnviada(true); }); }}>
+  return <MarcoCuenta volver={volver} recuperacion>{enviada ? <Resultado titulo="Revisá tu correo" volver={volver}>{MENSAJE_NEUTRAL} Puede tardar unos minutos. Revisá también spam. El enlace es temporal y de un solo uso.</Resultado> : <>
+    <span className="ac-paso">RECUPERÁ TU ACCESO · 1 DE 2</span><h2>¿Olvidaste tu contraseña?</h2><p className="ac-intro">Ingresá el correo de tu cuenta. Si está habilitada para recuperación, te enviaremos un enlace seguro.</p><p className="ac-alcance">Para cuentas de Administrador y Operador con correo verificado y acceso mediante contraseña.</p>
+    <form noValidate aria-busy={op.estado === 'cargando'} onSubmit={e => { e.preventDefault(); if (!emailValido(email)) { setValidacion('Ingresá un correo electrónico válido.'); return; } setValidacion(''); op.ejecutar(s => cliente.solicitar(email,s), () => { setEmail(''); setEnviada(true); }); }}>
       <label htmlFor="ac-email">Correo electrónico</label><input id="ac-email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} aria-invalid={!!validacion} aria-describedby="ac-ayuda-email" />
       <small id="ac-ayuda-email">Por privacidad, la respuesta es la misma para todas las cuentas.</small><Aviso>{validacion || op.error}</Aviso>
       <button className="ac-primario" disabled={op.ocupado}>{op.estado === 'cargando' ? 'Solicitando enlace…' : 'Solicitar enlace seguro'}</button>
-    </form><details><summary>¿No recibiste el enlace?</summary><p>Esperá unos minutos y comprobá la dirección. Si no tenés un correo verificado, contactá al administrador de tu equipo.</p></details>
+    </form><details><summary>¿No recibiste el enlace?</summary><p>Esperá unos minutos, revisá spam y comprobá la dirección ingresada. Si necesitás ayuda para verificar tu correo, contactá al responsable de tu cuenta.</p></details>
   </>}</MarcoCuenta>;
 }
 
@@ -79,9 +80,9 @@ export function ConfirmarCuenta({ tipo, tokenInicial, cliente, volver }) {
   }, [cliente,tipo,tokenInicial,revisionEnlace]);
   const invitacion = tipo === 'invitaciones';
   const titulo = invitacion ? 'Tu equipo te está esperando' : 'Elegí una nueva contraseña';
-  return <MarcoCuenta volver={volver}>{hecho ? <Resultado titulo={invitacion ? 'Ya sos parte del equipo' : 'Tu contraseña fue actualizada'} volver={volver}>{invitacion ? 'Tu cuenta de Operador está lista. Iniciá sesión para continuar.' : 'Tus sesiones anteriores fueron invalidadas. Iniciá sesión con tu nueva contraseña.'}</Resultado> : validando ? <div className="ac-validando" role="status"><span className="ac-linea" /><h2>Comprobando tu enlace</h2><p>Un momento, estamos verificando que siga vigente.</p></div> : errorEnlace ? <div><h2>No pudimos verificar el enlace</h2><Aviso>{errorEnlace}</Aviso><button className="ac-primario" onClick={()=>setRevisionEnlace(r=>r+1)}>Reintentar verificación</button></div> : !valido || op.estado === 'invalido' ? <div className="ac-resultado"><span className="ac-icono ac-icono-aviso" aria-hidden="true">↗</span><h2>Este enlace ya no está disponible</h2><p>Puede haber vencido, haber sido revocado o haberse utilizado. {invitacion ? 'Pedile una nueva invitación al administrador.' : 'Solicitá un nuevo enlace para recuperar tu acceso.'}</p><button className="ac-primario" onClick={volver}>Volver al inicio</button></div> : <>
+  return <MarcoCuenta volver={volver} recuperacion={!invitacion}>{hecho ? <Resultado titulo={invitacion ? 'Ya sos parte del equipo' : 'Tu contraseña fue actualizada'} volver={volver}>{invitacion ? 'Tu cuenta de Operador está lista. Iniciá sesión para continuar.' : 'Tus sesiones anteriores fueron invalidadas. Iniciá sesión con tu nueva contraseña.'}</Resultado> : validando ? <div className="ac-validando" role="status"><span className="ac-linea" /><h2>Comprobando tu enlace</h2><p>Un momento, estamos verificando que siga vigente.</p></div> : errorEnlace ? <div><h2>No pudimos verificar el enlace</h2><Aviso>{errorEnlace}</Aviso><button className="ac-primario" onClick={()=>setRevisionEnlace(r=>r+1)}>Reintentar verificación</button></div> : !valido || op.estado === 'invalido' ? <div className="ac-resultado"><span className="ac-icono ac-icono-aviso" aria-hidden="true">↗</span><h2>Este enlace ya no está disponible</h2><p>Puede haber vencido, haber sido revocado o haberse utilizado. {invitacion ? 'Pedile una nueva invitación al administrador.' : 'Solicitá un nuevo enlace para recuperar tu acceso.'}</p><button className="ac-primario" onClick={volver}>Volver al inicio</button></div> : <>
     <span className="ac-paso">{invitacion ? 'INVITACIÓN A TU EQUIPO' : 'RECUPERÁ TU ACCESO · 2 DE 2'}</span><h2>{titulo}</h2><p className="ac-intro">{invitacion ? 'Definí tu contraseña para aceptar la invitación. Accederás como Operador; los permisos los administra tu equipo.' : 'Creá una contraseña personal y segura. Este enlace solo se puede utilizar una vez.'}</p>
-    <form noValidate onSubmit={e => { e.preventDefault(); const error = validarPasswordNueva(password,confirmacion); if(error) { setValidacion(error); return; } setValidacion(''); op.ejecutar(s => cliente.confirmar(tipo,token,password,s), () => { setPassword(''); setConfirmacion(''); setToken(null); setHecho(true); }); }}>
+    <form noValidate aria-busy={invitacion ? undefined : op.estado === 'cargando'} onSubmit={e => { e.preventDefault(); const error = validarPasswordNueva(password,confirmacion); if(error) { setValidacion(error); return; } setValidacion(''); op.ejecutar(s => cliente.confirmar(tipo,token,password,s), () => { setPassword(''); setConfirmacion(''); setToken(null); setHecho(true); }); }}>
       <CampoPassword id="ac-password" label="Nueva contraseña" autoComplete="new-password" required value={password} disabled={op.ocupado} onChange={e => setPassword(e.target.value)} aria-invalid={!!validacion} aria-describedby="ac-password-ayuda" />
       <small id="ac-password-ayuda">Al menos 12 caracteres y hasta 72 bytes. Usá una frase larga y única.</small>
       <CampoPassword id="ac-confirmacion" label="Confirmar contraseña" autoComplete="new-password" required value={confirmacion} disabled={op.ocupado} onChange={e => setConfirmacion(e.target.value)} aria-invalid={!!validacion} />

@@ -1,0 +1,69 @@
+/* Variante exclusiva de recuperación. Invitaciones, contacto y login conservan sus estilos. */
+.ac-experiencia.ac-recuperacion {
+  color-scheme:dark; color:var(--brand-white,#f3f8fc); font-family:Arial,Helvetica,sans-serif;
+  grid-template-columns:minmax(0,1fr) minmax(340px,470px); gap:clamp(40px,7vw,110px);
+  padding:clamp(32px,5vw,80px); background:var(--brand-night,#0b1626);
+}
+.ac-recuperacion .ac-foto::after { background:linear-gradient(90deg,#0b1626c9,#0b162652 62%,#0b162670); }
+.ac-recuperacion .ac-marca { width:100%; max-width:510px; margin-inline:auto; }
+.ac-recuperacion .ac-marca .ac-identidad { display:inline-flex; gap:18px; font:800 clamp(46px,4.8vw,66px)/1 Arial,Helvetica,sans-serif; letter-spacing:-.045em; color:var(--brand-white,#f3f8fc); }
+.ac-recuperacion .ac-marca .hf-marca-isotipo { width:49px; height:80px; object-fit:contain; }
+.ac-recuperacion .ac-sello { margin:44px 0 15px; color:#c2eafa; font-size:10px; letter-spacing:.14em; }
+.ac-recuperacion .ac-marca h1 { margin:0 0 20px; max-width:440px; font-size:clamp(30px,3vw,43px); line-height:1.14; letter-spacing:-.035em; font-weight:600; text-wrap:balance; }
+.ac-recuperacion .ac-marca p { margin:0; font-size:17px; line-height:1.8; color:#e0ebf5; max-width:390px; }
+.ac-recuperacion .ac-confianza { margin-top:35px; padding-top:24px; border-top:1px solid #afcce64d; color:#d4e4f2; font-size:12px; }
+.ac-recuperacion .ac-confianza>span { color:var(--brand-primary,#78cee8); font-size:22px; }
+.ac-recuperacion .ac-panel {
+  background:#14263df7; border:1px solid #7892ab; border-radius:20px; padding:clamp(25px,3vw,38px);
+  box-shadow:0 24px 70px #0005; backdrop-filter:blur(14px); min-width:0;
+}
+.ac-recuperacion .ac-volver { display:inline-flex; align-items:center; min-height:44px; gap:8px; color:#d0e8f8; font-size:12px; border-radius:6px; }
+.ac-recuperacion .ac-volver:hover { color:white; text-decoration:underline; text-underline-offset:4px; }
+.ac-recuperacion .ac-paso { width:fit-content; border:1px solid #78cee84d; border-radius:999px; padding:6px 10px; background:#78cee810; color:#a8e2f3; margin:22px 0 18px; font-size:9px; line-height:1.6; letter-spacing:.1em; }
+.ac-recuperacion .ac-panel h2 { color:var(--brand-white,#f3f8fc); margin:0 0 16px; font-size:clamp(26px,2.35vw,34px); line-height:1.16; letter-spacing:-.035em; text-wrap:balance; }
+.ac-recuperacion .ac-panel p { color:#c1d1e0; font-size:14px; line-height:1.75; margin-block:12px; }
+.ac-recuperacion .ac-panel .ac-intro { margin-bottom:18px; }
+.ac-recuperacion .ac-panel .ac-alcance { border-left:2px solid var(--brand-primary,#78cee8); padding-left:12px; margin-bottom:26px; color:#d4e4f0; font-size:12px; line-height:1.7; }
+.ac-recuperacion label { margin:22px 0 9px; color:#f3f8fc; font-size:12px; }
+.ac-experiencia.ac-recuperacion .ac-panel input { min-height:50px; padding:13px 14px; border:1px solid #6e88a1; border-radius:9px; background:#0f2135; color:#f3f8fc; font-size:16px; }
+.ac-experiencia.ac-recuperacion input:hover:not(:disabled) { border-color:#a3c1d8; }
+.ac-experiencia.ac-recuperacion input[aria-invalid=true] { border-color:#ffb4b4; }
+.ac-recuperacion small { color:#bdcddd; font-size:12px; line-height:1.7; }
+.ac-experiencia.ac-recuperacion .ac-password-campo input { padding-right:88px; }
+.ac-recuperacion .ac-password-visibilidad { min-height:44px; color:#a8e2f3; }
+.ac-recuperacion .ac-primario { min-height:50px; margin-top:26px; border-radius:9px; border:1px solid #78cee8; background:var(--brand-primary,#78cee8); color:var(--brand-ink,#0b1626); font-size:14px; font-weight:700; }
+.ac-recuperacion .ac-primario:hover:not(:disabled) { background:#a3dff0; border-color:#a3dff0; }
+.ac-recuperacion :is(button,input,summary):focus-visible { outline:3px solid #9ee3f8; outline-offset:4px; }
+.ac-recuperacion button:disabled { opacity:.65; cursor:not-allowed; }
+.ac-recuperacion .ac-panel details { margin-top:22px; color:#c4d8e9; font-size:12px; }
+.ac-recuperacion summary { padding-block:11px; min-height:44px; border-radius:4px; }
+.ac-recuperacion .ac-panel details p { font-size:12px; }
+.ac-recuperacion .ac-panel footer { margin-top:25px; padding-top:19px; border-color:#4f6881; color:#bacbdc; font-size:11px; line-height:1.75; }
+.ac-recuperacion .ac-panel .ac-aviso { color:#ffd3d3!important; background:#382738; border-color:#bc767f; font-size:13px; line-height:1.65; }
+.ac-recuperacion .ac-icono { margin:23px 0; background:#163f39; color:#b1f0d3; border:1px solid #4f9983; }
+.ac-recuperacion .ac-icono-aviso { background:#403323; color:#ffe0a4; border-color:#a88c60; }
+.ac-recuperacion .ac-resultado h2 { margin-top:4px; }
+.ac-recuperacion .ac-linea { max-width:130px; margin:28px 0; background:linear-gradient(100deg,#294b66,#78cee8,#294b66); background-size:200% 100%; }
+.ac-recuperacion .ac-validando { min-height:190px; padding-block:3px; }
+@media(max-width:1000px) {
+  .ac-experiencia.ac-recuperacion { padding:36px; gap:34px; grid-template-columns:minmax(0,1fr) minmax(320px,440px); }
+  .ac-recuperacion .ac-marca .ac-identidad { font-size:46px; gap:13px; }
+  .ac-recuperacion .ac-marca .hf-marca-isotipo { width:40px; height:65px; }
+}
+@media(max-width:760px) {
+  .ac-experiencia.ac-recuperacion { grid-template-columns:minmax(0,1fr); align-content:center; gap:26px; padding:28px 20px; }
+  .ac-recuperacion .ac-marca { text-align:center; }
+  .ac-recuperacion .ac-marca .ac-identidad { font-size:42px; gap:14px; }
+  .ac-recuperacion .ac-marca .hf-marca-isotipo { width:38px; height:62px; }
+  .ac-recuperacion .ac-marca :is(.ac-sello,p,.ac-confianza) { display:none; }
+  .ac-recuperacion .ac-marca h1 { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); margin:0; padding:0; }
+  .ac-recuperacion .ac-panel { width:min(100%,470px); justify-self:center; padding:26px; }
+}
+@media(max-width:360px) {
+  .ac-experiencia.ac-recuperacion { padding:24px 14px; gap:22px; }
+  .ac-recuperacion .ac-marca .ac-identidad { font-size:37px; gap:12px; }
+  .ac-recuperacion .ac-marca .hf-marca-isotipo { width:34px; height:55px; }
+  .ac-recuperacion .ac-panel { padding:23px 20px; border-radius:17px; }
+  .ac-recuperacion .ac-panel h2 { font-size:26px; }
+}
+@media(prefers-reduced-motion:reduce) { .ac-recuperacion .ac-foto { transition:none; } .ac-recuperacion .ac-linea { animation:none; } }

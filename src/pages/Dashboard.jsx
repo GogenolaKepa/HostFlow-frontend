@@ -858,6 +858,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
   const { seccion: seccionActiva, apartado: apartadoConfiguracion, navegar: setSeccionActiva } = useNavegacionSistema(usuario, protector);
+  const vistaConBuscador = ["reservas", "huespedes", "limpiezas", "usuarios"].includes(seccionActiva);
   const [flowIAAbierta, setFlowIAAbierta] = useState(false);
   const flowIAPanelId = useId();
   const flowIAOpener = useRef(null);
@@ -2534,6 +2535,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
+      data-vista-con-buscador={vistaConBuscador || undefined}
       className={`dashboard ${
 
 

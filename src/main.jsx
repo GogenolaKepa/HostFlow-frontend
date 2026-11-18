@@ -11,15 +11,16 @@ import './styles/page-polish.css';
 import './styles/reportes-monedas-visual.css';
 import { PreferenciasNavegadorBootstrap } from "./components/configuracion/PreferenciasGenerales";
 import {prepararEntradaComercial} from './services/conexionComercialPreparada';
+import { iniciarEncuadreMovil } from './services/encuadreMovil';
 
 // Retirar secretos de la URL antes del primer render y de cualquier petición.
 const esDemo=['/demo','/demo/'].includes(window.location.pathname);
 const entradaComercial=esDemo?null:prepararEntradaComercial(window.location.href,
   url=>window.history.replaceState(null,'',url));
+const contenedor = document.getElementById('root');
+if (!esDemo) iniciarEncuadreMovil(contenedor);
 
-createRoot(
-  document.getElementById("root")
-).render(
+createRoot(contenedor).render(
   <StrictMode>
     <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} entradaComercial={entradaComercial}/></ThemeProvider>
   </StrictMode>

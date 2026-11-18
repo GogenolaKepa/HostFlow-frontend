@@ -93,7 +93,7 @@ test('build sensible bloquea analítica inyectada, retira token y conserva recup
     await esperar("!!document.getElementById('login-email') && window.__analiticaLeyoFragmento===''");
     const antes=solicitudes.filter(s=>s.tipo==='Document'&&s.ruta==='/cuenta/solicitar').length;
     const tercerosAntes=terceros.length;
-    await evaluate("[...document.querySelectorAll('.login-ayuda button')].find(b=>b.textContent.includes('Olvidaste')).click()");
+    await evaluate("document.querySelector('.login-ayuda a[href=\"/cuenta/solicitar\"]').click()");
     await esperar("!!document.getElementById('ac-email')");
     assert.equal(solicitudes.filter(s=>s.tipo==='Document'&&s.ruta==='/cuenta/solicitar').length,antes+1);
     assert.equal(await evaluate('window.__analiticaLeyoFragmento'),undefined);

@@ -43,6 +43,6 @@ test('Pages conserva configuración SWA y prepara cabeceras para enlaces sensibl
 });
 
 test('entrada desde login solicita documento protegido: cambiar solo history no aplica cabeceras CSP',()=>{
-  const app=fs.readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
-  assert.match(app,/abrirRecuperacion=\{\(\)=>window\.location\.assign\('\/cuenta\/solicitar'\)\}/);
+  const login=fs.readFileSync(new URL('../src/pages/Login.jsx',import.meta.url),'utf8');
+  assert.match(login,/<a\b[^>]*\bhref="\/cuenta\/solicitar">¿Olvidaste tu contraseña\?<\/a>/);
 });

@@ -1,9 +1,5 @@
 import {useEffect,useState} from 'react';
 import {MarcoCuenta,SolicitarRecuperacion,ConfirmarCuenta,GestionInvitaciones,ConfirmarContacto} from './ExperienciaComercial';
-// Usado por las rutas públicas del producto; capacidades siempre verificadas en servidor.
-export function EnlaceRecuperacionPreparado({capacidades,abrir}){
-  return capacidades?.recuperacion===true?<button type="button" className="ac-volver" onClick={abrir}>¿Olvidaste tu contraseña?</button>:null;
-}
 export function EntradaComercialPreparada({entrada,conexion,volver,usuario}){
   const [estado,setEstado]=useState({cargando:true,capacidades:null});
   useEffect(()=>{const abort=new AbortController();let vigente=true;

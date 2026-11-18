@@ -29,7 +29,7 @@ test('producto React→Express→cuentas→workers→Resend ficticio→enlace→
     b.on('Runtime.exceptionThrown',p=>console.error('Excepción del navegador:',p.exceptionDetails?.exception?.description||p.exceptionDetails?.text));
     await command('Runtime.enable');
     await command('Emulation.setDeviceMetricsOverride',{width:1440,height:950,deviceScaleFactor:1,mobile:false});
-    const click=texto=>evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(texto)}).click()`);
+    const click=texto=>evaluate(`Array.from(document.querySelectorAll('button, a')).find(b=>b.textContent.trim()===${JSON.stringify(texto)}).click()`);
     const fill=(id,v)=>evaluate(`(()=>{const e=document.getElementById(${JSON.stringify(id)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,${JSON.stringify(v)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
     const navegar=async ruta=>{await command('Page.navigate',{url:base+ruta});};
     const nueva='Clave E2E ficticia 2026 segura';
@@ -91,8 +91,11 @@ test('producto React→Express→cuentas→workers→Resend ficticio→enlace→
     assert.equal(e.confirmaciones(),antes+1);assert.ok(await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Aceptar invitación').disabled"));
     assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));
     fs.writeFileSync(path.join(capturas,'respuesta-incierta-movil.png'),Buffer.from((await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
-    e.desactivar();await evaluarLoginCerrado();
-    async function evaluarLoginCerrado(){await evaluate('localStorage.clear()');await navegar('/');await esperar("!!document.getElementById('hf-hero-title')");await navegar('/login');await esperar("!!document.getElementById('login-email')");assert.equal(await evaluate("document.body.innerText.includes('¿Olvidaste tu contraseña?')"),false);}
+    e.desactivar();await evaluate('localStorage.clear()');await navegar('/login');
+    await esperar("!!document.querySelector('.login-ayuda a')");
+    await click('¿Olvidaste tu contraseña?');
+    await esperar("document.body?.innerText.includes('Recuperación no disponible')");
+    assert.equal(await evaluate("!!document.getElementById('ac-email')"),false);
     assert.deepEqual(externos,[]);
   }catch(error){if(b)console.error('Pantalla al fallar:',await b.evaluate('document.body?.innerText'));throw error;}
   finally{await b?.cerrar();await vite?.close();if(server)await new Promise(r=>server.close(r));cache.limpiar();}

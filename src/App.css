@@ -16605,3 +16605,13 @@ svg {
     font-size: 16px;
   }
 }
+
+.login-container.login-premium .login-ayuda a.ac-volver {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

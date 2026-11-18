@@ -200,7 +200,7 @@ function Aplicacion({entradaInicial,conexionComercial}) {
         ) : <Dashboard usuario={usuario} onLogout={cerrarSesionRemota} onSesionActualizada={actualizarSesion} />
       ) : (
         rutaPublica==='/' ? <Suspense fallback={<ValidandoSesion/>}><Landing/></Suspense> :
-        <Login aviso={aviso} abrirRecuperacion={()=>window.location.assign('/cuenta/solicitar')} onLogin={() => { setAviso(""); validarSesion(); }} />
+        <Login aviso={aviso} onLogin={() => { setAviso(""); validarSesion(); }} />
       )}
     </PermisosContext.Provider>
   );

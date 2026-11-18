@@ -4,11 +4,8 @@ import { useState } from "react";
 import api from "../services/api";
 import { guardarSesion } from "../services/session";
 import {mensajeErrorAcceso} from '../services/disponibilidadApi';
-import {useComercial} from '../context/ComercialContext';
-import {EnlaceRecuperacionPreparado} from '../components/autenticacion/EntradaComercialPreparada';
 
-function Login({ onLogin, aviso, abrirRecuperacion }) {
-  const comercial=useComercial();
+function Login({ onLogin, aviso }) {
   const fondo = useFondoLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +48,7 @@ function Login({ onLogin, aviso, abrirRecuperacion }) {
           <label htmlFor="login-password">Contraseña</label><input id="login-password" type="password" value={password} autoComplete="current-password" placeholder="Ingresá tu contraseña" onChange={e=>setPassword(e.target.value)}/>
           {error&&<p className="error" role="alert">{error}</p>}
           <button type="submit" disabled={ocupado}>{ocupado?'Ingresando…':'Ingresar'}<span aria-hidden="true">→</span></button>
-          <div className="login-ayuda"><EnlaceRecuperacionPreparado capacidades={comercial?.capacidades} abrir={abrirRecuperacion}/></div>
+          <div className="login-ayuda"><a className="ac-volver" href="/cuenta/solicitar">¿Olvidaste tu contraseña?</a></div>
           <div className="login-contacto"><span>¿Todavía no tenés acceso?</span><a href="/#contacto">Solicitar información →</a></div>
         </form>
       </div>

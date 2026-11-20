@@ -7,5 +7,13 @@
   Cache-Control: no-store
   Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 
+/clientes/registro
+  Cache-Control: no-store
+  Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+
+/clientes/verificar
+  Cache-Control: no-store
+  Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+
 /login
   Cache-Control: no-store

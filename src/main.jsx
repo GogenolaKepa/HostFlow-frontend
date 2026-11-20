@@ -12,16 +12,20 @@ import './styles/reportes-monedas-visual.css';
 import { PreferenciasNavegadorBootstrap } from "./components/configuracion/PreferenciasGenerales";
 import {prepararEntradaComercial} from './services/conexionComercialPreparada';
 import { iniciarEncuadreMovil } from './services/encuadreMovil';
+import { prepararEntradaVerificacion } from './services/entradaVerificacionClientes';
 
 // Retirar secretos de la URL antes del primer render y de cualquier petición.
 const esDemo=['/demo','/demo/'].includes(window.location.pathname);
-const entradaComercial=esDemo?null:prepararEntradaComercial(window.location.href,
+const esRegistro=window.location.pathname==='/clientes/registro';
+const entradaVerificacion=prepararEntradaVerificacion(window.location.href,
+  url=>window.history.replaceState(null,'',url));
+const entradaComercial=esDemo||esRegistro||entradaVerificacion?null:prepararEntradaComercial(window.location.href,
   url=>window.history.replaceState(null,'',url));
 const contenedor = document.getElementById('root');
-if (!esDemo) iniciarEncuadreMovil(contenedor);
+if (!esDemo && !esRegistro && !entradaVerificacion) iniciarEncuadreMovil(contenedor);
 
 createRoot(contenedor).render(
   <StrictMode>
-    <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} entradaComercial={entradaComercial}/></ThemeProvider>
+    <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} esRegistro={esRegistro} entradaVerificacion={entradaVerificacion} entradaComercial={entradaComercial}/></ThemeProvider>
   </StrictMode>
 );

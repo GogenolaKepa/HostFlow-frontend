@@ -1,0 +1,49 @@
+:root {
+  color-scheme: dark;
+  background: #0b1724;
+  color: #f3f8fc;
+  font: 1rem/1.5 system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 67rem;
+  margin: auto;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #38516c;
+}
+
+h1 {
+  margin: 1.25rem 0 .35rem;
+  line-height: 1.15;
+}
+
+h1 + p {
+  margin: 0 0 1rem;
+  color: #b8ccdc;
+}
+
+.sesion-simulada {
+  display: grid;
+  gap: .35rem;
+  max-width: 16rem;
+  margin-bottom: 1.5rem;
+}
+
+.sesion-simulada select {
+  min-height: 44px;
+  padding: .45rem .75rem;
+  border: 1px solid #56738b;
+  border-radius: .5rem;
+  background: #14263d;
+  color: inherit;
+  font: inherit;
+}

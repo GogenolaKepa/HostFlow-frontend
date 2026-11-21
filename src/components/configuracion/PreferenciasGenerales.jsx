@@ -17,6 +17,6 @@ export default function PreferenciasGenerales(){
       <option value="sistema">Respetar preferencia del sistema</option><option value="reducido">Reducir movimiento</option>
     </select><p>Reducir movimiento desactiva las animaciones y los desplazamientos suaves. La opción del sistema respeta su configuración de accesibilidad.</p></div>
     <p role="status">{estado}</p>
-    <dl className="settings-readonly"><div><dt>Fechas y horas operativas</dt><dd>Formato actual de HostFlow y zona America/Argentina/Buenos_Aires. No se modifican desde esta sección.</dd></div><div><dt>Aspecto visual</dt><dd>Claro, Oscuro, Crema y Grafito se administran desde Apariencia.</dd></div></dl>
+    <dl className="settings-readonly"><div><dt>Fechas y horas operativas</dt><dd>Formato actual de HostFlow y zona America/Argentina/Buenos_Aires. No se modifican desde esta sección.</dd></div><div><dt>Aspecto visual</dt><dd>Elegí tu tema en Apariencia.</dd></div></dl>
   </div>;
 }

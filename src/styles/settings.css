@@ -22,7 +22,9 @@
 .settings-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; background: var(--hf-accent-soft); color: var(--hf-accent-text); }
 .settings-appearance { container-type: inline-size; }
 .theme-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-inline-size: 0; padding: 0; border: 0; margin: 0; }
-@container (min-width: 610px) { .theme-options { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container (min-width: 630px) { .theme-options { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@container (420px <= width < 630px) { .theme-options { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (width < 420px) { .theme-option:last-child { grid-column: 1 / -1; } }
 @container (max-width: 219px) { .theme-options { grid-template-columns: 1fr; } }
 .theme-option { position: relative; display: flex; flex-direction: column; gap: 13px; padding: 12px; border: 2px solid var(--hf-border-soft); border-radius: 11px; background: var(--hf-surface); cursor: pointer; min-width: 0; }
 .theme-option:hover { border-color: var(--hf-control-border); }

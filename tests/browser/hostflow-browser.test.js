@@ -496,7 +496,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
     });
 
-    await t.test("Configuración: cuatro temas, contraste aplicado, persistencia y aislamiento público", async () => {
+    await t.test("Configuración: cinco opciones, contraste aplicado, persistencia y aislamiento público", async () => {
       const abrir = async (button, content) => {
         await click(button);
         await esperar(`Boolean(document.querySelector(${JSON.stringify(content)}))`);
@@ -543,7 +543,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         ['crema', 'cream', 'rgb(255, 251, 245)', 'rgb(40, 39, 37)', 'light'],
         ['grafito', 'graphite', 'rgb(34, 38, 47)', 'rgb(17, 19, 25)', 'dark'],
       ];
-      assert.deepEqual(await evaluate("[...document.querySelectorAll('input[name=apariencia]')].map(el => el.value)"), themes.map(([preference]) => preference));
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('input[name=apariencia]')].map(el => el.value)"), [...themes.map(([preference]) => preference), 'automatico']);
       for (const [preference, theme, surface, navColor, scheme] of themes) {
         fase = `Apariencia ${preference}`;
         await abrir('.sidebar-settings', '.theme-options');
@@ -617,10 +617,39 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37 });
       await esperar(`document.querySelector('${radio('crema')}').checked`);
       assert.equal(await estilo('.theme-option.is-selected', 'outlineStyle'), 'solid');
-      await click(radio('oscuro'));
+      fase = 'Apariencia según el sistema';
+      const sistema = value => send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value }] });
+      const automatico = radio('automatico');
+      const comprobarSistema = async theme => {
+        await esperar(`document.documentElement.dataset.theme === '${theme}' && document.querySelector('${automatico}')?.checked`);
+        assert.equal(await evaluate("document.querySelector('.theme-option.is-selected input').value"), 'automatico');
+        assert.equal(await evaluate("document.querySelector('.theme-status strong').textContent"), 'Apariencia según el sistema activa');
+        assert.equal(await estilo('html', 'colorScheme'), theme);
+        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'automatico');
+      };
+      await sistema('dark');
+      assert.equal(await evaluate('document.documentElement.dataset.theme'), 'cream');
+      await click(automatico);
+      await comprobarSistema('dark');
+      await sistema('light');
+      await comprobarSistema('light');
+      for (const width of [1280, 390, 320]) {
+        await viewport(width);
+        await comprobarAncho();
+        assert.equal(await evaluate("[...document.querySelectorAll('.theme-option')].every(el => el.scrollWidth <= el.clientWidth + 1)"), true);
+      }
+      await viewport(1280);
+      await evaluate("document.body.dataset.beforeReload = '1'");
+      await send('Page.reload');
+      await esperar("!document.body?.dataset.beforeReload && Boolean(document.querySelector('.theme-options'))");
+      await comprobarSistema('light');
+      await sistema('dark');
+      await comprobarSistema('dark');
       await click('.sidebar-logout');
       await esperar("Boolean(document.querySelector('#login-email'))");
-      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'oscuro');
+      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'automatico');
+      assert.deepEqual(await publicColors(), loginColors);
+      await send('Emulation.setEmulatedMedia', { features: [] });
       for (const [preference] of themes) {
         await evaluate(`HostFlowAppearance.setPreference('${preference}')`);
         assert.deepEqual(await publicColors(), loginColors);

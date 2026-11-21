@@ -1,153 +1,204 @@
-body:has(.registro-clientes) {
-  margin: 0;
-  background: #0b1626;
+.hf-cliente {
+  --ink: #142641;
+  --muted: #495a71;
+  --blue: #17499a;
+  --line: #c5d0df;
+  color-scheme: light;
+  color: var(--ink);
+  background: radial-gradient(ellipse at 85% 0%, #dfe9f8, transparent 52%), #f3f6fb;
+  font: 16px/1.55 "Segoe UI", Arial, sans-serif;
+  min-height: 100svh;
+  padding-bottom: 46px;
 }
 
-.login-container.login-premium.registro-clientes {
-  box-sizing: border-box;
-  padding-block: 42px;
+body:has(.hf-cliente) { margin: 0; }
+.hf-cliente *, .hf-cliente *::before, .hf-cliente *::after { box-sizing: border-box; }
+.hf-cliente :focus-visible { outline: 3px solid #1d57ae; outline-offset: 3px; }
+.hf-cliente a { color: var(--blue); text-underline-offset: 3px; }
+.hf-cliente button, .hf-cliente input { font: inherit; }
+.hf-cliente button { cursor: pointer; }
+.hf-cliente button:disabled { opacity: .66; cursor: not-allowed; }
+.hf-cliente__cabecera {
+  width: min(1160px, calc(100% - 40px));
+  min-height: 82px;
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  align-items: center;
 }
-
-.login-container.login-premium.registro-clientes .login-contenido {
-  min-height: calc(100svh - 84px);
-}
-
-.login-container.login-premium.registro-clientes .identidad-login > .marca {
-  grid-column: 2;
-  grid-row: 1;
-  width: auto;
-  min-width: 0;
-  gap: 0;
-  font-size: clamp(40px, 8vw, 72px);
-  line-height: 1.15;
-}
-
-.registro-card {
-  box-sizing: border-box;
-}
-
-.login-container.login-premium.registro-acceso .login-contenido {
+.hf-cliente__cabecera > a { color: var(--ink); text-decoration: none; display: inline-flex; }
+.hf-cliente__cabecera .hf-marca { display: inline-flex; align-items: center; gap: 9px; }
+.hf-cliente__cabecera .hf-marca-isotipo { width: 25px; height: 40px; }
+.hf-cliente__cabecera .hf-marca-nombre { color: var(--ink); font-size: 26px; letter-spacing: -.06em; }
+.hf-cliente__cabecera .hf-marca-nombre span { color: var(--blue); }
+.hf-cliente__cabecera nav { display: flex; gap: clamp(8px, 3vw, 26px); }
+.hf-cliente__cabecera nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 650; }
+.hf-cliente__layout {
+  width: min(1040px, calc(100% - 40px));
+  margin: clamp(16px, 3vw, 40px) auto 0;
   display: grid;
-  grid-template-columns: minmax(0, 460px);
-  place-content: center;
+  grid-template-columns: minmax(0, 1.22fr) minmax(0, .85fr);
+  background: #fff;
+  border: 1px solid #d6deeb;
+  border-radius: 26px;
+  box-shadow: 0 18px 56px #18335416;
 }
-
-.registro-card > h1 {
+.hf-cliente__layout--amplio {
+  width: min(1160px, calc(100% - 40px));
+  grid-template-columns: minmax(0, 1fr);
+}
+.hf-cliente__foto {
+  min-height: 440px;
+  border-radius: 0 25px 25px 0;
+  background: linear-gradient(155deg, #0d203b26, #10254085), url("../assets/publico/recepcion.webp") center / cover no-repeat, #132a47;
+}
+.hf-cliente__layout--amplio .hf-cliente__foto { display: none; }
+.hf-cliente .registro-card { min-width: 0; padding: clamp(28px, 5vw, 52px); }
+.hf-cliente .registro-card h1 {
+  color: var(--ink);
   margin: 0 0 14px;
-  font-size: 28px;
-  line-height: 1.2;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 720;
+  line-height: 1.06;
+  letter-spacing: -.05em;
 }
-
-.registro-card > p {
-  line-height: 1.65;
+.hf-cliente .registro-card p { color: var(--muted); margin: 0 0 18px; }
+.hf-cliente__estado {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px 16px;
+  border: 1px solid #b9cbe6;
+  border-radius: 12px;
+  background: #eff5ff;
+  color: #18365e;
+  margin: 18px 0;
+  overflow-wrap: anywhere;
 }
-
-.login-container.login-premium.registro-clientes--planes .login-contenido {
-  grid-template-columns: minmax(0, 58rem);
-  gap: 20px;
+.hf-cliente__estado--error { border-color: #e4b9bd; background: #fcf0f0; color: #842f39; }
+.hf-cliente__estado--exito { border-color: #bacbe1; background: #ebf2fd; color: #1d4177; }
+.hf-cliente__cargando {
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  border: 2px solid #9bb4d6;
+  border-top-color: #17499a;
+  border-radius: 50%;
+  margin-top: 4px;
+  animation: hf-cliente-carga .8s linear infinite;
 }
+@keyframes hf-cliente-carga { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .hf-cliente__cargando { animation: none; } }
 
-.registro-card--planes {
-  padding: clamp(16px, 4vw, 32px);
-  border: 1px solid #7f99b0;
-  border-radius: 19px;
-  background: #14263df5;
-  color: #f3f8fc;
+.hf-cliente form { margin-top: 18px; }
+.hf-cliente fieldset { min-width: 0; padding: 0; margin: 0; border: 0; }
+.hf-cliente form:not(.hf-selector-planes) fieldset > label,
+.hf-cliente .ac-password-campo { display: block; }
+.hf-cliente form:not(.hf-selector-planes) label { color: var(--ink); font-weight: 650; font-size: 15px; }
+.hf-cliente input:not([type=radio]):not([type=checkbox]) {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  margin: 6px 0 14px;
+  padding: 10px 13px;
+  color: var(--ink);
+  background: #f8faff;
+  border: 1px solid #7386a0;
+  border-radius: 10px;
+  font-size: 16px;
 }
-
-.registro-card--planes > p {
-  margin: 0 0 24px;
-  color: #bccddd;
+.hf-cliente input:disabled { opacity: .8; }
+.hf-cliente input[type=radio], .hf-cliente input[type=checkbox] { accent-color: var(--blue); }
+.hf-cliente .ac-password-campo { position: relative; }
+.hf-cliente .ac-password-campo input { padding-right: 57px !important; }
+.hf-cliente .ac-password-visibilidad {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  top: 3px;
+  right: 3px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 7px;
+  color: #244775;
+  background: transparent;
 }
-
-.registro-plan-elegido {
+.hf-cliente .ac-password-visibilidad:hover:not(:disabled) { background: #e7edf8; }
+.hf-cliente .registro-card small { display: block; margin: -6px 0 15px; color: var(--muted); font-size: 13px; }
+.hf-cliente form:not(.hf-selector-planes) .registro-consentimiento {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 400;
+  margin: 0 0 18px;
+}
+.hf-cliente .registro-consentimiento input { flex: 0 0 auto; width: 19px; height: 19px; margin: 2px 0 0; }
+.hf-cliente .registro-card button[type=submit], .hf-cliente .hf-cliente__boton {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 11px 20px;
+  border: 1px solid var(--blue);
+  border-radius: 9px;
+  color: #fff;
+  background: var(--blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+.hf-cliente .registro-card button[type=submit]:hover:not(:disabled), .hf-cliente .hf-cliente__boton:hover { background: #123b7d; }
+.hf-cliente .registro-plan-elegido {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0 12px;
-  margin-bottom: 12px;
-  padding: 4px 12px;
-  border: 1px solid #617c96;
-  border-radius: 8px;
+  gap: 10px 15px;
+  padding: 12px 14px;
+  margin: 20px 0 15px;
+  border: 1px solid #c8d5e8;
+  border-radius: 11px;
+  background: #f2f6fd;
 }
-
-.registro-plan-elegido p {
-  margin: 0;
-  font-size: 14px;
-}
-
-.registro-plan-elegido button {
+.hf-cliente .registro-plan-elegido p { margin: 0; }
+.hf-cliente .registro-plan-elegido strong { display: block; color: var(--ink); }
+.hf-cliente .registro-plan-elegido span { font-size: 14px; }
+.hf-cliente .registro-plan-elegido button {
+  color: var(--blue);
+  padding: 8px;
   min-height: 44px;
-  padding: 0;
-  border: 0;
   background: transparent;
-  color: #a9e9f6;
-  font: inherit;
-  font-size: 13px;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.registro-card fieldset {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
   border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-
-.login-container.login-premium .registro-card input {
-  box-sizing: border-box;
+.hf-cliente__opciones { display: grid; gap: 12px; margin-block: 22px; }
+.hf-cliente__opciones a {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid #b8c9e0;
+  border-radius: 12px;
+  background: #f3f7fe;
+  text-decoration: none;
 }
-
-.registro-card small {
-  display: block;
-  color: #bccddd;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.login-container.login-premium .registro-card .registro-consentimiento {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 20px 0;
-  font-weight: 400;
-  line-height: 1.6;
-}
-
-.login-container.login-premium .registro-card .registro-consentimiento input {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  min-height: 0;
-  margin: 2px 0 0;
-  padding: 0;
-  accent-color: #78cee8;
-}
-
-.registro-card .registro-error {
-  padding: 12px;
-  border: 1px solid #cc7885;
-  border-radius: 8px;
-  background: #1a334e;
-  color: #ffb6c2;
-}
+.hf-cliente__opciones a:hover { border-color: var(--blue); background: #eaf1fd; }
+.hf-cliente__opciones strong { font-size: 18px; }
+.hf-cliente__opciones span { font-size: 14px; color: var(--muted); }
+.hf-cliente .registro-card .hf-cliente__pie { font-size: 14px; margin: 20px 0 0; }
 
 @media (max-width: 760px) {
-  .login-container.login-premium.registro-clientes .login-contenido {
-    min-height: 0;
-  }
-
-  .login-container.login-premium.registro-clientes .identidad-login > img {
-    grid-row: 1;
-    width: 37px;
-    height: 60px;
-  }
+  .hf-cliente { padding-bottom: 28px; }
+  .hf-cliente__cabecera { min-height: 68px; }
+  .hf-cliente__layout { grid-template-columns: minmax(0, 1fr); margin-top: 12px; }
+  .hf-cliente__foto { display: none; }
+  .hf-cliente .registro-card { padding: clamp(18px, 5vw, 34px); }
 }
-
-@media (max-width: 374px) {
-  .login-container.login-premium.registro-clientes .identidad-login {
-    grid-template-columns: max-content max-content;
-  }
+@media (max-width: 420px) {
+  .hf-cliente__cabecera, .hf-cliente__layout { width: calc(100% - 24px); }
+  .hf-cliente__cabecera .hf-marca-nombre { font-size: 21px; }
+  .hf-cliente__cabecera .hf-marca-isotipo { width: 19px; height: 32px; }
+  .hf-cliente .registro-card button[type=submit], .hf-cliente .hf-cliente__boton { width: 100%; }
 }

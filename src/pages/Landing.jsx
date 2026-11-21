@@ -2,11 +2,11 @@ import {useEffect,useRef,useState} from 'react';
 import MarcaHostFlow from '../components/MarcaHostFlow';
 import Planes from '../components/PlanesComerciales';
 import Contacto from '../components/ContactoComercial';
-import hero from '../assets/login/hero.webp';
-import heroMobile from '../assets/login/hero-mobile.webp';
+import hero from '../assets/publico/alojamiento.webp';
+import heroMobile from '../assets/publico/alojamiento-movil.webp';
 import '../styles/landing.css';
 function Marca(){return <MarcaHostFlow className="marca"/>;}
-function Foto({className=''}){return <picture className={className}><source media="(max-width:640px)" srcSet={heroMobile}/><img src={hero} width="1672" height="940" alt="" fetchPriority="high"/></picture>;}
+function Foto(){return <picture className="hero-foto"><source media="(max-width:760px)" srcSet={heroMobile}/><img src={hero} width="1400" height="933" alt="" fetchPriority="high"/></picture>;}
 const trazos = {
   casa: 'M3 10 12 3l9 7M5 9v12h14V9M9 21v-8h6v8',
   calendario: 'M5 5h14v16H5zM8 3v4m8-4v4M5 10h14m-10 4h2m2 0h2',
@@ -77,22 +77,24 @@ export default function Landing() {
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8"><path d={menu ? 'M6 6l12 12M6 18 18 6' : 'M3 6h18M3 12h18M3 18h18'} /></svg>
           </button>
           <nav id="navegacion" className={menu ? 'abierto' : ''} aria-label="Principal" onClick={() => setMenu(false)}>
-            <a href="#funciones">El producto</a><a href="#como-funciona">Cómo funciona</a><a href="#planes">Planes</a><a href="#preguntas">Preguntas</a><a href="/login" className="nav-acceso">Iniciar sesión ↗</a>
+            <a href="#funciones">El producto</a><a href="#planes">Planes</a><a href="/acceso" className="nav-acceso">Iniciar sesión</a>
           </nav>
         </div>
       </header>
       <main id="principal">
         <section className="hero" aria-labelledby="hf-hero-title">
-          <Foto className="hero-foto" /><div className="hero-sombra" />
           <div className="hero-interior ancho">
             <div className="hero-texto">
-              <span className="ceja">HOSTFLOW · GESTIÓN DE ALOJAMIENTOS</span>
-              <h1 id="hf-hero-title" aria-label="Tu operación. En un solo lugar.">Tu operación.<br /><em>En un solo lugar.</em></h1>
-              <p>Más claridad para gestionar tus alojamientos, tus reservas y tu equipo. Todo el contexto de tu operación, en un mismo espacio.</p>
-              <div className="acciones"><a className="boton primario" href="/demo">Explorar la demo<span aria-hidden="true">→</span></a><a className="boton cristal" href="#planes">Conocer los planes</a></div>
-              <span className="micro"><Icono nombre="escudo" />Acceso controlado · Roles definidos · Gestión centralizada</span>
+              <h1 id="hf-hero-title">Gestioná tus alojamientos en un solo lugar.</h1>
+              <p>Reuní reservas, huéspedes y tareas en un panel que tu equipo pueda usar cada día.</p>
+              <div className="acciones">
+                <a className="boton primario" href="/clientes/registro">Registrarse<span aria-hidden="true">→</span></a>
+                <a className="boton cristal" href="#planes">Conocer los planes</a>
+              </div>
+              <p className="hero-disponibilidad">Altas por invitación. Consultá la disponibilidad en Registro.</p>
+              <div className="hero-enlaces"><a href="/acceso">Iniciar sesión</a><a href="/demo">Explorar la demo</a></div>
             </div>
-            <div className="hero-leyenda"><span>DEL ALOJAMIENTO A LA OPERACIÓN</span><p>Un espacio para ver<br />el panorama completo.</p></div>
+            <Foto />
           </div>
         </section>
         <section className="producto-intro seccion ancho" aria-labelledby="producto-titulo">
@@ -117,7 +119,7 @@ export default function Landing() {
         <Contacto plan={plan} setPlan={setPlan} ciclo={ciclo} setCiclo={setCiclo} />
         <section className="privacidad ancho" id="privacidad"><details><summary>Privacidad de la consulta</summary><p>El mensaje se prepara únicamente en tu navegador. Esta página no registra ni envía la consulta, no crea cuentas y no suscribe a marketing. Si elegís enviarlo, se abrirá tu aplicación de correo. contacto@hostflow.com.ar es el canal comercial; seguridad@hostflow.com.ar se conserva para comunicaciones de seguridad.</p></details></section>
       </main>
-      <footer className="pie ancho"><div><Marca /><p>Una visión más clara de tu operación.</p></div><nav aria-label="Pie de página"><a href="#funciones">Producto</a><a href="#planes">Planes</a><a href="#contacto">Contacto</a><a href="/login">Iniciar sesión</a></nav><div className="pie-base"><span>HostFlow · Gestión de alojamientos</span><a href="#privacidad">Privacidad de la consulta</a></div></footer>
+      <footer className="pie ancho"><div><Marca /><p>Una visión más clara de tu operación.</p></div><nav aria-label="Pie de página"><a href="#funciones">Producto</a><a href="#planes">Planes</a><a href="#contacto">Contacto</a><a href="/acceso">Iniciar sesión</a><a href="/clientes/registro">Registro</a></nav><div className="pie-base"><span>HostFlow · Gestión de alojamientos</span><a href="#privacidad">Privacidad de la consulta</a></div></footer>
     </div>
   );
 }

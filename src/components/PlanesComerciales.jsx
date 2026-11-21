@@ -1,10 +1,8 @@
-import { planes, precioPlan, descuentoAnualPuntosBase, herramientas } from '../services/catalogoComercial';
+import { planes, precioPlan, ahorroAnual, descuentoAnual, herramientas } from '../services/catalogoComercial';
 import ModalidadesComparadas from './ModalidadesComparadas';
 
 
 export default function Planes({ ciclo, setCiclo, elegir }) {
-  const puntosBase = descuentoAnualPuntosBase(planes[0]);
-  const descuento = Math.floor(puntosBase / 100) + ',' + String(puntosBase % 100).padStart(2, '0') + ' %';
   return (
     <section id="planes" className="planes-seccion" aria-labelledby="planes-titulo">
       <div className="ancho">
@@ -25,16 +23,16 @@ export default function Planes({ ciclo, setCiclo, elegir }) {
             </label>
           ))}
         </fieldset>
-        <p className="facturacion-anual">{ciclo === 'anual' ? 'Pago anual por adelantado. Pagás 11 mensualidades y recibís 12 meses de servicio.' : 'La modalidad anual contempla 12 meses de servicio por el precio de 11 mensualidades, con pago por adelantado.'}<strong>1 mes bonificado · Equivale al {descuento}</strong></p>
+        <p className="facturacion-anual">12 meses por el precio de 11 mensualidades.<strong>{descuentoAnual} de ahorro aprox.</strong></p>
         <div className="tarjetas-plan">
           {planes.map(plan => (
             <article className={'tarjeta-plan' + (plan.id === 'profesional' ? ' destacada' : '')} key={plan.id}>
               <span className="plan-etiqueta">{plan.enfoque}</span>
               <h3>{plan.nombre}</h3>
               <p>{plan.descripcion}</p>
-              <div className="precio"><strong>{precioPlan(plan, ciclo)}</strong><span>{ciclo === 'anual' ? 'Periodicidad anual · Pago por adelantado' : 'Periodicidad mensual · Importe por mes'}</span><small>{ciclo === 'anual' ? '12 meses de servicio · 1 mes bonificado' : 'Suscripción por empresa'}</small></div>
+              <div className="precio"><strong>{precioPlan(plan, ciclo)}</strong><span>{ciclo === 'anual' ? 'Importe total por año' : 'Importe por mes'}</span><small>{ciclo === 'anual' ? `Ahorrás ${ahorroAnual(plan)} frente a 12 pagos mensuales` : 'Plan por empresa'}</small></div>
               <div className="alcance-plan">
-                <div><strong>{plan.propiedades}</strong><span>hasta {plan.propiedades} propiedades</span></div>
+                <div><strong>{plan.propiedades}</strong><span>propiedades como máximo</span></div>
                 <div><strong>{plan.usuarios}</strong><span>{plan.usuarios === 1 ? 'usuario con acceso' : 'usuarios con acceso'}</span></div>
               </div>
               <h4>Herramientas contempladas</h4>

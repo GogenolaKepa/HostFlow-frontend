@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  catalogoComercial, planes, precioPlan, formatoUSD, descuentoAnualPuntosBase,
+  catalogoComercial, planes, precioPlan, formatoUSD, descuentoAnualPuntosBase, ahorroAnual,
   prepararSolicitudComercial, presentarModalidad, orientarModalidad, prepararCorreoComercial,
 } from '../src/services/catalogoComercial.js';
 
@@ -17,6 +17,7 @@ test('solo los tres planes aprobados, por empresa, con importes enteros y sin co
 test('mensual/anual precisos, un mes bonificado y 8,33 % en cada plan', () => {
   assert.deepEqual(planes.map(p => precioPlan(p, 'mensual')), ['US$9,99', 'US$29,99', 'US$79,99']);
   assert.deepEqual(planes.map(p => precioPlan(p, 'anual')), ['US$109,89', 'US$329,89', 'US$879,89']);
+  assert.deepEqual(planes.map(ahorroAnual), ['US$9,99', 'US$29,99', 'US$79,99']);
   for (const plan of planes) {
     assert.equal(plan.anualCentavos, plan.mensualCentavos * 11);
     assert.equal(descuentoAnualPuntosBase(plan), 833);

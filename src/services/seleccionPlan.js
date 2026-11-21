@@ -1,8 +1,6 @@
 import { planes } from './catalogoComercial.js';
 
-export const planesParaSeleccion = Object.freeze(planes.map(({
-  id, nombre, descripcion, propiedades, usuarios,
-}) => Object.freeze({ id, nombre, descripcion, propiedades, usuarios })));
+export const planesParaSeleccion = planes;
 
 export const ciclosParaSeleccion = Object.freeze({
   mensual: 'Mensual',

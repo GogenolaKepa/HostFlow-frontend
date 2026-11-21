@@ -124,6 +124,20 @@ test('registro por correo y verificación con API simulada', {
   const formulario = '!!document.querySelector("form")';
   const selectorPlanes = '!!document.querySelector(".hf-selector-planes")';
   const formularioRegistro = '!!document.querySelector("#registro-nombre") && !document.getElementById("registro-nombre").closest("[hidden]")';
+  const preciosSelector = '[...document.querySelectorAll(".hf-selector-planes__precio b")].map(e=>e.textContent)';
+
+  async function comprobarOjo(id) {
+    const campo = `document.getElementById(${JSON.stringify(id)})`;
+    const boton = `document.querySelector(${JSON.stringify(`button[aria-controls="${id}"]`)})`;
+    const valor = await evaluate(`${campo}.value`);
+    assert.equal(await evaluate(`${campo}.type`), 'password');
+    await evaluate(`${boton}.click()`);
+    assert.equal(await evaluate(`${campo}.type`), 'text');
+    assert.match(await evaluate(`${boton}.getAttribute('aria-label')`), /^Ocultar/);
+    assert.equal(await evaluate(`${campo}.value`), valor);
+    await evaluate(`${boton}.click()`);
+    assert.equal(await evaluate(`${campo}.type`), 'password');
+  }
 
   async function elegirPlan(plan, ciclo) {
     for (const valor of [plan, ciclo]) {
@@ -170,6 +184,10 @@ test('registro por correo y verificación con API simulada', {
       assert.equal(await evaluate(formulario), false);
       pausa.resolve([200, capacidades]);
       await esperar(selectorPlanes);
+      assert.deepEqual(await evaluate(preciosSelector), ['US$9,99', 'US$29,99', 'US$79,99']);
+      await evaluate('document.querySelector(\'.hf-selector-planes [value="anual"]\').click()');
+      assert.deepEqual(await evaluate(preciosSelector), ['US$109,89', 'US$329,89', 'US$879,89']);
+      assert.match(await evaluate('document.querySelector(".hf-selector-planes__ahorro").innerText'), /8,33 %/);
       assert.ok(bloqueosCsp > 0);
       assert.equal(await evaluate(formularioRegistro), false);
       await enviar();
@@ -178,6 +196,8 @@ test('registro por correo y verificación con API simulada', {
       assert.equal(await evaluate('document.activeElement.id'), 'titulo-registro');
 
       await completar();
+      await comprobarOjo('registro-password');
+      await comprobarOjo('registro-repetir');
       await enviar();
       assert.equal(await evaluate('document.querySelector("form input:invalid").type'), 'checkbox');
 
@@ -222,7 +242,7 @@ test('registro por correo y verificación con API simulada', {
         .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));`);
       assert.ok(llamadas.every(l => l.ruta === '/api/clientes/capacidades'));
       await elegirPlan('gestion', 'anual');
-      assert.match(await evaluate('document.querySelector(".registro-plan-elegido").innerText'), /Gestión · Anual/);
+      assert.match(await evaluate('document.querySelector(".registro-plan-elegido").innerText'), /Gestión\s+US\$879,89 · Anual/);
       assert.equal(await evaluate('document.getElementById("registro-email").value'), 'cliente@example.invalid');
       assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true);
       await evaluate(`const f = document.querySelector('form');
@@ -323,6 +343,7 @@ test('registro por correo y verificación con API simulada', {
       await esperar(formulario);
 
       await llenarVerificacion('corta');
+      await comprobarOjo('verificacion-password');
       await enviar();
       await esperar(mensaje('al menos 12 caracteres'));
       assert.equal(llamadas.slice(antes).filter(l => l.ruta.endsWith('/verificar')).length, 0);
@@ -366,6 +387,7 @@ test('registro por correo y verificación con API simulada', {
       const antes = llamadas.length;
       await evaluate(`document.querySelector('#cliente-email').value = 'cliente@example.invalid';
         document.querySelector('#cliente-password').value = ${JSON.stringify(password)};`);
+      await comprobarOjo('cliente-password');
       await enviar();
       await esperar(mensaje('Tu cuenta está pendiente de activación'));
       assert.equal(await evaluate('!!document.querySelector("[role=alert]")'), false);

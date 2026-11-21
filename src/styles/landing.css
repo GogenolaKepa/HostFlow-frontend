@@ -1,12 +1,12 @@
 .hf-hibrido {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   font-synthesis: none;
   color-scheme: dark;
   color: #F3F8FC;
   background: #0B1626;
   --noche: #0B1626;
   --superficie: #14263D;
-  --celeste: #8AD0EB;
+  --celeste: #B6CCFA;
   --blanco: #F3F8FC;
   --muted: #B5C7D9;
   --borde: #354B62;
@@ -32,7 +32,7 @@
 .hf-hibrido .ceja { font-size: 10px; letter-spacing: .13em; font-weight: 700; color: var(--celeste); display: block; line-height: 1.6; }
 .hf-hibrido .marca { display: inline-flex; align-items: center; gap: 11px; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -.05em; }
 .hf-hibrido .marca > img { width: 29px; height: 47px; object-fit: contain; }
-.hf-hibrido .marca > span > span { color: #78CEE8; }
+.hf-hibrido .marca > span > span { color: #B6CCFA; }
 .hf-hibrido .cabecera { position: sticky; top: 0; z-index: 20; background: #102035B8; border-bottom: 1px solid #C1D9EF26; backdrop-filter: blur(16px); }
 .hf-hibrido .cabecera span { padding: 0; border-radius: 0; background: transparent; font-weight: inherit; }
 .hf-hibrido .cabecera .marca { font-weight: 800; }
@@ -46,27 +46,22 @@
 .hf-hibrido .saltar:focus { top: 12px; }
 .hf-hibrido .solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
-.hf-hibrido .hero { min-height: 730px; position: relative; isolation: isolate; display: flex; align-items: center; margin-top: -84px; padding: 150px 0 100px; background: linear-gradient(115deg, #163252, #24516A); }
-.hf-hibrido .hero-foto, .hf-hibrido .hero-sombra { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.hf-hibrido .hero-foto img { width: 100%; height: 100%; object-fit: cover; object-position: center 55%; }
-.hf-hibrido .hero-sombra { background: linear-gradient(90deg, #071321D9 0%, #0B1626AB 38%, #0B162624 75%, #0B162642), linear-gradient(0deg, #0B1626, transparent 24%); }
-.hf-hibrido .hero-interior { display: flex; justify-content: space-between; align-items: end; gap: 60px; }
-.hf-hibrido .hero-texto { max-width: 800px; }
-.hf-hibrido .hero h1 { font-size: clamp(52px, 5.9vw, 82px); font-weight: 600; line-height: 1.06; margin: 23px 0 26px; letter-spacing: -.045em; }
-.hf-hibrido .hero h1 em { color: #9ADBF0; font-style: normal; }
-.hf-hibrido .hero p { max-width: 470px; color: #EBF2F8; font-size: 18px; line-height: 1.7; }
+.hf-hibrido .hero { padding-block: clamp(44px, 7vw, 96px); background: radial-gradient(ellipse at 78% 0%, #21375b, transparent 66%), #0b1626; }
+.hf-hibrido .hero-interior { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(28px, 5vw, 70px); }
+.hf-hibrido .hero-foto { display: block; min-width: 0; border-radius: 22px; overflow: hidden; border: 1px solid #728ab15c; box-shadow: 0 25px 64px #02070f66; }
+.hf-hibrido .hero-foto img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 58% 55%; }
+.hf-hibrido .hero h1 { font-size: clamp(41px, 5vw, 71px); font-weight: 720; line-height: 1.04; margin: 0 0 22px; letter-spacing: -.055em; }
+.hf-hibrido .hero p { max-width: 440px; color: #dbe5f3; font-size: 18px; line-height: 1.65; }
+.hf-hibrido .hero .hero-disponibilidad { margin: 15px 0 9px; color: #c4d2e7; font-size: 13px; }
+.hf-hibrido .hero-enlaces { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.hf-hibrido .hero-enlaces a { min-height: 44px; display: inline-flex; align-items: center; color: #d2e1fb; font-size: 14px; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
 .hf-hibrido .acciones { display: flex; gap: 13px; flex-wrap: wrap; margin-top: 32px; }
 .hf-hibrido .boton { border: 1px solid #738DA6; border-radius: 8px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 22px; padding: 13px 20px; font-size: 13px; font-weight: 700; line-height: 1.4; background: transparent; color: var(--blanco); }
-.hf-hibrido .primario { background: #326DA9; border-color: #629BD0; color: #FFFFFF; }
-.hf-hibrido .primario:hover { background: #3B7BB9; border-color: #9ACCF2; }
+.hf-hibrido .primario { background: #2454a3; border-color: #74a1ea; color: #FFFFFF; }
+.hf-hibrido .primario:hover { background: #3064b7; border-color: #a2bff1; }
 .hf-hibrido .secundario:hover { background: #213B55; }
 .hf-hibrido .cristal { background: #0E2238A6; border-color: #B3C7DA; }
 .hf-hibrido .cristal:hover { background: #213B55; }
-.hf-hibrido .micro { font-size: 11px; color: #DBE8F2; margin-top: 27px; line-height: 1.7; display: flex; gap: 8px; align-items: center; }
-.hf-hibrido .micro svg { width: 17px; height: 17px; color: #A4DAF0; }
-.hf-hibrido .hero-leyenda { border-left: 1px solid #E6F1F770; padding-left: 23px; padding-bottom: 2px; flex-shrink: 0; }
-.hf-hibrido .hero-leyenda > span { font-size: 9px; letter-spacing: .1em; color: #D7E6F0; }
-.hf-hibrido .hero-leyenda p { font-size: 21px; margin: 12px 0 0; line-height: 1.5; color: white; }
 
 .hf-hibrido .seccion { padding-block: 78px; }
 .hf-hibrido .titulo-seccion { display: flex; justify-content: space-between; align-items: end; gap: 65px; margin-bottom: 40px; }
@@ -135,14 +130,14 @@
 .hf-hibrido .facturacion-anual strong { display: block; color: #BDE4F5; font-size: 12px; margin-top: 5px; }
 .hf-hibrido .tarjetas-plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 23px; }
 .hf-hibrido .tarjeta-plan { padding: 30px 26px; border: 1px solid #4A6580; border-radius: 13px; background: #172C43; display: flex; flex-direction: column; }
-.hf-hibrido .tarjeta-plan.destacada { border-color: #8DCDE6; background: linear-gradient(155deg, #203E5B, #172C43 65%); box-shadow: inset 0 3px #8DCDE6; }
+.hf-hibrido .tarjeta-plan.destacada { border-color: #9ab7ee; background: linear-gradient(155deg, #253c61, #172b44 65%); box-shadow: inset 0 3px #9ab7ee; }
 .hf-hibrido .plan-etiqueta { font-size: 10px; color: #B3D8EE; letter-spacing: .02em; margin-bottom: 22px; }
 .hf-hibrido .tarjeta-plan h3 { font-size: 31px; margin-bottom: 13px; }
 .hf-hibrido .tarjeta-plan > p { font-size: 13px; min-height: 68px; }
 .hf-hibrido .precio { font-size: 26px; font-weight: 600; margin: 15px 0 24px; letter-spacing: -.025em; }
-.hf-hibrido .precio > strong { font-size: 32px; font-weight: 600; }
-.hf-hibrido .precio > span { display: block; font-size: 10px; font-weight: 400; letter-spacing: 0; color: #B9CEE0; margin-top: 10px; line-height: 1.5; }
-.hf-hibrido .precio > small { display: block; color: #B9CEE0; font-size: 10px; font-weight: 400; margin-top: 8px; letter-spacing: 0; line-height: 1.5; }
+.hf-hibrido .precio > strong { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hf-hibrido .precio > span { display: block; font-size: 14px; font-weight: 500; letter-spacing: 0; color: #c8d6e9; margin-top: 6px; line-height: 1.5; }
+.hf-hibrido .precio > small { display: block; color: #cadcf9; font-size: 13px; font-weight: 600; margin-top: 8px; letter-spacing: 0; line-height: 1.5; }
 .hf-hibrido .alcance-plan { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; border-block: 1px solid #486079; padding-block: 20px; }
 .hf-hibrido .alcance-plan strong { display: block; font-size: 26px; font-weight: 500; color: #B5E1F3; }
 .hf-hibrido .alcance-plan span { display: block; font-size: 10px; line-height: 1.6; color: #C6D8E7; margin-top: 4px; }
@@ -248,15 +243,11 @@
   .hf-hibrido .nav-fila nav { display: none; position: absolute; top: 76px; left: 0; right: 0; background: #162D46; border-bottom: 1px solid #6D89A3; padding: 20px; gap: 4px; flex-direction: column; align-items: stretch; font-size: 14px; }
   .hf-hibrido .nav-fila nav.abierto { display: flex; }
   .hf-hibrido .nav-fila nav a { padding: 12px; }
-  .hf-hibrido .hero { min-height: 740px; margin-top: -76px; padding: 135px 0 90px; }
-  .hf-hibrido .hero-foto img { object-position: 48% center; }
-  .hf-hibrido .hero-sombra { background: linear-gradient(90deg, #08172FC4, #0B162665), linear-gradient(0deg, #0B1626, transparent 27%); }
-  .hf-hibrido .hero h1 { font-size: clamp(43px, 7.5vw, 60px); line-height: 1.09; }
-  .hf-hibrido .hero .ceja { font-size: 9px; }
+  .hf-hibrido .hero { padding-block: clamp(28px, 6vw, 62px); }
+  .hf-hibrido .hero-foto img { aspect-ratio: 16 / 10; }
+  .hf-hibrido .hero h1 { font-size: clamp(37px, 7.5vw, 60px); line-height: 1.09; }
   .hf-hibrido .hero p { font-size: 16px; max-width: 420px; }
-  .hf-hibrido .hero-interior { display: block; }
-  .hf-hibrido .micro { font-size: 10px; align-items: start; max-width: 320px; }
-  .hf-hibrido .micro svg { margin-top: 1px; }
+  .hf-hibrido .hero-interior { grid-template-columns: minmax(0, 1fr); }
   .hf-hibrido .seccion { padding-block: 58px; }
   .hf-hibrido .titulo-seccion { flex-direction: column; align-items: start; gap: 0; margin-bottom: 28px; }
   .hf-hibrido .titulo-seccion > p { max-width: 100%; font-size: 14px; margin-top: 0; }
@@ -297,7 +288,7 @@
   .hf-hibrido .pie-base { flex-direction: column; gap: 14px; }
 }
 @media (max-width: 480px) {
-  .hf-hibrido .hero h1 { font-size: 46px; }
+  .hf-hibrido .hero h1 { font-size: clamp(34px, 9vw, 44px); }
   .hf-hibrido .acciones { flex-direction: column; max-width: 345px; }
   .hf-hibrido .acciones .boton { justify-content: space-between; }
   .hf-hibrido .beneficios { grid-template-columns: 1fr; gap: 27px; }

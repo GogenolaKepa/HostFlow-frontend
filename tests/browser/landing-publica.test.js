@@ -57,11 +57,11 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
           await command('Fetch.fulfillRequest', {requestId: p.requestId, responseCode: status, responseHeaders: [{name: 'Content-Type', value: 'application/json'}, {name:'Access-Control-Allow-Origin',value:base}, {name:'Access-Control-Allow-Methods',value:'GET,POST,OPTIONS'}, {name:'Access-Control-Allow-Headers',value:'authorization,content-type'}], body: Buffer.from(JSON.stringify(data)).toString('base64')});
           return;
         }
-        if (!foto && /hero.*\.webp/.test(url.pathname)) {
+        if (!foto && /(?:hero|alojamiento)[^/]*\.webp$/.test(url.pathname)) {
           await command('Fetch.failRequest', {requestId: p.requestId, errorReason: 'BlockedByClient'});
           return;
         }
-        if (foto === 'lenta' && /hero.*\.webp/.test(url.pathname)) await new Promise(resolve => setTimeout(resolve, 3500));
+        if (foto === 'lenta' && /(?:hero|alojamiento)[^/]*\.webp$/.test(url.pathname)) await new Promise(resolve => setTimeout(resolve, 3500));
         const destino = path.resolve(dist, '.'+decodeURIComponent(url.pathname));
         assert.ok(destino.startsWith(path.resolve(dist)+path.sep)||destino===path.resolve(dist));
         const archivo = fs.existsSync(destino)&&fs.statSync(destino).isFile()?destino:path.extname(url.pathname)?null:path.join(dist,'index.html');
@@ -105,11 +105,13 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       assert.equal(await evaluate("getComputedStyle(document.querySelector('[name=nombre]')).backgroundColor"), 'rgb(15, 33, 53)');
       assert.ok(await evaluate("[...document.querySelectorAll('.cabecera span')].every(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(e).padding==='0px')"));
       tipografiasLanding.set(width, await Promise.all(['.cabecera .hf-marca-nombre','.pie .hf-marca-nombre'].map(tipografia)));
-      assert.equal(await evaluate("document.getElementById('hf-hero-title').textContent"), 'Tu operación.En un solo lugar.');
+      assert.equal(await evaluate("document.getElementById('hf-hero-title').textContent"), 'Gestioná tus alojamientos en un solo lugar.');
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hero-texto a')].map(a=>a.getAttribute('href'))"),
+        ['/clientes/registro', '#planes', '/acceso', '/demo']);
       assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .marca')).fontSize"), width<=760?'26px':width<=1100?'27px':'30px');
       assert.equal(await evaluate("document.querySelector('.cabecera .marca img').getAttribute('src')"), '/brand/isotipo.svg');
       assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre')).color"), 'rgb(243, 248, 252)');
-      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre>span')).color"), 'rgb(120, 206, 232)');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre>span')).color"), 'rgb(182, 204, 250)');
       if (width < 760) {
         await evaluate("document.querySelector('.menu-movil').click()");
         assert.equal(await evaluate("document.querySelector('.menu-movil').getAttribute('aria-expanded')"), 'true');
@@ -145,6 +147,16 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       assert.equal(await evaluate("!!document.getElementById('hf-solicitud')"), false);
       assert.ok(llamadas.every(x=>x.metodo==='GET'&&x.ruta==='/api/cuentas-comerciales/capacidades'));
       assert.equal(await evaluate('localStorage.length'), 0);
+    });
+    await t.test('el acceso público separa clientes y equipo antes de autenticarse', async () => {
+      const antes = llamadas.length;
+      await navegar('/acceso');
+      await esperar("!!document.querySelector('.hf-cliente__opciones')");
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-cliente__opciones a')].map(a=>a.getAttribute('href'))"),
+        ['/clientes/login', '/login']);
+      assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true);
+      assert.equal(llamadas.length, antes);
+      await captura('acceso-publico-320', false);
     });
     await t.test('teclado, movimiento reducido e imagen ausente', async () => {
       foto = false;

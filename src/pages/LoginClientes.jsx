@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { resolverBaseApi } from '../services/configuracionApiPublica';
 import { crearClienteRegistro } from '../services/registroClientes';
-import '../styles/login-premium.css';
-import '../styles/registro-clientes.css';
+import ClienteLayout, { EstadoCliente } from '../components/ClienteLayout';
+import CampoPassword from '../components/autenticacion/CampoPassword';
 
 function conectar() {
   try {
@@ -65,28 +65,25 @@ export default function LoginClientes() {
 
   const pendiente = estado === 'pendiente-activacion';
   return (
-    <main className="login-container login-premium registro-clientes registro-acceso">
-      <div className="login-contenido">
-        <section className="login-card registro-card" aria-labelledby="titulo-acceso-cliente" aria-busy={ocupado || estado === 'cargando'}>
+    <ClienteLayout titulo="titulo-acceso-cliente" ocupado={ocupado || estado === 'cargando'}>
           <h1 id="titulo-acceso-cliente">{pendiente ? 'Tu cuenta está pendiente de activación' : 'Acceso de clientes'}</h1>
-          {estado === 'cargando' && <p role="status">Comprobando tu sesión…</p>}
-          {estado === 'no-disponible' && <p role="alert">El acceso de clientes no está disponible en este momento.</p>}
-          {error && <p className="registro-error" role="alert">{error}</p>}
+          {estado === 'cargando' && <EstadoCliente tipo="cargando">Comprobando tu sesión…</EstadoCliente>}
+          {estado === 'no-disponible' && <EstadoCliente tipo="error">El acceso de clientes no está disponible en este momento.</EstadoCliente>}
+          {error && <EstadoCliente tipo="error">{error}</EstadoCliente>}
           {estado === 'login' && <form method="post" onSubmit={ejecutar}>
             <fieldset disabled={ocupado}>
               <label htmlFor="cliente-email">Correo electrónico</label>
               <input id="cliente-email" name="email" type="email" autoComplete="username" maxLength={254} required />
-              <label htmlFor="cliente-password">Contraseña</label>
-              <input id="cliente-password" name="password" type="password" autoComplete="current-password" required />
-              <button type="submit">Ingresar</button>
+              <CampoPassword id="cliente-password" name="password" label="Contraseña" autoComplete="current-password" icono required />
+              <button type="submit">{ocupado ? 'Iniciando sesión…' : 'Ingresar'}</button>
             </fieldset>
           </form>}
           {pendiente && <>
-            <p role="status">Tu correo está verificado. Podés consultar este estado hasta que se habilite tu espacio.</p>
-            <button type="button" disabled={ocupado} onClick={evento => ejecutar(evento, true)}>Cerrar sesión</button>
+            <EstadoCliente tipo="exito">Tu correo está verificado. Podés consultar este estado hasta que se habilite tu espacio.</EstadoCliente>
+            <button className="hf-cliente__boton" type="button" disabled={ocupado} onClick={evento => ejecutar(evento, true)}>
+              {ocupado ? 'Cerrando sesión…' : 'Cerrar sesión'}
+            </button>
           </>}
-        </section>
-      </div>
-    </main>
+    </ClienteLayout>
   );
 }

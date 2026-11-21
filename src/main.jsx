@@ -18,9 +18,10 @@ import { prepararEntradaVerificacion } from './services/entradaVerificacionClien
 const esDemo=['/demo','/demo/'].includes(window.location.pathname);
 const esRegistro=window.location.pathname==='/clientes/registro';
 const esLoginClientes=window.location.pathname==='/clientes/login';
+const esAccesoPublico=window.location.pathname==='/acceso';
 const entradaVerificacion=prepararEntradaVerificacion(window.location.href,
   url=>window.history.replaceState(null,'',url));
-const entradaDedicada=esDemo||esRegistro||esLoginClientes||entradaVerificacion;
+const entradaDedicada=esDemo||esRegistro||esLoginClientes||esAccesoPublico||entradaVerificacion;
 const entradaComercial=entradaDedicada?null:prepararEntradaComercial(window.location.href,
   url=>window.history.replaceState(null,'',url));
 const contenedor = document.getElementById('root');
@@ -28,6 +29,6 @@ if (!entradaDedicada) iniciarEncuadreMovil(contenedor);
 
 createRoot(contenedor).render(
   <StrictMode>
-    <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} esRegistro={esRegistro} esLoginClientes={esLoginClientes} entradaVerificacion={entradaVerificacion} entradaComercial={entradaComercial}/></ThemeProvider>
+    <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} esRegistro={esRegistro} esLoginClientes={esLoginClientes} esAccesoPublico={esAccesoPublico} entradaVerificacion={entradaVerificacion} entradaComercial={entradaComercial}/></ThemeProvider>
   </StrictMode>
 );

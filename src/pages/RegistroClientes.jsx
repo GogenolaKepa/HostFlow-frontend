@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import SelectorPlanes from '../components/suscripciones/SelectorPlanes';
-import { useFondoLogin } from '../hooks/useFondoLogin';
+import ClienteLayout, { EstadoCliente } from '../components/ClienteLayout';
+import CampoPassword from '../components/autenticacion/CampoPassword';
 import { validarPasswordNueva } from '../services/cuentas';
 import { resolverBaseApi } from '../services/configuracionApiPublica';
 import { crearClienteRegistro, mensajeErrorRegistro } from '../services/registroClientes';
 import { ciclosParaSeleccion, planesParaSeleccion } from '../services/seleccionPlan';
-import '../styles/login-premium.css';
-import '../styles/registro-clientes.css';
+import { precioPlan } from '../services/catalogoComercial';
 
 function conectarRegistro() {
   try {
@@ -26,7 +26,6 @@ export default function RegistroClientes() {
   const [eligiendoPlan, setEligiendoPlan] = useState(true);
   const bloqueo = useRef(false);
   const titulo = useRef(null);
-  const fondo = useFondoLogin();
 
   useEffect(() => {
     document.title = 'Creá tu cuenta | HostFlow';
@@ -102,40 +101,36 @@ export default function RegistroClientes() {
   const encabezado = estado === 'enviado' ? 'Revisá tu correo' : 'Creá tu cuenta';
 
   return (
-    <main className={`login-container login-premium registro-clientes${conSelector ? ' registro-clientes--planes' : ''}`} data-fondo={fondo.estado}>
-      <div className="login-hero" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
-      <div className="login-contenido">
-        <div className="login-info">
-          <div className="identidad-login">
-            <img src="/brand/isotipo.svg" width="52" height="85" alt="" />
-            <p className="marca nombre-login">Host<span>Flow</span></p>
-          </div>
-        </div>
-        <section className={conSelector ? 'registro-card registro-card--planes' : 'login-card registro-card'}
-          aria-labelledby="titulo-registro" aria-busy={estado === 'cargando' || enviando}>
+    <ClienteLayout amplio={conSelector} titulo="titulo-registro" ocupado={estado === 'cargando' || enviando}>
           <h1 id="titulo-registro" ref={titulo} tabIndex={-1}>{conSelector ? 'Elegí tu plan' : encabezado}</h1>
-          {estado === 'cargando' && <p role="status">Comprobando la disponibilidad del registro…</p>}
-          {estado === 'deshabilitado' && <p role="status">El registro por correo todavía está en preparación.</p>}
-          {estado === 'no-disponible' && <p role="alert">No pudimos comprobar la disponibilidad del registro. Volvé a ingresar más tarde.</p>}
+          {estado === 'cargando' && <EstadoCliente tipo="cargando">Comprobando la disponibilidad del registro…</EstadoCliente>}
+          {estado === 'deshabilitado' && <>
+            <EstadoCliente>El registro por correo todavía está en preparación. Las altas se habilitan por invitación.</EstadoCliente>
+            <a className="hf-cliente__boton" href="/#planes">Conocer los planes</a>
+          </>}
+          {estado === 'no-disponible' && <>
+            <EstadoCliente tipo="error">No pudimos comprobar la disponibilidad del registro. Volvé a intentar más tarde.</EstadoCliente>
+            <a className="hf-cliente__boton" href="/#planes">Conocer los planes</a>
+          </>}
           {estado === 'enviado' && (
-            <p role="status">Si corresponde, recibirás un enlace para verificar tu correo. La cuenta se crea después de la verificación.</p>
+            <EstadoCliente tipo="exito">Si tu correo está habilitado, vas a recibir un enlace para verificarlo. Revisá también la carpeta de spam.</EstadoCliente>
           )}
-          {error && <p className="registro-error" role="alert">{error}</p>}
+          {error && <EstadoCliente tipo="error">{error}</EstadoCliente>}
           {conSelector && (
             <>
-              <p>Elegí el plan y el ciclo que querés solicitar al crear tu cuenta.</p>
+              <p>Compará los cupos y elegí la periodicidad para tu empresa.</p>
               <SelectorPlanes seleccionInicial={seleccion} onConfirmar={confirmarPlan} />
             </>
           )}
           {conFormulario && (
             <div hidden={conSelector}>
               <div className="registro-plan-elegido">
-                <p><strong>{planElegido.nombre}</strong> · {ciclosParaSeleccion[seleccion.ciclo]}</p>
+                <p><strong>{planElegido.nombre}</strong><span>{precioPlan(planElegido, seleccion.ciclo)} · {ciclosParaSeleccion[seleccion.ciclo]}</span></p>
                 <button type="button" onClick={cambiarPlan} disabled={enviando || estado === 'bloqueado'}>
                   Cambiar plan y ciclo
                 </button>
               </div>
-              <p className="login-intro">Acceso por invitación. Verificá tu correo para continuar.</p>
+              <p>Usá la dirección de tu invitación. Te enviaremos un enlace para verificarla.</p>
               <form aria-label="Registro por correo" method="post" onSubmit={enviar}>
                 <fieldset disabled={conSelector || enviando || estado === 'bloqueado'}>
                   <label htmlFor="registro-nombre">Tu nombre</label>
@@ -145,11 +140,9 @@ export default function RegistroClientes() {
                   <input id="registro-email" name="email" type="email" autoComplete="email" maxLength={254}
                     pattern="[^\s@]+@[^\s@]+\.[^\s@]+" title="Ingresá un correo con dominio completo." required />
 
-                  <label htmlFor="registro-password">Contraseña</label>
-                  <input id="registro-password" type="password" autoComplete="new-password" aria-describedby="registro-password-ayuda" required />
-
-                  <label htmlFor="registro-repetir">Repetí la contraseña</label>
-                  <input id="registro-repetir" type="password" autoComplete="new-password" required />
+                  <CampoPassword id="registro-password" name={null} label="Contraseña" autoComplete="new-password"
+                    aria-describedby="registro-password-ayuda" icono required />
+                  <CampoPassword id="registro-repetir" name={null} label="Repetí la contraseña" autoComplete="new-password" icono required />
                   <small id="registro-password-ayuda">Mínimo 12 caracteres, máximo 72 bytes. Usá una contraseña única.</small>
 
                   <label className="registro-consentimiento">
@@ -161,8 +154,6 @@ export default function RegistroClientes() {
               </form>
             </div>
           )}
-        </section>
-      </div>
-    </main>
+    </ClienteLayout>
   );
 }

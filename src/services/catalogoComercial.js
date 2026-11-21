@@ -1,12 +1,14 @@
-// Catálogo comercial de presentación. No cobra ni activa suscripciones. Importes enteros en centavos de USD.
+// Importes comerciales en centavos de USD. El año cubre 12 meses por 11 mensualidades.
+const MESES_COBRADOS_ANUAL = 11;
+const conPrecioAnual = plan => Object.freeze({ ...plan, anualCentavos: plan.mensualCentavos * MESES_COBRADOS_ANUAL });
 export const planes = Object.freeze([
-  Object.freeze({ id: 'inicial', nombre: 'Inicial', propiedades: 2, usuarios: 1, mensualCentavos: 999, anualCentavos: 10989,
+  conPrecioAnual({ id: 'inicial', nombre: 'Inicial', propiedades: 2, usuarios: 1, mensualCentavos: 999,
     enfoque: 'Tu operación cotidiana',
     descripcion: 'Para organizar una cartera pequeña con una persona a cargo del sistema.' }),
-  Object.freeze({ id: 'profesional', nombre: 'Profesional', propiedades: 10, usuarios: 3, mensualCentavos: 2999, anualCentavos: 32989,
+  conPrecioAnual({ id: 'profesional', nombre: 'Profesional', propiedades: 10, usuarios: 3, mensualCentavos: 2999,
     enfoque: 'Tu equipo, coordinado',
     descripcion: 'Para acompañar una cartera en crecimiento y coordinar el trabajo del equipo.' }),
-  Object.freeze({ id: 'gestion', nombre: 'Gestión', propiedades: 50, usuarios: 10, mensualCentavos: 7999, anualCentavos: 87989,
+  conPrecioAnual({ id: 'gestion', nombre: 'Gestión', propiedades: 50, usuarios: 10, mensualCentavos: 7999,
     enfoque: 'Una cartera de mayor alcance',
     descripcion: 'Para gestionar más alojamientos y personas dentro de una misma empresa.' }),
 ]);
@@ -29,6 +31,14 @@ export function descuentoAnualPuntosBase(plan) {
   // Redondeo de la proporción a dos decimales porcentuales, usando enteros.
   return Math.floor((ahorro * 10000 + Math.floor(doceMeses / 2)) / doceMeses);
 }
+
+export function ahorroAnual(plan) {
+  if (!planes.includes(plan)) throw Error('PLAN_INVALIDO');
+  return formatoUSD(plan.mensualCentavos * 12 - plan.anualCentavos);
+}
+
+const puntosAnuales = descuentoAnualPuntosBase(planes[0]);
+export const descuentoAnual = `${Math.floor(puntosAnuales / 100)},${String(puntosAnuales % 100).padStart(2, '0')} %`;
 
 export const catalogoComercial = Object.freeze({
   version: 2,

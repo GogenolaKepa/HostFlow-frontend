@@ -4,6 +4,7 @@ import {
   crearSeleccionPlan,
   planesParaSeleccion,
 } from '../../services/seleccionPlan.js';
+import { ahorroAnual, descuentoAnual, precioPlan } from '../../services/catalogoComercial.js';
 import './planes-suscripciones.css';
 
 export default function SelectorPlanes({ seleccionInicial, onConfirmar }) {
@@ -18,8 +19,8 @@ export default function SelectorPlanes({ seleccionInicial, onConfirmar }) {
 
   return (
     <form className="hf-selector-planes" aria-label="Selección de plan" onSubmit={confirmar}>
-      <fieldset>
-        <legend>Ciclo de suscripción</legend>
+      <fieldset className="hf-selector-planes__periodicidad">
+        <legend>Periodicidad</legend>
         <div className="hf-selector-planes__ciclos">
           {Object.entries(ciclosParaSeleccion).map(([codigo, nombre]) => (
             <label key={codigo}>
@@ -36,6 +37,7 @@ export default function SelectorPlanes({ seleccionInicial, onConfirmar }) {
           ))}
         </div>
       </fieldset>
+      <p className="hf-selector-planes__ahorro">12 meses por el precio de 11 · {descuentoAnual} de ahorro aprox.</p>
       <fieldset>
         <legend>Planes por empresa</legend>
         <div className="hf-selector-planes__tarjetas">
@@ -47,7 +49,7 @@ export default function SelectorPlanes({ seleccionInicial, onConfirmar }) {
                   name={`${id}-plan`}
                   value={opcion.id}
                   aria-labelledby={`${id}-${opcion.id}-nombre`}
-                  aria-describedby={`${id}-${opcion.id}-descripcion ${id}-${opcion.id}-cupos`}
+                  aria-describedby={`${id}-${opcion.id}-descripcion ${id}-${opcion.id}-precio ${id}-${opcion.id}-cupos`}
                   checked={plan === opcion.id}
                   onChange={() => setPlan(opcion.id)}
                   required
@@ -55,6 +57,10 @@ export default function SelectorPlanes({ seleccionInicial, onConfirmar }) {
                 <strong id={`${id}-${opcion.id}-nombre`}>{opcion.nombre}</strong>
               </span>
               <span id={`${id}-${opcion.id}-descripcion`}>{opcion.descripcion}</span>
+              <span className="hf-selector-planes__precio" id={`${id}-${opcion.id}-precio`}>
+                <b>{precioPlan(opcion, ciclo)}</b> <span>/ {ciclo === 'anual' ? 'año' : 'mes'}</span>
+              </span>
+              {ciclo === 'anual' && <span className="hf-selector-planes__diferencia">Ahorrás {ahorroAnual(opcion)} frente a 12 pagos mensuales.</span>}
               <span className="hf-selector-planes__cupos" id={`${id}-${opcion.id}-cupos`}>
                 <span>Hasta <b>{opcion.propiedades}</b> propiedades</span>
                 <span><b>{opcion.usuarios}</b> {opcion.usuarios === 1 ? 'usuario con acceso' : 'usuarios con acceso'}</span>
@@ -64,8 +70,8 @@ export default function SelectorPlanes({ seleccionInicial, onConfirmar }) {
         </div>
       </fieldset>
       <div className="hf-selector-planes__acciones">
-        <p>Precios pendientes de confirmación.</p>
-        <button type="submit">Confirmar selección</button>
+        <p>Importes en dólares estadounidenses. La selección no genera cobros.</p>
+        <button type="submit">Continuar con mi plan</button>
       </div>
     </form>
   );

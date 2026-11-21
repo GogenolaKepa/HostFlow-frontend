@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useFondoLogin } from '../hooks/useFondoLogin';
+import ClienteLayout, { EstadoCliente } from '../components/ClienteLayout';
+import CampoPassword from '../components/autenticacion/CampoPassword';
 import { validarPasswordNueva } from '../services/cuentas';
 import { resolverBaseApi } from '../services/configuracionApiPublica';
 import { crearClienteRegistro } from '../services/registroClientes';
-import '../styles/login-premium.css';
-import '../styles/registro-clientes.css';
 
 const MENSAJES = {
   invalido: 'Este enlace no es válido. Volvé a abrir el enlace original desde tu correo.',
@@ -42,7 +41,6 @@ export default function VerificarCorreoClientes({ token }) {
   const [error, setError] = useState('');
   const consulta = useRef(null);
   const bloqueo = useRef(false);
-  const fondo = useFondoLogin();
 
   useEffect(() => {
     document.title = 'Verificá tu correo | HostFlow';
@@ -87,32 +85,25 @@ export default function VerificarCorreoClientes({ token }) {
   }
 
   return (
-    <main className="login-container login-premium registro-clientes" data-fondo={fondo.estado}>
-      <div className="login-hero" aria-hidden="true" style={fondo.url ? { backgroundImage: `url("${fondo.url}")` } : undefined} />
-      <div className="login-contenido">
-        <div className="login-info">
-          <div className="identidad-login">
-            <img src="/brand/isotipo.svg" width="52" height="85" alt="" />
-            <p className="marca nombre-login">Host<span>Flow</span></p>
-          </div>
-        </div>
-        <section className="login-card registro-card" aria-labelledby="titulo-verificacion" aria-busy={estado === 'cargando' || enviando}>
+    <ClienteLayout titulo="titulo-verificacion" ocupado={estado === 'cargando' || enviando}>
           <h1 id="titulo-verificacion">{estado === 'verificado' ? 'Correo verificado' : 'Verificá tu correo'}</h1>
-          {estado === 'cargando' && <p role="status">Comprobando tu enlace…</p>}
-          {MENSAJES[estado] && <p className="registro-error" role="alert">{MENSAJES[estado]}</p>}
-          {estado === 'verificado' && <><p role="status">Tu cuenta fue creada.</p><a href="/clientes/login">Ingresá a tu cuenta de cliente</a></>}
-          {error && <p className="registro-error" role="alert">{error}</p>}
+          {estado === 'cargando' && <EstadoCliente tipo="cargando">Comprobando tu enlace…</EstadoCliente>}
+          {MENSAJES[estado] && <EstadoCliente tipo="error">{MENSAJES[estado]}</EstadoCliente>}
+          {estado === 'verificado' && <>
+            <EstadoCliente tipo="exito">Tu cuenta fue creada. Ya podés iniciar sesión para consultar el estado de tu espacio.</EstadoCliente>
+            <a className="hf-cliente__boton" href="/clientes/login">Ingresá a tu cuenta de cliente</a>
+          </>}
+          {error && <EstadoCliente tipo="error">{error}</EstadoCliente>}
           {(estado === 'vigente' || estado === 'bloqueado') && (
             <form method="post" onSubmit={confirmar}>
               <fieldset disabled={enviando || estado === 'bloqueado'}>
-                <label htmlFor="verificacion-password">Contraseña elegida al registrarte</label>
-                <input id="verificacion-password" type="password" autoComplete="current-password" required />
+                <p>Ingresá la contraseña que elegiste al crear tu cuenta.</p>
+                <CampoPassword id="verificacion-password" name={null} label="Contraseña elegida al registrarte"
+                  autoComplete="current-password" icono required />
                 <button type="submit">{enviando ? 'Confirmando…' : 'Confirmá tu correo'}</button>
               </fieldset>
             </form>
           )}
-        </section>
-      </div>
-    </main>
+    </ClienteLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import SelectorPlanes from '../components/suscripciones/SelectorPlanes';
+import CabeceraPublica from '../components/CabeceraPublica';
 import ClienteLayout, { EstadoCliente } from '../components/ClienteLayout';
 import CampoPassword from '../components/autenticacion/CampoPassword';
 import { validarPasswordNueva } from '../services/cuentas';
@@ -7,6 +8,7 @@ import { resolverBaseApi } from '../services/configuracionApiPublica';
 import { crearClienteRegistro, mensajeErrorRegistro } from '../services/registroClientes';
 import { ciclosParaSeleccion, planesParaSeleccion } from '../services/seleccionPlan';
 import { precioPlan } from '../services/catalogoComercial';
+import '../styles/entrada-publica.css';
 
 function conectarRegistro() {
   try {
@@ -101,17 +103,28 @@ export default function RegistroClientes() {
   const encabezado = estado === 'enviado' ? 'Revisá tu correo' : 'Creá tu cuenta';
 
   return (
-    <ClienteLayout amplio={conSelector} titulo="titulo-registro" ocupado={estado === 'cargando' || enviando}>
+    <ClienteLayout cabecera={<CabeceraPublica pantalla="registro" />} amplio={conSelector} titulo="titulo-registro" ocupado={estado === 'cargando' || enviando}>
           <h1 id="titulo-registro" ref={titulo} tabIndex={-1}>{conSelector ? 'Elegí tu plan' : encabezado}</h1>
           {estado === 'cargando' && <EstadoCliente tipo="cargando">Comprobando la disponibilidad del registro…</EstadoCliente>}
-          {estado === 'deshabilitado' && <>
-            <EstadoCliente>El registro por correo todavía está en preparación. Las altas se habilitan por invitación.</EstadoCliente>
-            <a className="hf-cliente__boton" href="/#planes">Conocer los planes</a>
-          </>}
-          {estado === 'no-disponible' && <>
-            <EstadoCliente tipo="error">No pudimos comprobar la disponibilidad del registro. Volvé a intentar más tarde.</EstadoCliente>
-            <a className="hf-cliente__boton" href="/#planes">Conocer los planes</a>
-          </>}
+          {(estado === 'deshabilitado' || estado === 'no-disponible') && (
+            <>
+              {estado === 'deshabilitado' ? (
+                <EstadoCliente>
+                  <strong>Altas por invitación</strong>
+                  El registro por correo todavía está en preparación.
+                </EstadoCliente>
+              ) : (
+                <EstadoCliente tipo="error">
+                  <strong>Registro temporalmente no disponible</strong>
+                  No pudimos comprobar la disponibilidad del registro. Volvé a intentar más tarde.
+                </EstadoCliente>
+              )}
+              <div className="hf-entrada-publica__acciones">
+                <a className="hf-cliente__boton" href="/#planes">Conocer los planes</a>
+                <a className="hf-cliente__boton hf-entrada-publica__secundaria" href="/acceso">Iniciar sesión</a>
+              </div>
+            </>
+          )}
           {estado === 'enviado' && (
             <EstadoCliente tipo="exito">Si tu correo está habilitado, vas a recibir un enlace para verificarlo. Revisá también la carpeta de spam.</EstadoCliente>
           )}

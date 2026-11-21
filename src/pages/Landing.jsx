@@ -1,4 +1,5 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useState} from 'react';
+import CabeceraPublica from '../components/CabeceraPublica';
 import MarcaHostFlow from '../components/MarcaHostFlow';
 import Planes from '../components/PlanesComerciales';
 import Contacto from '../components/ContactoComercial';
@@ -52,37 +53,19 @@ const preguntas = [
 ];
 
 export default function Landing() {
-  const [menu, setMenu] = useState(false);
   const [ciclo, setCiclo] = useState('mensual');
   const [plan, setPlan] = useState('inicial');
-  const botonMenu = useRef(null);
   useEffect(() => {
     document.title = 'HostFlow | Tu operación. En un solo lugar.';
     if (location.hash) requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
   }, []);
-  function cerrarMenu(evento) {
-    if (evento.key === 'Escape') {
-      setMenu(false);
-      botonMenu.current?.focus();
-    }
-  }
   return (
     <div className="hf-landing hf-hibrido">
       <a className="saltar" href="#principal">Saltar al contenido</a>
-      <header className="cabecera" onKeyDown={cerrarMenu}>
-        <div className="ancho nav-fila">
-          <a href="/" aria-label="HostFlow, inicio"><Marca /></a>
-          <button ref={botonMenu} className="menu-movil" type="button" aria-expanded={menu} aria-controls="navegacion" onClick={() => setMenu(!menu)}>
-            <span>{menu ? 'Cerrar' : 'Menú'}</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8"><path d={menu ? 'M6 6l12 12M6 18 18 6' : 'M3 6h18M3 12h18M3 18h18'} /></svg>
-          </button>
-          <nav id="navegacion" className={menu ? 'abierto' : ''} aria-label="Principal" onClick={() => setMenu(false)}>
-            <a href="#funciones">El producto</a><a href="#planes">Planes</a><a href="/acceso" className="nav-acceso">Iniciar sesión</a>
-          </nav>
-        </div>
-      </header>
+      <CabeceraPublica pantalla="landing" />
       <main id="principal">
         <section className="hero" aria-labelledby="hf-hero-title">
+          <Foto />
           <div className="hero-interior ancho">
             <div className="hero-texto">
               <h1 id="hf-hero-title">Gestioná tus alojamientos en un solo lugar.</h1>
@@ -94,7 +77,6 @@ export default function Landing() {
               <p className="hero-disponibilidad">Altas por invitación. Consultá la disponibilidad en Registro.</p>
               <div className="hero-enlaces"><a href="/acceso">Iniciar sesión</a><a href="/demo">Explorar la demo</a></div>
             </div>
-            <Foto />
           </div>
         </section>
         <section className="producto-intro seccion ancho" aria-labelledby="producto-titulo">

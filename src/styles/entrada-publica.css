@@ -1,0 +1,92 @@
+.hf-cliente.hf-entrada-publica {
+  --ink: #f4f7ff;
+  --muted: #ccd8e9;
+  --blue: #a9c8ff;
+  --line: #57708b;
+  color-scheme: dark;
+  padding-bottom: 0;
+  background: #0b1728;
+}
+.hf-entrada-publica .hf-cliente__layout {
+  --ancho-tarjeta: 560px;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, var(--ancho-tarjeta));
+  align-items: center;
+  width: 100%;
+  min-height: calc(100svh - 82px);
+  margin: 0;
+  padding: clamp(35px, 7vh, 88px) max(24px, calc((100% - 1280px) / 2));
+  background: #0b1728;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.hf-entrada-publica .hf-cliente__layout--amplio { --ancho-tarjeta: 1040px; justify-content: center; }
+.hf-entrada-publica .hf-entrada-publica__fondo {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(0deg, #0b1728 0%, transparent 65%),
+    linear-gradient(96deg, #0b1728df 0%, #0b17288a 46%, #0b172825 100%),
+    url("../assets/publico/recepcion.webp") 66% center / cover no-repeat;
+}
+.hf-entrada-publica .registro-card {
+  background: linear-gradient(150deg, #182b43, #0e2034);
+  border: 1px solid #7994b365;
+  border-radius: 24px;
+  box-shadow: 0 26px 70px #030b1790;
+  padding: clamp(26px, 4vw, 49px);
+}
+.hf-entrada-publica .registro-card h1 { text-wrap: balance; }
+.hf-entrada-publica :focus-visible { outline-color: #b9d2ff; }
+.hf-entrada-publica .hf-cliente__estado { background: #203955; border-color: #5b7c9e; color: #eff6ff; }
+.hf-entrada-publica .hf-cliente__estado--error { background: #402b38; border-color: #a87587; color: #ffdee6; }
+.hf-entrada-publica .hf-cliente__estado strong { display: block; margin-bottom: 3px; }
+.hf-entrada-publica .hf-cliente__cargando { border-top-color: #e2edff; }
+.hf-entrada-publica .registro-card .hf-cliente__boton,
+.hf-entrada-publica .registro-card button[type=submit] { border-color: #dbe6ff; background: #dbe6ff; color: #102443; }
+.hf-entrada-publica .registro-card .hf-cliente__boton:hover,
+.hf-entrada-publica .registro-card button[type=submit]:hover:not(:disabled) { background: #fff; }
+.hf-entrada-publica .registro-card .hf-entrada-publica__secundaria { border-color: #8fa9c5; background: #192e47; color: #f5f8ff; }
+.hf-entrada-publica .registro-card .hf-entrada-publica__secundaria:hover { background: #284560; }
+.hf-entrada-publica__acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.hf-entrada-publica .hf-cliente__opciones { gap: 12px; margin-block: 23px 0; }
+.hf-entrada-publica .hf-cliente__opciones a {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px 15px;
+  padding: 16px 18px;
+  border-color: #7796bc;
+  background: #1e3653;
+  color: #f4f7ff;
+}
+.hf-entrada-publica .hf-cliente__opciones a:nth-child(2) { background: #152940; }
+.hf-entrada-publica .hf-cliente__opciones a:hover { border-color: #dbe6ff; background: #28496b; }
+.hf-entrada-publica .hf-cliente__opciones strong { line-height: 1.28; }
+.hf-entrada-publica .hf-entrada-publica__flecha { grid-column: 2; grid-row: 1 / span 2; color: #cfe2ff; font-size: 21px; }
+.hf-entrada-publica .hf-cliente__opciones span:not(.hf-entrada-publica__flecha) { grid-column: 1; }
+.hf-entrada-publica input:not([type=radio]):not([type=checkbox]) { color-scheme: light; color: #142641; }
+.hf-entrada-publica .registro-plan-elegido { background: #1e3653; border-color: #7796bc; }
+.hf-entrada-publica :is(.hf-selector-planes legend, .hf-selector-planes__opcion, .hf-selector-planes__precio b) { color: #f5f8ff; }
+.hf-entrada-publica .hf-selector-planes__ciclos,
+.hf-entrada-publica .hf-selector-planes__tarjeta { background: #152940; color: #e0ebfc; border-color: #7796bc; }
+.hf-entrada-publica .hf-selector-planes__ciclos label,
+.hf-entrada-publica .hf-selector-planes__diferencia { color: #c3d9ff; }
+.hf-entrada-publica .hf-selector-planes__ciclos label:has(input:checked),
+.hf-entrada-publica .hf-selector-planes__tarjeta:has(input:checked) { color: #f5f8ff; background: #254769; border-color: #bed3ff; }
+.hf-entrada-publica .hf-selector-planes__tarjeta:hover { border-color: #bed3ff; }
+.hf-entrada-publica .hf-selector-planes__cupos { border-color: #7796bc; }
+
+@media (max-width: 760px) {
+  .hf-entrada-publica .hf-cliente__layout { min-height: calc(100svh - 68px); align-items: start; justify-content: center; }
+  .hf-entrada-publica .hf-entrada-publica__fondo { background-position: center, center, 65% 35%; }
+}
+@media (max-width: 500px) {
+  .hf-entrada-publica .hf-cliente__layout { min-height: calc(100svh - 110px); padding: 28px 16px 40px; }
+  .hf-entrada-publica .registro-card { border-radius: 18px; padding: 23px 19px; }
+  .hf-entrada-publica .hf-cliente__opciones a { padding: 14px 12px; gap: 6px 10px; }
+}

@@ -103,22 +103,18 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       assert.equal(await evaluate("/prototipo|laboratorio|datos ficticios|localhost|127\\.0\\.0\\.1/i.test(document.body.innerText)"), false);
       assert.ok(await evaluate("[...document.querySelectorAll('form input,form select,form textarea')].every(e=>!!e.closest('label'))"));
       assert.equal(await evaluate("getComputedStyle(document.querySelector('[name=nombre]')).backgroundColor"), 'rgb(15, 33, 53)');
-      assert.ok(await evaluate("[...document.querySelectorAll('.cabecera span')].every(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(e).padding==='0px')"));
-      tipografiasLanding.set(width, await Promise.all(['.cabecera .hf-marca-nombre','.pie .hf-marca-nombre'].map(tipografia)));
+      assert.ok(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera .hf-marca, .hf-publica-cabecera .hf-marca span')].every(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(e).padding==='0px')"));
+      tipografiasLanding.set(width, await Promise.all(['.hf-publica-cabecera .hf-marca-nombre','.pie .hf-marca-nombre'].map(tipografia)));
       assert.equal(await evaluate("document.getElementById('hf-hero-title').textContent"), 'Gestioná tus alojamientos en un solo lugar.');
       assert.deepEqual(await evaluate("[...document.querySelectorAll('.hero-texto a')].map(a=>a.getAttribute('href'))"),
         ['/clientes/registro', '#planes', '/acceso', '/demo']);
-      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .marca')).fontSize"), width<=760?'26px':width<=1100?'27px':'30px');
-      assert.equal(await evaluate("document.querySelector('.cabecera .marca img').getAttribute('src')"), '/brand/isotipo.svg');
-      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre')).color"), 'rgb(243, 248, 252)');
-      assert.equal(await evaluate("getComputedStyle(document.querySelector('.cabecera .hf-marca-nombre>span')).color"), 'rgb(182, 204, 250)');
-      if (width < 760) {
-        await evaluate("document.querySelector('.menu-movil').click()");
-        assert.equal(await evaluate("document.querySelector('.menu-movil').getAttribute('aria-expanded')"), 'true');
-        await evaluate("document.querySelector('#navegacion a[href=\"#planes\"]').click()");
-        assert.equal(await evaluate("document.querySelector('.menu-movil').getAttribute('aria-expanded')"), 'false');
-        await evaluate('scrollTo(0,0)');
-      }
+      assert.equal(await evaluate("document.querySelector('.hf-publica-cabecera .hf-marca img').getAttribute('src')"), '/brand/isotipo.svg');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.hf-publica-cabecera .hf-marca-nombre')).color"), 'rgb(245, 248, 255)');
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.hf-publica-cabecera .hf-marca-nombre>span')).color"), 'rgb(182, 204, 250)');
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].filter(a=>a.getClientRects().length).map(a=>a.getAttribute('href'))"),
+        width <= 760 ? ['#planes', '/clientes/registro', '/acceso'] : ['#funciones', '#planes', '/clientes/registro', '/acceso']);
+      assert.ok(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].every(a=>!a.getClientRects().length||a.clientHeight>=42)"));
+      assert.ok(await evaluate("document.querySelector('.hero').clientWidth===document.querySelector('.hero-foto').clientWidth"));
       await captura('landing-'+width);
       await captura('hero-'+width, false);
     });
@@ -154,6 +150,7 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       await esperar("!!document.querySelector('.hf-cliente__opciones')");
       assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-cliente__opciones a')].map(a=>a.getAttribute('href'))"),
         ['/clientes/login', '/login']);
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].map(a=>a.getAttribute('href'))"), ['/#planes','/clientes/registro']);
       assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true);
       assert.equal(llamadas.length, antes);
       await captura('acceso-publico-320', false);
@@ -163,7 +160,7 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       await command('Network.setCacheDisabled', {cacheDisabled: true});
       await command('Emulation.setEmulatedMedia', {features: [{name: 'prefers-reduced-motion', value: 'reduce'}]});
       await navegar('/'); await esperar("!!document.getElementById('hf-hero-title')");
-      assert.ok(await evaluate("getComputedStyle(document.querySelector('.hero')).backgroundImage.includes('gradient')"));
+      assert.ok(await evaluate("getComputedStyle(document.querySelector('.hero'),'::before').backgroundImage.includes('gradient')"));
       await command('Input.dispatchKeyEvent', {type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9});
       await command('Input.dispatchKeyEvent', {type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9});
       assert.equal(await evaluate("document.activeElement.getAttribute('href')"), '#principal');

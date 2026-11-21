@@ -275,6 +275,8 @@ test('registro por correo y verificación con API simulada', {
         responderCapacidades = async () => [estado, datos];
         await visitar(mensaje(texto));
         assert.equal(await evaluate(formulario), false);
+        assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].map(a=>a.getAttribute('href'))"), ['/#planes', '/acceso']);
+        assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-entrada-publica__acciones a')].map(a=>a.getAttribute('href'))"), ['/#planes', '/acceso']);
       }
       assert.equal(solicitudesPost().length, 1);
     });

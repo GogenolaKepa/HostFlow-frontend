@@ -1,0 +1,70 @@
+.hf-publica-cabecera {
+  position: relative;
+  z-index: 2;
+  background: #0b1728;
+  border-bottom: 1px solid #a8bbd42b;
+  color: #f5f8ff;
+}
+.hf-publica-cabecera__interior {
+  width: min(1280px, calc(100% - 48px));
+  min-height: 82px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px 24px;
+  margin-inline: auto;
+}
+.hf-publica-cabecera__interior > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+.hf-publica-cabecera .hf-marca,
+.hf-publica-cabecera .hf-marca span { background: transparent; padding: 0; border-radius: 0; }
+.hf-publica-cabecera .hf-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+}
+.hf-publica-cabecera .hf-marca span { font-weight: inherit; }
+.hf-publica-cabecera .hf-marca-isotipo { width: 25px; height: 40px; }
+.hf-publica-cabecera .hf-marca-nombre { color: #f5f8ff; font-size: 30px; letter-spacing: -.05em; }
+.hf-publica-cabecera .hf-marca-nombre span { color: #b6ccfa; }
+.hf-publica-cabecera nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.hf-publica-cabecera nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 7px clamp(10px, 1.4vw, 20px);
+  border: 1px solid #8fa9c574;
+  border-radius: 9px;
+  background: #162941;
+  color: #f5f8ff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-decoration: none;
+  text-align: center;
+}
+.hf-publica-cabecera nav a:hover { border-color: #bed3ff; background: #253e5d; }
+.hf-publica-cabecera nav .hf-publica-cabecera__producto { border-color: transparent; background: transparent; color: #cad7e8; }
+.hf-publica-cabecera nav .hf-publica-cabecera__producto:hover { background: #253e5d; }
+.hf-publica-cabecera nav .hf-publica-cabecera__principal { border-color: #dbe6ff; background: #dbe6ff; color: #102443; }
+.hf-publica-cabecera nav .hf-publica-cabecera__principal:hover { background: #fff; }
+.hf-publica-cabecera a:focus-visible { outline: 3px solid #dbe6ff; outline-offset: 4px; }
+
+@media (max-width: 760px) {
+  .hf-publica-cabecera__interior { width: calc(100% - 32px); min-height: 68px; }
+  .hf-publica-cabecera .hf-marca-nombre { font-size: 25px; }
+  .hf-publica-cabecera nav .hf-publica-cabecera__producto { display: none; }
+}
+@media (max-width: 500px) {
+  .hf-publica-cabecera__interior { flex-wrap: wrap; gap: 5px; padding-block: 6px 11px; }
+  .hf-publica-cabecera nav { width: 100%; }
+  .hf-publica-cabecera nav a { flex: 1 1 auto; }
+}

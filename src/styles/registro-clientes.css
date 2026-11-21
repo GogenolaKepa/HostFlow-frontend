@@ -26,6 +26,12 @@ body:has(.registro-clientes) {
   box-sizing: border-box;
 }
 
+.login-container.login-premium.registro-acceso .login-contenido {
+  display: grid;
+  grid-template-columns: minmax(0, 460px);
+  place-content: center;
+}
+
 .registro-card > h1 {
   margin: 0 0 14px;
   font-size: 28px;

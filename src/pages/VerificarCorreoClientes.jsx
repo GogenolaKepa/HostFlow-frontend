@@ -100,7 +100,7 @@ export default function VerificarCorreoClientes({ token }) {
           <h1 id="titulo-verificacion">{estado === 'verificado' ? 'Correo verificado' : 'Verificá tu correo'}</h1>
           {estado === 'cargando' && <p role="status">Comprobando tu enlace…</p>}
           {MENSAJES[estado] && <p className="registro-error" role="alert">{MENSAJES[estado]}</p>}
-          {estado === 'verificado' && <p role="status">Tu cuenta fue creada.</p>}
+          {estado === 'verificado' && <><p role="status">Tu cuenta fue creada.</p><a href="/clientes/login">Ingresá a tu cuenta de cliente</a></>}
           {error && <p className="registro-error" role="alert">{error}</p>}
           {(estado === 'vigente' || estado === 'bloqueado') && (
             <form method="post" onSubmit={confirmar}>

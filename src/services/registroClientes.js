@@ -52,7 +52,29 @@ export function crearClienteRegistro({
     return pedir(ruta, { body, csrf });
   }
 
+  function validarSesion(estado, datos) {
+    if (estado !== 200 || datos?.estado !== 'pendiente-activacion') throw errorRegistro('SESION_NO_DISPONIBLE');
+    return datos.estado;
+  }
+
   return Object.freeze({
+    async consultarSesion() {
+      const { estado, datos } = await pedir('sesion');
+      if (estado === 401 && datos?.codigo === 'SESION_CLIENTE_REQUERIDA') return null;
+      return validarSesion(estado, datos);
+    },
+
+    async iniciarSesion(email, password) {
+      const { estado, datos } = await enviarProtegido('login', { email, password });
+      if (estado === 401 && datos?.codigo === 'CREDENCIALES_INVALIDAS') throw errorRegistro(datos.codigo);
+      if (estado === 429) throw errorRegistro('LIMITE_SOLICITUDES');
+      return validarSesion(estado, datos);
+    },
+
+    async cerrarSesion() {
+      const { estado, datos } = await enviarProtegido('logout', {});
+      if (estado !== 200 || datos?.cerrado !== true) throw errorRegistro('CIERRE_NO_CONFIRMADO');
+    },
     async registroHabilitado() {
       const { estado, datos } = await pedir('capacidades');
       if (estado !== 200 || datos?.version !== 1 || datos.operativa !== false ||

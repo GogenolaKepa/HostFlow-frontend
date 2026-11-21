@@ -15,5 +15,9 @@
   Cache-Control: no-store
   Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 
+/clientes/login
+  Cache-Control: no-store
+  Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+
 /login
   Cache-Control: no-store

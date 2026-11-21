@@ -10,6 +10,7 @@ const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
 const origen = 'https://registro.example.invalid';
 const ruta = '/clientes/registro';
 const rutaVerificacion = '/clientes/verificar';
+const rutaLogin = '/clientes/login';
 const token = 'A'.repeat(43);
 const enlaceVigente = { tipo: 'registro', expiraEn: '2099-01-01T00:00:00.000Z' };
 const csrf = 'csrf.ficticio.' + 'a'.repeat(43);
@@ -33,8 +34,9 @@ test('registro por correo y verificación con API simulada', {
   let responderRegistro = async () => [202, aceptada];
   let responderEstado = async () => [200, enlaceVigente];
   let responderVerificacion = async () => [200, { completado: true }];
+  let sesionCliente = false;
   const reglas = fs.readFileSync(path.join(dist, '_headers'), 'utf8');
-  const politicas = Object.fromEntries([ruta, rutaVerificacion].map(url => {
+  const politicas = Object.fromEntries([ruta, rutaVerificacion, rutaLogin].map(url => {
     const regla = reglas.match(new RegExp(`^${url}\\r?\\n  Cache-Control: no-store\\r?\\n  Content-Security-Policy: (.+)$`, 'm'));
     assert.ok(regla, `Falta la política del documento ${url}`);
     return [url, regla[1]];
@@ -65,6 +67,15 @@ test('registro por correo y verificación con API simulada', {
         'POST /api/clientes/registro': responderRegistro,
         'POST /api/clientes/enlaces/estado': responderEstado,
         'POST /api/clientes/verificar': responderVerificacion,
+        'GET /api/clientes/sesion': () => sesionCliente ? [200, { estado: 'pendiente-activacion' }] : [401, { codigo: 'SESION_CLIENTE_REQUERIDA' }],
+        'POST /api/clientes/login': () => {
+          sesionCliente = true;
+          return [200, { estado: 'pendiente-activacion' }];
+        },
+        'POST /api/clientes/logout': () => {
+          sesionCliente = false;
+          return [200, { cerrado: true }];
+        },
       }[method + ' ' + url.pathname];
       if (mock) {
         const [estado, datos] = await mock();
@@ -347,6 +358,24 @@ test('registro por correo y verificación con API simulada', {
       assert.equal(await evaluate(`[...Object.values(localStorage), ...Object.values(sessionStorage)]
         .some(valor => valor.includes(${JSON.stringify(token)}))`), false);
       assert.ok(bloqueosCsp > bloqueosAntes);
+    });
+
+    await t.test('después de verificar se ingresa al área de cliente pendiente y se puede cerrar sesión', async () => {
+      await evaluate('document.querySelector(\'a[href="/clientes/login"]\').click()');
+      await esperar('!!document.querySelector("#cliente-password")');
+      const antes = llamadas.length;
+      await evaluate(`document.querySelector('#cliente-email').value = 'cliente@example.invalid';
+        document.querySelector('#cliente-password').value = ${JSON.stringify(password)};`);
+      await enviar();
+      await esperar(mensaje('Tu cuenta está pendiente de activación'));
+      assert.equal(await evaluate('!!document.querySelector("[role=alert]")'), false);
+      assert.ok(llamadas.slice(antes).every(l => l.ubicacion === origen + rutaLogin && !l.query));
+      assert.deepEqual(JSON.parse(llamadas.slice(antes).find(l => l.ruta.endsWith('/login')).postData),
+        { email: 'cliente@example.invalid', password });
+      await evaluate('document.querySelector("main button").click()');
+      await esperar('!!document.querySelector("#cliente-password")');
+      assert.equal(sesionCliente, false);
+      assert.equal(await evaluate('document.querySelector("#cliente-password").value'), '');
     });
 
     await t.test('una respuesta de confirmación incierta limpia la contraseña y bloquea el reenvío', async () => {

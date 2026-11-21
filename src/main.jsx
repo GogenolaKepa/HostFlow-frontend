@@ -17,15 +17,17 @@ import { prepararEntradaVerificacion } from './services/entradaVerificacionClien
 // Retirar secretos de la URL antes del primer render y de cualquier petición.
 const esDemo=['/demo','/demo/'].includes(window.location.pathname);
 const esRegistro=window.location.pathname==='/clientes/registro';
+const esLoginClientes=window.location.pathname==='/clientes/login';
 const entradaVerificacion=prepararEntradaVerificacion(window.location.href,
   url=>window.history.replaceState(null,'',url));
-const entradaComercial=esDemo||esRegistro||entradaVerificacion?null:prepararEntradaComercial(window.location.href,
+const entradaDedicada=esDemo||esRegistro||esLoginClientes||entradaVerificacion;
+const entradaComercial=entradaDedicada?null:prepararEntradaComercial(window.location.href,
   url=>window.history.replaceState(null,'',url));
 const contenedor = document.getElementById('root');
-if (!esDemo && !esRegistro && !entradaVerificacion) iniciarEncuadreMovil(contenedor);
+if (!entradaDedicada) iniciarEncuadreMovil(contenedor);
 
 createRoot(contenedor).render(
   <StrictMode>
-    <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} esRegistro={esRegistro} entradaVerificacion={entradaVerificacion} entradaComercial={entradaComercial}/></ThemeProvider>
+    <ThemeProvider><PreferenciasNavegadorBootstrap /><EntradaHostFlow esDemo={esDemo} esRegistro={esRegistro} esLoginClientes={esLoginClientes} entradaVerificacion={entradaVerificacion} entradaComercial={entradaComercial}/></ThemeProvider>
   </StrictMode>
 );

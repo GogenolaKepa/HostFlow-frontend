@@ -61,8 +61,6 @@
 .hf-hibrido .hero h1 { font-size: clamp(41px, 5vw, 71px); font-weight: 720; line-height: 1.04; margin: 0 0 22px; letter-spacing: -.055em; }
 .hf-hibrido .hero p { max-width: 440px; color: #dbe5f3; font-size: 18px; line-height: 1.65; }
 .hf-hibrido .hero .hero-disponibilidad { margin: 15px 0 9px; color: #c4d2e7; font-size: 13px; }
-.hf-hibrido .hero-enlaces { display: flex; flex-wrap: wrap; gap: 8px 24px; }
-.hf-hibrido .hero-enlaces a { min-height: 44px; display: inline-flex; align-items: center; color: #d2e1fb; font-size: 14px; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
 .hf-hibrido .acciones { display: flex; gap: 13px; flex-wrap: wrap; margin-top: 32px; }
 .hf-hibrido .boton { border: 1px solid #738DA6; border-radius: 8px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 22px; padding: 13px 20px; font-size: 13px; font-weight: 700; line-height: 1.4; background: transparent; color: var(--blanco); }
 .hf-hibrido .primario { background: #2454a3; border-color: #74a1ea; color: #FFFFFF; }
@@ -70,6 +68,8 @@
 .hf-hibrido .secundario:hover { background: #213B55; }
 .hf-hibrido .cristal { background: #0E2238A6; border-color: #B3C7DA; }
 .hf-hibrido .cristal:hover { background: #213B55; }
+.hf-hibrido .hero .terciario { background: #14263d99; border-color: #aac3e336; color: #dbe5f3; }
+.hf-hibrido .hero .terciario:hover { background: #213B55; border-color: #738DA6; }
 
 .hf-hibrido .seccion { padding-block: 78px; }
 .hf-hibrido .titulo-seccion { display: flex; justify-content: space-between; align-items: end; gap: 65px; margin-bottom: 40px; }
@@ -154,6 +154,13 @@
 .hf-hibrido .tarjeta-plan li { display: flex; gap: 9px; font-size: 12px; line-height: 1.65; margin-top: 12px; color: #D5E2ED; }
 .hf-hibrido .tarjeta-plan li > span { color: #9AD5F0; }
 .hf-hibrido .tarjeta-plan .boton { width: 100%; font-size: 12px; justify-content: space-between; }
+.hf-hibrido .tarjeta-plan { position: relative; cursor: pointer; transition: border-color .16s, box-shadow .16s; }
+/* Extiende el enlace nativo al borde de la tarjeta. */
+.hf-hibrido .tarjeta-plan .boton::after { content: ""; position: absolute; inset: -1px; border-radius: 13px; }
+.hf-hibrido .tarjeta-plan:hover { border-color: #B6CCFA; box-shadow: inset 0 0 0 1px #B6CCFA; }
+.hf-hibrido .tarjeta-plan:active { border-color: #D5E4FF; box-shadow: inset 0 0 0 2px #D5E4FF; }
+.hf-hibrido .tarjeta-plan .boton:focus-visible { outline: none; }
+.hf-hibrido .tarjeta-plan .boton:focus-visible::after { outline: 3px solid var(--celeste); outline-offset: 4px; }
 .hf-hibrido .aclaracion { font-size: 11px; line-height: 1.85; margin: 24px 0; color: #B3C7D8; max-width: 1000px; }
 .hf-hibrido .alcance-desarrollo { font-size: 11px; line-height: 1.85; margin-bottom: 25px; color: #BACEDF; max-width: 1000px; }
 .hf-hibrido .comparador { border: 1px solid #4C6580; border-radius: 10px; background: #192F47; }
@@ -286,7 +293,6 @@
 @media (max-width: 480px) {
   .hf-hibrido .hero h1 { font-size: clamp(34px, 9vw, 44px); }
   .hf-hibrido .acciones { flex-direction: column; max-width: 345px; }
-  .hf-hibrido .acciones .boton { justify-content: space-between; }
   .hf-hibrido .beneficios { grid-template-columns: 1fr; gap: 27px; }
   .hf-hibrido .beneficios p { min-height: 0; max-width: 360px; }
   .hf-hibrido .vista-contenido { padding: 23px 15px; }
@@ -318,6 +324,8 @@
 }
 
 .hf-hibrido section[id]{scroll-margin-top:112px}
+/* La cabecera se desplaza con la página y la sección ya tiene su propio espacio superior. */
+.hf-hibrido #planes { scroll-margin-top: 0; }
 .hf-hibrido .vista-metricas strong{font-size:20px}
 .hf-hibrido .correo-preparado{margin-top:22px;padding-top:20px;border-top:1px solid #486079}
 .hf-hibrido .correo-preparado label{font-size:12px}

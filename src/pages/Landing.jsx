@@ -73,9 +73,9 @@ export default function Landing() {
               <div className="acciones">
                 <a className="boton primario" href="/clientes/registro">Registrarse<span aria-hidden="true">→</span></a>
                 <a className="boton cristal" href="#planes">Conocer los planes</a>
+                <a className="boton terciario" href="/demo">Explorar demo</a>
               </div>
               <p className="hero-disponibilidad">Altas por invitación. Consultá la disponibilidad en Registro.</p>
-              <div className="hero-enlaces"><a href="/acceso">Iniciar sesión</a><a href="/demo">Explorar la demo</a></div>
             </div>
           </div>
         </section>

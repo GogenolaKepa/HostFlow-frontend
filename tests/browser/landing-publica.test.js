@@ -53,8 +53,9 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
           else if (url.pathname === '/api/auth/logout') data = {};
           else if (url.pathname === '/api/dashboard/resumen') data = {resumen: {propiedadesActivas: 0, reservasActivas: 0, huespedesRegistrados: 0, ocupacionMensual: 0, alertasPendientes: 0}, proximasReservas: [], alertas: []};
           else if (url.pathname === '/api/monedas/estado') data = {habilitado: false};
+          else if (url.pathname === '/api/clientes/capacidades') data = {version: 1, registro: false, modalidadRegistro: 'controlado', operativa: false};
           else {status = 404; data = {mensaje: 'Ruta no preparada en fixture.'};}
-          await command('Fetch.fulfillRequest', {requestId: p.requestId, responseCode: status, responseHeaders: [{name: 'Content-Type', value: 'application/json'}, {name:'Access-Control-Allow-Origin',value:base}, {name:'Access-Control-Allow-Methods',value:'GET,POST,OPTIONS'}, {name:'Access-Control-Allow-Headers',value:'authorization,content-type'}], body: Buffer.from(JSON.stringify(data)).toString('base64')});
+          await command('Fetch.fulfillRequest', {requestId: p.requestId, responseCode: status, responseHeaders: [{name: 'Content-Type', value: 'application/json'}, {name:'Access-Control-Allow-Origin',value:base}, {name:'Access-Control-Allow-Methods',value:'GET,POST,OPTIONS'}, {name:'Access-Control-Allow-Headers',value:'authorization,content-type'}, {name:'Access-Control-Allow-Credentials',value:'true'}], body: Buffer.from(JSON.stringify(data)).toString('base64')});
           return;
         }
         if (!foto && /(?:hero|alojamiento)[^/]*\.webp$/.test(url.pathname)) {
@@ -106,21 +107,63 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       assert.ok(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera .hf-marca, .hf-publica-cabecera .hf-marca span')].every(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(e).padding==='0px')"));
       tipografiasLanding.set(width, await Promise.all(['.hf-publica-cabecera .hf-marca-nombre','.pie .hf-marca-nombre'].map(tipografia)));
       assert.equal(await evaluate("document.getElementById('hf-hero-title').textContent"), 'Gestioná tus alojamientos en un solo lugar.');
-      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hero-texto a')].map(a=>a.getAttribute('href'))"),
-        ['/clientes/registro', '#planes', '/acceso', '/demo']);
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hero-texto a')].map(a=>[a.textContent.replace('→',''),a.getAttribute('href')])"),
+        [['Registrarse', '/clientes/registro'], ['Conocer los planes', '#planes'], ['Explorar demo', '/demo']]);
       assert.equal(await evaluate("document.querySelector('.hf-publica-cabecera .hf-marca img').getAttribute('src')"), '/brand/isotipo.svg');
       assert.equal(await evaluate("getComputedStyle(document.querySelector('.hf-publica-cabecera .hf-marca-nombre')).color"), 'rgb(245, 248, 255)');
       assert.equal(await evaluate("getComputedStyle(document.querySelector('.hf-publica-cabecera .hf-marca-nombre>span')).color"), 'rgb(182, 204, 250)');
-      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].filter(a=>a.getClientRects().length).map(a=>a.getAttribute('href'))"),
-        width <= 760 ? ['#planes', '/clientes/registro', '/acceso'] : ['#funciones', '#planes', '/clientes/registro', '/acceso']);
-      assert.ok(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].every(a=>!a.getClientRects().length||a.clientHeight>=42)"));
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].map(a=>[a.textContent,a.getAttribute('href')])"),
+        [['El producto', '#funciones'], ['Iniciar sesión', '/acceso']]);
+      assert.ok(await evaluate("[...document.querySelectorAll('.hf-publica-cabecera nav a')].every(a=>a.clientHeight>=42)"));
       assert.ok(await evaluate("document.querySelector('.hero').clientWidth===document.querySelector('.hero-foto').clientWidth"));
       await captura('landing-'+width);
       await captura('hero-'+width, false);
+
+      const seccionAlineada = `(() => {
+        const planes = document.querySelector('#planes');
+        const ceja = planes?.querySelector('.ceja')?.getBoundingClientRect();
+        const titulo = document.querySelector('#planes-titulo')?.getBoundingClientRect();
+        return location.hash === '#planes' && Math.abs(planes.getBoundingClientRect().top) <= 1 &&
+          ceja.top >= 24 && titulo.bottom < innerHeight;
+      })()`;
+      await evaluate('document.querySelector(".hero a.cristal").click()');
+      await esperar(seccionAlineada);
+      await navegar('/#planes');
+      await esperar(seccionAlineada);
+      await captura('ancla-planes-'+width, false);
+
+      await evaluate("document.querySelector('input[name=ciclo-plan][value=anual]').click()");
+      const planes = ['inicial', 'profesional', 'gestion'];
+      for (const [indice, plan] of planes.entries()) {
+        const {x, y} = await evaluate(`(() => {
+          const tarjeta = document.querySelectorAll('.tarjeta-plan')[${indice}];
+          tarjeta.scrollIntoView({block: 'start'});
+          const {left, top} = tarjeta.getBoundingClientRect();
+          return {x: left + 12, y: top + 12};
+        })()`);
+        if (width < 760) {
+          await command('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x, y}]});
+          await command('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []});
+        } else {
+          await command('Input.dispatchMouseEvent', {type: 'mousePressed', x, y, button: 'left', clickCount: 1});
+          await command('Input.dispatchMouseEvent', {type: 'mouseReleased', x, y, button: 'left', clickCount: 1});
+        }
+        await esperar(`location.hash === '#contacto' && document.querySelector('[name=plan]').value === '${plan}'`);
+        assert.equal(await evaluate("document.querySelector('[name=periodicidad]').value"), 'anual');
+      }
+      await evaluate("document.querySelector('.tarjeta-plan a').focus()");
+      await command('Input.dispatchKeyEvent', {type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9});
+      await command('Input.dispatchKeyEvent', {type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9});
+      assert.ok(await evaluate("document.activeElement.matches('.tarjeta-plan.destacada a:focus-visible')"));
+      assert.equal(await evaluate("getComputedStyle(document.activeElement, '::after').outlineStyle"), 'solid');
+      await command('Input.dispatchKeyEvent', {type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13});
+      await command('Input.dispatchKeyEvent', {type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13});
+      await esperar("document.querySelector('[name=plan]').value === 'profesional'");
     });
     await t.test('precios anuales y comparación coherentes', async () => {
       await evaluate("document.querySelector('input[name=\"ciclo-plan\"][value=anual]').click();document.querySelector('.comparador').open=true");
       assert.deepEqual(await evaluate("[...document.querySelectorAll('.precio strong')].map(x=>x.textContent)"), ['US$109,89', 'US$329,89', 'US$879,89']);
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('.alcance-plan strong')].map(x=>x.textContent)"), ['2', '1', '10', '3', '50', '10']);
       assert.ok(await evaluate("document.querySelector('.comparador').innerText.includes('US$329,89')&&document.querySelector('.facturacion-anual').innerText.includes('8,33')"));
       await captura('planes-anuales-320');
     });
@@ -143,6 +186,16 @@ test('landing híbrida y login real con API completamente simulada', {skip: !fs.
       assert.equal(await evaluate("!!document.getElementById('hf-solicitud')"), false);
       assert.ok(llamadas.every(x=>x.metodo==='GET'&&x.ruta==='/api/cuentas-comerciales/capacidades'));
       assert.equal(await evaluate('localStorage.length'), 0);
+    });
+    await t.test('Registrarse desde el hero conserva el aviso de alta cerrada', async () => {
+      const antes = llamadas.length;
+      await navegar('/');
+      await esperar("!!document.querySelector('.hero a[href=\"/clientes/registro\"]')");
+      await evaluate("document.querySelector('.hero a[href=\"/clientes/registro\"]').click()");
+      await esperar("location.pathname === '/clientes/registro' && document.body.innerText.includes('está en preparación')");
+      assert.equal(await evaluate("!!document.querySelector('form')"), false);
+      const llamadasRegistro = llamadas.slice(antes).filter(({ruta}) => ruta !== '/api/cuentas-comerciales/capacidades');
+      assert.deepEqual(llamadasRegistro.map(({metodo, ruta}) => [metodo, ruta]), [['GET', '/api/clientes/capacidades']]);
     });
     await t.test('el acceso público separa clientes y equipo antes de autenticarse', async () => {
       const antes = llamadas.length;

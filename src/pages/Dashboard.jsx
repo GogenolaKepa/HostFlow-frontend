@@ -7,7 +7,7 @@ import Configuracion from "./Configuracion";
 import { BorradoresProvider } from "../context/BorradoresProvider";
 import { MonedasProvider } from '../context/MonedasProvider';
 import { useProtectorBorradores } from "../context/BorradoresContext";
-import { SecurityIcon } from "../components/security/SecurityUI";
+import { RoleBadge, SecurityIcon } from "../components/security/SecurityUI";
 import { puedeGestionarUsuarios } from "../services/cuentas";
 import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import AccesoFlowIA from "../components/flowia/AccesoFlowIA";
@@ -2536,6 +2536,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
       data-vista-con-buscador={vistaConBuscador || undefined}
+      data-hf-workspace=""
       className={`dashboard ${
 
 
@@ -3919,15 +3920,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-              <span>
-
-
-
-                {usuario.rol}
-
-
-
-              </span>
+              <RoleBadge rol={usuario.rol} />
 
 
 

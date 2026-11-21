@@ -7,6 +7,8 @@ const paths = {
   appearance: <><circle cx="12" cy="12" r="9" /><path d="M12 3v18M12 3a9 9 0 0 1 0 18" /></>,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2m-4.5-7.5 1.4-1.4M5.1 18.9l1.4-1.4m11 0 1.4 1.4M5.1 5.1l1.4 1.4" /></>,
   moon: <path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z" />,
+  cream: <><path d="M4 9h12v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5Zm12 0h2a2 2 0 0 1 0 4h-2M3 21h15M8 3v3m4-3v3" /></>,
+  graphite: <><rect x="4" y="4" width="16" height="16" rx="4" /><path d="m8 16 8-8m-4 8 4-4m-8 0 4-4" /></>,
   monitor: <><rect x="3" y="3" width="18" height="13" rx="2" /><path d="M12 16v5M8 21h8" /></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 11h18" /></>,
   building: <><path d="M4 21V3h12v18M16 9h4v12M2 21h20M8 7h4M8 11h4M8 15h4" /></>,

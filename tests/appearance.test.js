@@ -19,7 +19,7 @@ function browser({ saved, dark = false, denied = false } = {}) {
 test("inicio claro sin preferencia aun con sistema oscuro; solo lee apariencia antes de React", () => {
   const b = browser({ dark: true });
   assert.equal(b.root.document.documentElement.dataset.theme, "light");
-  assert.equal(b.root.document.documentElement.style.colorScheme, "light");
+  assert.equal(b.root.document.documentElement.style.colorScheme, undefined);
   assert.deepEqual(b.reads, [KEY]); assert.equal(b.data.size, 0);
   assert.equal(b.store.getSnapshot().persisted, false);
 });
@@ -29,10 +29,15 @@ test("tema oscuro persistido se aplica antes de React; no se aceptan valores arb
   const b = browser(); assert.equal(b.store.setPreference("desconocido"), false); assert.equal(b.data.size, 0);
 });
 test("elegir persiste solo el valor no sensible y sobrevive una nueva carga", () => {
-  const b = browser(); assert.equal(b.store.setPreference("oscuro"), true);
-  assert.deepEqual([...b.data], [[KEY, "oscuro"]]); assert.equal(b.store.getSnapshot().persisted, true);
-  const restored = browser({ saved: b.data.get(KEY) });
-  assert.equal(restored.store.getSnapshot().theme, "dark");
+  for (const [preference, theme] of [["claro", "light"], ["oscuro", "dark"], ["crema", "cream"], ["grafito", "graphite"]]) {
+    const b = browser();
+    assert.equal(b.store.setPreference(preference), true);
+    assert.deepEqual([...b.data], [[KEY, preference]]);
+    assert.equal(b.store.getSnapshot().persisted, true);
+    const restored = browser({ saved: b.data.get(KEY) });
+    assert.equal(restored.root.document.documentElement.dataset.theme, theme);
+    assert.equal(restored.store.getSnapshot().theme, theme);
+  }
 });
 test("automatico sigue y reacciona al sistema; opciones explicitas prevalecen", () => {
   const b = browser({ saved: "automatico" }); b.system(true);

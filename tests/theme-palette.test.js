@@ -9,14 +9,28 @@ function luminance(hex) {
   return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
 }
 function contrast(a,b) { const values=[luminance(a),luminance(b)].sort((a,b)=>b-a); return (values[0]+.05)/(values[1]+.05); }
-test("tokens legibles para texto, mensajes, navegación y botones en ambas paletas",()=>{
-  const blocks=css.match(/:root[^{}]*\{[^{}]+\}/g);
-  const base=Object.fromEntries([...blocks[0].matchAll(/(--hf-[\w-]+):\s*(#[0-9a-f]{6})/g)].map(m=>[m[1],m[2]]));
-  for(const [index,block] of blocks.entries()) {
-    const tokens={...base,...Object.fromEntries([...block.matchAll(/(--hf-[\w-]+):\s*(#[0-9a-f]{6})/g)].map(m=>[m[1],m[2]]))};
-    const pairs=[['text','surface-raised'],['text-secondary','surface'],['text-muted','surface-raised'],['info-text','surface-raised'],['text-muted','canvas'],['text-faint','surface-raised'],['nav-text','nav-bg'],['on-brand','primary'],['on-brand','primary-hover']];
-    for(const family of ['info','success','warning','danger','violet','cyan','teal'])pairs.push([family+'-text',family+'-soft']);
-    for(const [fg,bg] of pairs)assert.ok(contrast(tokens['--hf-'+fg],tokens['--hf-'+bg])>=4.5,`Contraste insuficiente: ${index?'oscuro':'claro'} ${fg}/${bg}`);
+test("WCAG AA en los tokens de texto, badges, controles y foco de las cuatro paletas", () => {
+  const blocks = [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)];
+  for (const theme of ['light', 'dark', 'cream', 'graphite']) {
+    const tokens = {};
+    for (const [, selector, declarations] of blocks) {
+      if (!selector.includes('[data-hf-preview]') && !selector.includes(`[data-hf-preview="${theme}"]`)) continue;
+      for (const [, name, value] of declarations.matchAll(/--hf-([\w-]+):\s*(#[0-9a-f]{6})/g)) tokens[name] = value;
+    }
+    const pairs = [];
+    for (const surface of ['canvas', 'surface', 'surface-raised', 'surface-soft', 'surface-muted']) {
+      for (const text of ['text', 'text-secondary', 'text-muted', 'text-faint', 'info-text']) pairs.push([text, surface, 4.5]);
+      pairs.push(['focus', surface, 3], ['control-border', surface, 3]);
+    }
+    for (const family of ['info', 'accent', 'success', 'warning', 'danger', 'violet', 'cyan', 'teal']) {
+      pairs.push([`${family}-text`, `${family}-soft`, 4.5]);
+    }
+    pairs.push(['nav-text', 'nav-bg', 4.5], ['on-brand', 'primary', 4.5], ['on-brand', 'primary-hover', 4.5], ['on-brand', 'danger-solid', 4.5]);
+    for (const [fg, bg, minimum] of pairs) {
+      assert.ok(tokens[fg] && tokens[bg], `Faltan tokens: ${theme} ${fg}/${bg}`);
+      const ratio = contrast(tokens[fg], tokens[bg]);
+      assert.ok(ratio >= minimum, `Contraste insuficiente: ${theme} ${fg}/${bg} ${ratio.toFixed(2)} < ${minimum}`);
+    }
   }
 });
 test("bootstrap bloqueante precede a React y los módulos usan tokens sin filtros de inversión",()=>{

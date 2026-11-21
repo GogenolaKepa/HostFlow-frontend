@@ -42,7 +42,7 @@ function MiCuenta({ usuario, onSesionActualizada, onLogout, obligatorio = false 
   }
 
   return (
-    <section className={`security-page security-account ${obligatorio ? "security-page--required" : ""}`}>
+    <section className={`security-page security-account ${obligatorio ? "security-page--required" : ""}`} data-hf-workspace={obligatorio ? "" : undefined}>
       <header className="section-header security-heading">
         <div><span className="security-eyebrow"><SecurityIcon name="shield" />{obligatorio ? "Protegé tu acceso" : "Tu espacio personal"}</span>
           <h1>{obligatorio ? "Actualizá tu contraseña" : "Mi cuenta"}</h1>

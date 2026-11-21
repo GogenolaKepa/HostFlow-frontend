@@ -77,6 +77,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   const dialogosNativos = [];
   let falloUsuarios = false;
   let datosVisuales = false;
+  const soloApariencia = process.env.HOSTFLOW_TEST_APARIENCIA_ONLY === '1';
   let reservasEstabilizacion = null;
   const soloEstabilizacion=(process.env.HOSTFLOW_TEST_W3_ONLY==='1'||process.env.HOSTFLOW_TEST_SESION_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1'||process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'||process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1');
   let configuracionActivada = true, falloGuardarConfiguracion = false, conflictoConfiguracion = false, demoraPredeterminados = 0;
@@ -297,11 +298,19 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       }
       if (ruta === "/dashboard/resumen") {
         if (falloInicio) return [503, { mensaje: "Fallo inicial simulado" }];
+        if (soloApariencia && datosVisuales) return [200, {
+          resumen: { propiedadesActivas: 1, reservasActivas: 1, huespedesRegistrados: 1, ocupacionMensual: 64, alertasPendientes: 1 },
+          proximasReservas: [reservaVisual], alertas: [alertaVisual],
+        }];
         return [200, { resumen: { propiedadesActivas: 0, reservasActivas: 0, huespedesRegistrados: 0,
           ...(current.permisos.includes("dashboard.economia") ? { ingresosMes: 123456 } : {}),
           ocupacionMensual: 0, alertasPendientes: 0 }, proximasReservas: [], alertas: [] }];
       }
-      if (ruta === "/dashboard/historico") return [200, { historico: [] }];
+      if (ruta === "/dashboard/historico") return [200, { historico: soloApariencia && datosVisuales ? [
+        { mes: '2026-11', inicioMes: '2026-11-01', ocupacionMensual: 64 },
+        { mes: '2026-10', inicioMes: '2026-10-01', ocupacionMensual: 53 },
+        { mes: '2026-09', inicioMes: '2026-09-01', ocupacionMensual: 49 },
+      ] : [] }];
       if (ruta === "/dashboard/reportes/opciones") return [200, { opciones: { propiedades: [], canales: [], estados: [] } }];
       if (ruta === "/dashboard/reportes") return [200, { reportes: datosVisuales ? reportesVisuales : { periodo: { fechaDesde: "2026-10-01", fechaHasta: "2026-10-31", tipo: "mensual" }, filtros: {}, resumen: { totalReservasPeriodo: 0, totalReservasOperativas: 0, reservasConIngreso: 0, ingresosEstimados: 0, nochesOcupadas: 0, nochesDisponibles: 0, ocupacionPromedio: 0 }, historico: [], porCanal: [], porEstado: [], porPropiedad: [] } }];
       if (ruta === "/calendario") return [200, datosVisuales ? calendarioVisual : { anio: 2026, mes: 10, diasMes: 31, propiedades: [], resumen: { reservas: 0 } }];
@@ -487,57 +496,143 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
     });
 
-    await t.test("Configuración: temas reales, persistencia, sistema, responsive y logout", async () => {
-      fase = "temas Admin"; await login(); await esperar(inicioVisible);
+    await t.test("Configuración: cuatro temas, contraste aplicado, persistencia y aislamiento público", async () => {
+      const abrir = async (button, content) => {
+        await click(button);
+        await esperar(`Boolean(document.querySelector(${JSON.stringify(content)}))`);
+      };
+      const navegar = async (name, content) => {
+        await evaluate(`[...document.querySelectorAll('.sidebar-nav button')].find(el => el.textContent.trim() === ${JSON.stringify(name)}).click()`);
+        await esperar(`Boolean(document.querySelector(${JSON.stringify(content)}))`);
+      };
+      const radio = preference => `input[name=apariencia][value=${preference}]`;
+      const estilo = (selector, property) => evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(selector)})).${property}`);
+      const ratio = (fg, bg) => {
+        const luminance = color => color.match(/\d+/g).slice(0, 3)
+          .map(value => Number(value) / 255)
+          .map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4)
+          .reduce((sum, value, index) => sum + [.2126, .7152, .0722][index] * value, 0);
+        const values = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+        return (values[0] + .05) / (values[1] + .05);
+      };
+      const contrastar = async (selector, minimum = 4.5) => {
+        const contrast = ratio(await estilo(selector, 'color'), await estilo(selector, 'backgroundColor'));
+        assert.ok(contrast >= minimum, `${fase}: ${selector} tiene ${contrast.toFixed(2)}:1`);
+      };
+      const viewport = width => send('Emulation.setDeviceMetricsOverride', { width, height: width > 700 ? 900 : 844, deviceScaleFactor: 1, mobile: width < 700 });
+      const comprobarAncho = async () => {
+        assert.equal(await evaluate(`(() => {
+          const main = document.querySelector('.main');
+          return document.documentElement.scrollWidth <= innerWidth && main.scrollWidth <= main.clientWidth + 1;
+        })()`), true, `${fase}: sin desplazamiento horizontal de la pantalla`);
+      };
+      const publicColors = () => evaluate(`[document.documentElement, document.querySelector('.login-card'), document.querySelector('#login-email')].map(el => {
+        const style = getComputedStyle(el); return [style.colorScheme, style.color, style.backgroundColor, style.borderColor];
+      })`);
+      const loginColors = await publicColors();
+
+      fase = 'Apariencia con datos ficticios';
+      datosVisuales = true;
+      users.get(2).estado = 'Inactivo';
+      await login();
+      await esperar(inicioVisible);
       await comprobarUtilidades('Administrador');
-      await esperar("Boolean(document.querySelector('.theme-options'))");
-      assert.equal(await evaluate("document.querySelector('.sidebar-settings').getAttribute('aria-current')"),'page');
-      assert.equal(await evaluate("document.documentElement.dataset.theme"),"light");
-      assert.equal(await evaluate("document.querySelectorAll('.settings-nav button').length"),8);
-      await capturar('configuracion-clara');
-      const anteriores = requests.length, tokenPrevio = await evaluate("localStorage.getItem('token')");
-      await click('input[name=apariencia][value=oscuro]');
-      await esperar("document.documentElement.dataset.theme==='dark'");
-      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'oscuro');
-      assert.equal(await evaluate("getComputedStyle(document.querySelector('.settings-card')).backgroundColor"),'rgb(25, 35, 54)');
-      assert.equal(await evaluate("localStorage.getItem('token')"),tokenPrevio);
-      assert.equal(requests.length,anteriores,"Cambiar apariencia no consulta ni escribe en la API.");
-      await capturar('configuracion-oscura');
-      await evaluate("document.querySelector('input[value=oscuro]').focus()");
-      await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
-      await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
-      await esperar("document.querySelector('input[value=automatico]').checked");
-      await click('input[name=apariencia][value=oscuro]');
-      await recargarInicio();
-      assert.equal(await evaluate("document.documentElement.dataset.theme"),'dark');
-      await click('.sidebar-settings');
-      await esperar("document.querySelector('input[value=oscuro]')?.checked");
-      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'dark'}]});
-      await click('input[name=apariencia][value=automatico]');
-      await esperar("document.documentElement.dataset.theme==='dark'");
-      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'light'}]});
-      await esperar("document.documentElement.dataset.theme==='light'");
-      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'automatico');
-      await click('input[name=apariencia][value=claro]');
-      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'dark'}]});
-      assert.equal(await evaluate("document.documentElement.dataset.theme"),'light');
-      await click('input[name=apariencia][value=oscuro]');
-      for(const width of [320,390,820]) {
-        await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<700});
-        assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"),true,`Configuración sin desborde a ${width}px.`);
-        if(width===390) await capturar('configuracion-oscura-movil');
+      const themes = [
+        ['claro', 'light', 'rgb(255, 255, 255)', 'rgb(17, 24, 39)', 'light'],
+        ['oscuro', 'dark', 'rgb(25, 35, 54)', 'rgb(11, 18, 32)', 'dark'],
+        ['crema', 'cream', 'rgb(255, 251, 245)', 'rgb(40, 39, 37)', 'light'],
+        ['grafito', 'graphite', 'rgb(34, 38, 47)', 'rgb(17, 19, 25)', 'dark'],
+      ];
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('input[name=apariencia]')].map(el => el.value)"), themes.map(([preference]) => preference));
+      for (const [preference, theme, surface, navColor, scheme] of themes) {
+        fase = `Apariencia ${preference}`;
+        await abrir('.sidebar-settings', '.theme-options');
+        const before = requests.length;
+        await click(radio(preference));
+        await esperar(`document.documentElement.dataset.theme === '${theme}'`);
+        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), preference);
+        assert.equal(requests.length, before, 'Cambiar el tema no consulta ni escribe en la API');
+        assert.equal(await estilo('.settings-card', 'backgroundColor'), surface);
+        assert.equal(await estilo('.sidebar', 'backgroundColor'), navColor);
+        assert.equal(await estilo('html', 'colorScheme'), scheme);
+        assert.equal(await evaluate("new Set([...document.querySelectorAll('.theme-preview')].map(el => getComputedStyle(el).backgroundColor)).size"), 4);
+        await capturar(`${preference}-configuracion`);
+        demoraSesion = 650;
+        await evaluate("document.body.dataset.beforeReload = '1'");
+        await send('Page.reload');
+        await esperar("Boolean(document.querySelector('.sesion-preparando[data-hf-workspace]'))");
+        assert.equal(await estilo('html', 'colorScheme'), scheme);
+        assert.equal(await estilo('.sesion-preparando', 'backgroundColor'), await estilo('html', 'backgroundColor'));
+        assert.equal(await evaluate("Boolean(document.querySelector('.dashboard'))"), false);
+        await esperar(`!document.body?.dataset.beforeReload && document.querySelector('${radio(preference)}')?.checked`);
+        demoraSesion = 0;
+        assert.equal(await evaluate("document.documentElement.dataset.theme"), theme);
+        assert.equal(await estilo('.sidebar', 'backgroundColor'), navColor);
+        await navegar('Inicio', '.dashboard-metric-card');
+        if (soloApariencia) await esperar("!document.querySelector('.dashboard-occupancy-preview-empty')");
+        await capturar(`${preference}-inicio`);
+        await navegar('Usuarios', '.security-role--admin');
+        for (const selector of ['.security-avatar', '.security-role--admin', '.security-role:not(.security-role--admin)', '.security-badge', '.security-badge--inactive']) await contrastar(selector);
+        await contrastar('.security-directory-heading .security-heading-icon', 3);
+        assert.ok(ratio(await estilo('#usuarios-busqueda', 'borderTopColor'), surface) >= 3);
+        await capturar(`${preference}-usuarios`);
+        await abrir('.security-heading .primary-button', '.security-dialog[open]');
+        assert.equal(await estilo('.security-dialog', 'backgroundColor'), surface);
+        await contrastar('.security-dialog');
+        await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+        await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+        assert.equal(await evaluate("document.activeElement.id === 'usuario-nombre' && getComputedStyle(document.activeElement).outlineStyle === 'solid'"), true);
+        if (preference === 'grafito') await capturar('grafito-usuarios-modal');
+        await click('.security-dialog .security-close');
+        await abrir('.sidebar-user', '#cuenta-nombre');
+        for (const selector of ['.security-avatar--large', '.security-role--admin']) await contrastar(selector);
+        for (const selector of ['.security-personal-card .security-heading-icon', '.security-card:not(.security-personal-card) .security-heading-icon']) await contrastar(selector, 3);
+        await capturar(`${preference}-mi-cuenta`);
+        await navegar('Propiedades', '.property-card');
+        await capturar(`${preference}-propiedades`);
+        await viewport(320);
+        await comprobarAncho();
+        await abrir('.mobile-menu-toggle', '.mobile-nav-drawer');
+        assert.equal(await estilo('.mobile-nav-drawer', 'backgroundColor'), navColor);
+        await evaluate("[...document.querySelectorAll('.mobile-nav-list button')].find(el => el.textContent.trim() === 'Usuarios').click()");
+        await esperar("!document.querySelector('.mobile-nav-drawer') && Boolean(document.querySelector('.security-table'))");
+        await comprobarAncho();
+        if (preference === 'grafito') await capturar('grafito-usuarios-movil');
+        await abrir('.mobile-menu-toggle', '.mobile-nav-drawer');
+        await abrir('.mobile-nav-user', '#cuenta-nombre');
+        await comprobarAncho();
+        await abrir('.mobile-menu-toggle', '.mobile-nav-drawer');
+        await abrir('.mobile-nav-settings', '.theme-options');
+        await comprobarAncho();
+        if (preference === 'crema') {
+          await viewport(390);
+          await comprobarAncho();
+          await evaluate("document.querySelector('.settings-appearance').scrollIntoView({block: 'start'})");
+          await capturar('crema-configuracion-movil');
+        }
+        await viewport(1280);
       }
-      await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
-      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes('Datos de empresa')).click()");
-      await esperar("Boolean(document.querySelector('#config-nombreComercial'))");
-      assert.equal(await evaluate("document.querySelector('#config-nombreComercial').value"),'Alojamientos ficticios');
-      await evaluate("[...document.querySelectorAll('.settings-nav button')].find(b=>b.textContent.includes('Seguridad y acceso')).click()");
-      assert.equal(await evaluate("document.querySelector('.settings-links').textContent.includes('Gestionar usuarios')"),true);
-      await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
-      assert.equal(await evaluate("document.documentElement.dataset.theme"),'dark');
-      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"),'oscuro');
-      await capturar('login-oscuro');
+      await evaluate(`document.querySelector('${radio('grafito')}').focus()`);
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37 });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37 });
+      await esperar(`document.querySelector('${radio('crema')}').checked`);
+      assert.equal(await estilo('.theme-option.is-selected', 'outlineStyle'), 'solid');
+      await click(radio('oscuro'));
+      await click('.sidebar-logout');
+      await esperar("Boolean(document.querySelector('#login-email'))");
+      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'oscuro');
+      for (const [preference] of themes) {
+        await evaluate(`HostFlowAppearance.setPreference('${preference}')`);
+        assert.deepEqual(await publicColors(), loginColors);
+      }
+      await evaluate("HostFlowAppearance.setPreference('oscuro')");
+      datosVisuales = false;
+      users.get(2).estado = 'Activo';
     });
+    if (soloApariencia) {
+      assert.equal(excepciones.length, 0, JSON.stringify(excepciones));
+      return;
+    }
 
     await t.test('Datos de empresa y operativas: guardar real aislado, errores, conflictos, temas y activación pendiente',async()=>{
       fase='configuración empresarial';await login();await esperar(inicioVisible);await click('.sidebar-settings');

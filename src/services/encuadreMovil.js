@@ -10,7 +10,7 @@ export function iniciarEncuadreMovil(contenedor) {
 
   function actualizar() {
     cuadro = 0;
-    const panel = contenedor.querySelector(".dashboard");
+    const panel = contenedor.querySelector("[data-hf-workspace]");
     const modo = panel ? "espacio" : "publico";
     if (html.dataset.hfChrome !== modo) html.dataset.hfChrome = modo;
 

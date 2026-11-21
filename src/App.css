@@ -3717,30 +3717,6 @@ td {
 }
 
 /* =========================================================
-   HOSTFLOW - SISTEMA DE SUPERFICIES SUAVES
-   Inspirado en interfaces SaaS / travel modernas:
-   gris muy claro de fondo + superficies elevadas + bordes suaves.
-   ========================================================= */
-
-:root {
-  --hf-canvas: #f1f3f6;
-  --hf-surface: #fbfcfe;
-  --hf-surface-raised: #ffffff;
-  --hf-surface-soft: #f6f8fb;
-  --hf-surface-muted: #eef2f6;
-
-  --hf-border: #dce2ea;
-  --hf-border-soft: #e8edf3;
-
-  --hf-text: #1f2937;
-  --hf-text-muted: #64748b;
-
-  --hf-blue-soft: #eef4ff;
-  --hf-shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.045);
-  --hf-shadow-card: 0 5px 16px rgba(15, 23, 42, 0.04);
-}
-
-/* =========================================================
    LIENZO GENERAL
    ========================================================= */
 
@@ -3970,16 +3946,6 @@ textarea,
 .property-gallery-info,
 .property-gallery-actions {
   background: var(--hf-surface);
-}
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 900px) {
-  :root {
-    --hf-canvas: #f3f5f8;
-  }
 }
 
 /* =========================================================
@@ -10963,7 +10929,7 @@ svg {
 
 .sidebar .sidebar-user:focus-visible,
 .mobile-nav-user:focus-visible {
-  outline: 2px solid var(--hf-info-border);
+  outline: 2px solid var(--hf-on-brand);
   outline-offset: 2px;
 }
 
@@ -10978,8 +10944,8 @@ svg {
 
   border-radius: 50%;
 
-  background: var(--hf-info-soft);
-  color: var(--hf-info-text);
+  background: var(--hf-accent-soft);
+  color: var(--hf-accent-text);
 
   font-size: 13px;
   font-weight: 900;
@@ -11458,8 +11424,8 @@ svg {
 
     border-radius: 50%;
 
-    background: var(--hf-info-soft);
-    color: var(--hf-info-text);
+    background: var(--hf-accent-soft);
+    color: var(--hf-accent-text);
 
     font-size: 13px;
     font-weight: 900;
@@ -16355,23 +16321,24 @@ svg {
     max-width: 58%;
   }
 }
-/* Cuentas: superficies y colores preparados para temas, sin cambiar el tema global. */
-.security-page {
+/* Los diálogos y avisos compartidos también se usan fuera de Usuarios y Mi cuenta. */
+:is(.security-page, .security-dialog, .security-feedback, .settings-page) {
   --security-primary: var(--hf-primary);
   --security-primary-hover: var(--hf-primary-hover);
-  --security-primary-soft: var(--hf-blue-soft, var(--hf-info-soft));
-  --security-surface: var(--hf-surface-raised, var(--hf-surface-raised));
-  --security-soft: var(--hf-surface-soft, var(--hf-surface-raised));
-  --security-border: var(--hf-border-soft, var(--hf-info-border));
-  --security-input-border: var(--hf-border, var(--hf-info-border));
-  --security-text: var(--hf-text, var(--hf-text));
-  --security-muted: var(--hf-text-muted, var(--hf-surface-muted));
+  --security-primary-soft: var(--hf-info-soft);
+  --security-surface: var(--hf-surface-raised);
+  --security-soft: var(--hf-surface-soft);
+  --security-border: var(--hf-border-soft);
+  --security-input-border: var(--hf-control-border);
+  --security-text: var(--hf-text);
+  --security-muted: var(--hf-text-muted);
   --security-success: var(--hf-success-text);
   --security-success-soft: var(--hf-success-soft);
   --security-danger: var(--hf-danger-text);
   --security-danger-soft: var(--hf-danger-soft);
   --security-warning: var(--hf-warning-text);
-  --security-warning-soft: var(--hf-warning-soft);
+}
+.security-page {
   width: 100%; max-width: 1500px; margin: 0 auto; padding: 10px 0 24px; color: var(--security-text);
 }
 .security-page--required { min-height: 100vh; max-width: 840px; padding: 48px 24px; }
@@ -16385,14 +16352,15 @@ svg {
 .security-icon { flex: 0 0 auto; vertical-align: middle; }
 .security-page button { font: inherit; transition: background .15s, border-color .15s; }
 .security-page .primary-button, .security-page .secondary-button, .security-danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 10px 17px; border-radius: 9px; border: 1px solid transparent; font-size: 13px; font-weight: 600; cursor: pointer; }
-.security-page .primary-button { background: var(--security-primary); color: var(--hf-on-brand); box-shadow: 0 3px 7px #2f66f619; }
+.security-page .primary-button { background: var(--security-primary); color: var(--hf-on-brand); box-shadow: 0 3px 7px color-mix(in srgb, var(--security-primary) 12%, transparent); }
 .security-page .primary-button:hover:not(:disabled) { background: var(--security-primary-hover); }
 .security-page .secondary-button { background: var(--security-surface); border-color: var(--security-input-border); color: var(--security-text); box-shadow: none; }
 .security-page .secondary-button:hover:not(:disabled) { background: var(--security-soft); }
 .security-danger-button { background: var(--hf-danger-solid); color: var(--hf-on-brand); }
 .security-danger-button:hover:not(:disabled) { filter: brightness(.92); }
-.security-page button:disabled { opacity: .5; cursor: not-allowed; }
-.security-page button:focus-visible, .security-page input:focus-visible, .security-page select:focus-visible { outline: 3px solid var(--security-primary); outline-offset: 3px; }
+.security-page button:disabled { opacity: 1; cursor: not-allowed; color: var(--security-muted); }
+.security-page :is(.primary-button, .secondary-button, .security-row-action, .security-pagination button):disabled { background: var(--hf-surface-muted); border-color: var(--hf-border); box-shadow: none; }
+.security-page :is(button, input, select):focus-visible { outline: 3px solid var(--hf-focus); outline-offset: 2px; }
 .security-page .security-field input:focus, .security-page .security-field select:focus { border-color: var(--hf-info-text); }
 .security-profile, .security-card, .security-directory { background: var(--security-surface); border: 1px solid var(--security-border); border-radius: 16px; box-shadow: var(--hf-shadow-card, 0 5px 16px #0f172a0a); }
 .security-profile { display: flex; align-items: center; gap: 20px; padding: 26px 28px; margin-bottom: 24px; }
@@ -16400,24 +16368,24 @@ svg {
 .security-profile-identity strong { color: var(--security-text); font-size: 20px; line-height: 1.35; overflow-wrap: anywhere; }
 .security-profile-identity > span:not(.security-profile-label) { font-size: 14px; color: var(--security-muted); overflow-wrap: anywhere; }
 .security-profile-label { color: var(--security-muted); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
-.security-avatar { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: var(--security-primary-soft); color: var(--hf-info-text); font-size: 12px; font-weight: 700; }
+.security-avatar { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; font-size: 12px; font-weight: 700; }
 .security-avatar--large { width: 64px; height: 64px; border-radius: 18px; font-size: 21px; }
-.security-role { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid var(--security-border); border-radius: 7px; background: var(--security-soft); color: var(--security-muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.security-role { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid var(--hf-border-soft); border-radius: 7px; background: var(--hf-surface-soft); color: var(--hf-text-muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
 .security-role .security-icon { width: 14px; height: 14px; }
-.security-role--admin { background: var(--security-primary-soft); color: var(--hf-info-text); border-color: transparent; }
+.security-avatar, .security-role--admin, .security-heading-icon { background: var(--hf-accent-soft); color: var(--hf-accent-text); border: 1px solid var(--hf-accent-border); }
 .security-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; gap: 24px; }
 .security-grid--required { grid-template-columns: 1fr; }
 .security-card { padding: 26px; min-width: 0; }
 .security-card-heading, .security-title-with-icon { display: flex; align-items: flex-start; gap: 12px; }
 .security-card-heading { margin-bottom: 25px; }
-.security-heading-icon { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 38px; height: 38px; background: var(--security-primary-soft); color: var(--hf-info-text); border-radius: 11px; }
+.security-heading-icon { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; }
 .security-card h2, .security-directory h2 { margin: 0; color: var(--security-text); font-size: 16px; font-weight: 700; line-height: 1.4; letter-spacing: -.02em; }
 .security-card-heading p, .security-directory-heading p { font-size: 12px; margin-top: 4px; }
 .security-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin-bottom: 18px; }
 .security-field label { display: block; margin: 0; color: var(--security-text); font-size: 12px; font-weight: 600; line-height: 1.4; }
 .security-page .security-field input, .security-page .security-field select { width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box; border: 1px solid var(--security-input-border); border-radius: 8px; padding: 11px 12px; background: var(--security-surface); color: var(--security-text); font: inherit; font-size: 13px; margin: 0; }
-.security-field input::placeholder { color: var(--security-muted); opacity: .8; }
-.security-field input:disabled, .security-field select:disabled { background: var(--security-soft); }
+.security-field input::placeholder { color: var(--security-muted); opacity: 1; }
+.security-page .security-field :is(input, select):disabled { background: var(--hf-surface-muted); color: var(--security-muted); border-color: var(--hf-border); }
 .security-page .security-field-help { font-size: 12px; margin-top: 2px; }
 .security-password { position: relative; }
 .security-page .security-password input { padding-right: 48px; }
@@ -16463,8 +16431,8 @@ svg {
 .security-table small { display: flex; align-items: center; gap: 4px; color: var(--security-warning); font-size: 10px; margin-top: 5px; }
 .security-table small .security-icon { width: 12px; height: 12px; }
 .security-email { color: var(--security-muted) !important; overflow-wrap: anywhere; }
-.security-badge { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; border-radius: 20px; background: var(--security-success-soft); color: var(--security-success); padding: 6px 9px; font-weight: 500; white-space: nowrap; }
-.security-badge--inactive { color: var(--security-muted); background: var(--security-soft); }
+.security-badge { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; border: 1px solid var(--hf-success-border); border-radius: 20px; background: var(--security-success-soft); color: var(--security-success); padding: 6px 9px; font-weight: 600; white-space: nowrap; }
+.security-badge--inactive { color: var(--security-muted); background: var(--security-soft); border-color: var(--hf-border); }
 .security-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .security-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 .security-row-actions { flex-wrap: nowrap; }
@@ -16491,7 +16459,7 @@ svg {
 .security-footer-note .security-icon { width: 15px; height: 15px; margin-top: 2px; }
 .security-dialog { width: min(660px, calc(100% - 32px)); max-height: calc(100dvh - 40px); box-sizing: border-box; margin: auto; border: 1px solid var(--security-border); border-radius: 16px; padding: 0; background: var(--security-surface); color: var(--security-text); box-shadow: 0 24px 80px #0f172a33; overflow-y: auto; }
 .security-dialog--compact { width: min(480px, calc(100% - 32px)); }
-.security-dialog::backdrop { background: color-mix(in srgb, var(--hf-primary-deep) 64%, transparent); }
+.security-dialog::backdrop { background: var(--hf-modal-backdrop); }
 .security-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 25px 26px 22px; border-bottom: 1px solid var(--security-border); }
 .security-dialog-header h2 { margin: 0 0 7px; color: var(--security-text); font-size: 20px; line-height: 1.35; letter-spacing: -.025em; }
 .security-dialog-header p { font-size: 12px; }

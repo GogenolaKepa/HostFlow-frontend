@@ -68,7 +68,8 @@ test("Configuración personal no agrega administración al Operador ni formulari
   assert.ok(operador.includes('name="apariencia"'));
   assert.ok(operador.includes('value="claro"'));
   assert.ok(operador.includes('value="oscuro"'));
-  assert.ok(operador.includes('value="automatico"'));
+  assert.ok(operador.includes('value="crema"'));
+  assert.ok(operador.includes('value="grafito"'));
   assert.equal(operador.includes('Datos de empresa'),false);
   assert.equal(operador.includes('<form'),false);
   const admin = render(['usuarios.ver','configuracion.ver','configuracion.modificar']);

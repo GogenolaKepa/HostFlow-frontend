@@ -172,7 +172,8 @@ function Aplicacion({entradaInicial,conexionComercial}) {
   }
 
   if (estadoSesion === "validando") {
-    return <ValidandoSesion />;
+    const aparienciaInterna = rutaPublica !== "/" && !/^\/login\/?$/.test(rutaPublica) && Boolean(obtenerToken());
+    return <ValidandoSesion aparienciaInterna={aparienciaInterna} />;
   }
 
   if (estadoSesion === "error") {

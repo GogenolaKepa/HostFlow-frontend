@@ -3,8 +3,11 @@
 (function (root) {
   if (root.HostFlowAppearance) return;
   const KEY = "hostflow.apariencia.v1";
-  const modes = ["claro", "oscuro", "automatico"];
-  const valid = value => modes.includes(value);
+  const themes = new Map([
+    ["claro", "light"], ["oscuro", "dark"], ["crema", "cream"], ["grafito", "graphite"],
+  ]);
+  // Las preferencias automáticas ya guardadas siguen el sistema hasta elegir un tema.
+  const valid = value => value === "automatico" || themes.has(value);
   let preference = "claro", persisted = false, storageAvailable = true;
   try {
     const saved = root.localStorage?.getItem(KEY);
@@ -16,11 +19,8 @@
   let snapshot;
   function update() {
     const system = media?.matches ? "dark" : "light";
-    const theme = preference === "automatico" ? system : preference === "oscuro" ? "dark" : "light";
-    if (root.document) {
-      root.document.documentElement.dataset.theme = theme;
-      root.document.documentElement.style.colorScheme = theme;
-    }
+    const theme = preference === "automatico" ? system : themes.get(preference);
+    if (root.document) root.document.documentElement.dataset.theme = theme;
     if (snapshot?.preference === preference && snapshot.theme === theme && snapshot.system === system &&
         snapshot.persisted === persisted && snapshot.storageAvailable === storageAvailable) return;
     snapshot = Object.freeze({ preference, theme, system, persisted, storageAvailable });

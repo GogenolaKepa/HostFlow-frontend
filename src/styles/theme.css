@@ -1,5 +1,6 @@
-/* Tokens semanticos compartidos. El selector se establece antes del primer pintado. */
-:root, :root[data-theme="light"] {
+/* La preferencia se lee antes de React. Solo el espacio autenticado activa la paleta
+   en la raíz para incluir también los modales que se montan en document.body. */
+:root, [data-hf-preview] {
   color-scheme: light;
   --hf-canvas: #f1f3f6;
   --hf-surface: #fbfcfe;
@@ -22,7 +23,12 @@
   --hf-info-text: #1d4ed8;
   --hf-info-soft: #eef4ff;
   --hf-info-border: #bfd2ff;
-  --hf-blue-soft: var(--hf-info-soft);
+  --hf-accent-text: #173f98;
+  --hf-accent-soft: #dbe8ff;
+  --hf-accent-border: #a8bbec;
+  --hf-control-border: #7d8ca0;
+  --hf-focus: #2454d6;
+  --hf-modal-backdrop: rgb(30 64 175 / 64%);
   --hf-success-text: #166534;
   --hf-success-soft: #f0fdf4;
   --hf-success-border: #bbf7d0;
@@ -52,7 +58,12 @@
   --hf-shadow-soft: 0 8px 24px rgb(15 23 42 / 4.5%);
   --hf-shadow-card: 0 5px 16px rgb(15 23 42 / 4%);
 }
-:root[data-theme="dark"] {
+:root[data-theme="light"]:has([data-hf-workspace]), [data-hf-preview="light"] {
+  --hf-text-faint: #5e6c81;
+}
+:root[data-theme="dark"]:has([data-hf-workspace]),
+:root[data-theme="graphite"]:has([data-hf-workspace]),
+[data-hf-preview="dark"], [data-hf-preview="graphite"] {
   color-scheme: dark;
   --hf-canvas: #0d1422;
   --hf-surface: #161f30;
@@ -73,6 +84,12 @@
   --hf-info-text: #a2c4ff;
   --hf-info-soft: #192d4d;
   --hf-info-border: #355787;
+  --hf-accent-text: #c3d7ff;
+  --hf-accent-soft: #233c65;
+  --hf-accent-border: #406297;
+  --hf-control-border: #7d90ab;
+  --hf-focus: #91b6ff;
+  --hf-modal-backdrop: rgb(12 23 44 / 74%);
   --hf-success-text: #93e5b5;
   --hf-success-soft: #193329;
   --hf-success-border: #346249;
@@ -102,8 +119,87 @@
   --hf-shadow-soft: 0 8px 24px rgb(0 0 0 / 18%);
   --hf-shadow-card: 0 5px 18px rgb(0 0 0 / 16%);
 }
+
+:root[data-theme="cream"]:has([data-hf-workspace]), [data-hf-preview="cream"] {
+  --hf-canvas: #f6f1e8;
+  --hf-surface: #fff9f1;
+  --hf-surface-raised: #fffbf5;
+  --hf-surface-soft: #f7eee1;
+  --hf-surface-muted: #f1e7d8;
+  --hf-border: #d8c8b4;
+  --hf-border-soft: #e8dccd;
+  --hf-text: #2f241c;
+  --hf-text-secondary: #514237;
+  --hf-text-muted: #6c5a4c;
+  --hf-text-faint: #756354;
+  --hf-primary: #2f5eaa;
+  --hf-primary-hover: #264d90;
+  --hf-primary-deep: #1e3c71;
+  --hf-nav-bg: #282725;
+  --hf-nav-text: #e3dad0;
+  --hf-info-text: #244d85;
+  --hf-info-soft: #edf1f7;
+  --hf-info-border: #b5c6dd;
+  --hf-accent-text: #214c89;
+  --hf-accent-soft: #dae6f4;
+  --hf-accent-border: #9db6d5;
+  --hf-control-border: #8d7b69;
+  --hf-focus: #2f5eaa;
+  --hf-modal-backdrop: rgb(47 36 28 / 52%);
+  --hf-shadow-soft: 0 8px 24px rgb(62 45 28 / 6%);
+  --hf-shadow-card: 0 5px 16px rgb(62 45 28 / 5%);
+}
+
+:root[data-theme="graphite"]:has([data-hf-workspace]), [data-hf-preview="graphite"] {
+  --hf-canvas: #16181d;
+  --hf-surface: #1e222a;
+  --hf-surface-raised: #22262f;
+  --hf-surface-soft: #262c36;
+  --hf-surface-muted: #2d3440;
+  --hf-border: #3e4756;
+  --hf-border-soft: #343c48;
+  --hf-text: #f2f4f7;
+  --hf-text-secondary: #d0d6df;
+  --hf-text-muted: #a8b2c1;
+  --hf-text-faint: #a1adbe;
+  --hf-primary: #416ee0;
+  --hf-primary-hover: #365fc8;
+  --hf-primary-deep: #243d7b;
+  --hf-nav-bg: #111319;
+  --hf-nav-text: #d2d7e0;
+  --hf-info-text: #aecaff;
+  --hf-info-soft: #222e44;
+  --hf-info-border: #435779;
+  --hf-accent-text: #c7daff;
+  --hf-accent-soft: #263653;
+  --hf-accent-border: #465e89;
+  --hf-control-border: #7f8da1;
+  --hf-focus: #a4c2ff;
+  --hf-modal-backdrop: rgb(13 15 19 / 76%);
+}
+
 html { background: var(--hf-canvas); }
 body { color: var(--hf-text); }
+
+:root:has([data-hf-workspace]):not([data-hf-chrome]) body { background: var(--hf-canvas); }
+
+:root:has([data-hf-workspace]) :is(button, a[href], input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--hf-focus);
+  outline-offset: 2px;
+}
+
+:root:has([data-hf-workspace]) :is(.sidebar, .mobile-appbar, .mobile-nav-drawer) :is(button, a[href]):focus-visible {
+  outline-color: var(--hf-on-brand);
+}
+
+:root:has([data-hf-workspace]) :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--hf-primary);
+}
+
+:root:has([data-hf-workspace]) :where(input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], input[type="time"], input[type="tel"], input[type="url"], select, textarea):not(:where([aria-invalid="true"], :disabled, [readonly])) {
+  border-color: var(--hf-control-border);
+}
+
 input:not([type="radio"]):not([type="checkbox"]), select, textarea {
   color: var(--hf-text);
   background-color: var(--hf-surface-raised);

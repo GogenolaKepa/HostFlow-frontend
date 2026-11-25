@@ -18,6 +18,7 @@ const Notificaciones = lazy(() => import('./Notificaciones'));
 import api from "../services/api";
 import {totalSinMoneda} from '../services/importes';
 import AvisoMonetarioInicio from '../components/monedas/AvisoMonetarioInicio';
+import ResumenSuscripcion from '../components/suscripciones/ResumenSuscripcion';
 
 
 
@@ -3933,6 +3934,9 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
             {tienePermiso('dashboard.economia')&&<AvisoMonetarioInicio key={usuario.idUsuario} idUsuario={usuario.idUsuario} onVerReportes={()=>cambiarSeccion('reportes')} onVerMonedas={()=>protector.solicitar(()=>ejecutarCambioSeccion('configuracion','monedas'))} />}
+            {import.meta.env.VITE_CONSULTA_SUSCRIPCION === '1' && tienePermiso('dashboard.ver') && (
+              <ResumenSuscripcion usuario={usuario} apiAutenticada={api} />
+            )}
             <section className="cards">
 
 

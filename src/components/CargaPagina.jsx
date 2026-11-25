@@ -14,7 +14,7 @@ const etiquetas = {
   limpiezas: 'Cargando tareas de limpieza...',
 };
 
-function Trazo({ ancho = '100%', alto = '1rem' }) {
+export function Trazo({ ancho = '100%', alto = '1rem' }) {
   return <span className="hf-skeleton-trazo" style={{ width: ancho, height: alto }} />;
 }
 

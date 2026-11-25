@@ -7,11 +7,14 @@ import Apariencia from '../components/configuracion/Apariencia';
 import PanelConfiguracion from '../components/configuracion/PanelConfiguracion';
 const PreferenciasNotificaciones = lazy(() => import('../components/configuracion/PreferenciasNotificaciones'));
 import PreferenciasGenerales from '../components/configuracion/PreferenciasGenerales';
+import ResumenSuscripcion from '../components/suscripciones/ResumenSuscripcion';
+import { consultaSuscripcionHabilitada } from '../services/consultaSuscripcion';
 const MonedasCotizaciones = lazy(() => import('../components/configuracion/MonedasCotizaciones'));
 
 const sections = [
   { id: 'apariencia', title: 'Apariencia', icon: 'appearance', disponible: true },
   { id: 'generales', title: 'Preferencias generales', icon: 'settings', disponible: true },
+  { id: 'mi-plan', title: 'Mi plan', icon: 'building', disponible: true },
   { id: 'operativas', title: 'Preferencias operativas', icon: 'calendar', disponible: true },
   { id: 'empresa', title: 'Datos de empresa', icon: 'building', disponible: true },
   { id: 'monedas', title: 'Monedas y cotizaciones', icon: 'settings', disponible: true },
@@ -20,12 +23,19 @@ const sections = [
   { id: 'seguridad', title: 'Seguridad y acceso', icon: 'shield', disponible: true },
 ];
 
-export default function Configuracion({ onNavegar, onCambiarApartado, gestionCuentasDisponible = false, apartadoInicial = 'apariencia' }) {
+export default function Configuracion({ onNavegar, onCambiarApartado, gestionCuentasDisponible = false, apartadoInicial = 'apariencia', usuario, apiAutenticada }) {
   const permite = usePermisos();
   const general = permite('usuarios.ver');
   const empresarial = permite('configuracion.ver');
   const { protector, ocupado: busy } = useProtectorBorradores();
-  const visibles = sections.filter(item=>['apariencia','generales'].includes(item.id) || (item.id==='notificaciones'?permite('notificaciones.preferencias'):['empresa','operativas','monedas'].includes(item.id)?empresarial:general));
+  const miPlan = consultaSuscripcionHabilitada && permite('dashboard.ver');
+  const visibles = sections.filter(({ id }) => {
+    if (['apariencia', 'generales'].includes(id)) return true;
+    if (id === 'mi-plan') return miPlan;
+    if (id === 'notificaciones') return permite('notificaciones.preferencias');
+    if (['empresa', 'operativas', 'monedas'].includes(id)) return empresarial;
+    return general;
+  });
   const [section,setSection] = useState(() => visibles.some(item=>item.id===apartadoInicial) ? apartadoInicial : 'apariencia');
   const current = sections.find(item=>item.id===section);
   const navegar = id => {
@@ -35,6 +45,7 @@ export default function Configuracion({ onNavegar, onCambiarApartado, gestionCue
   const contenido = () => {
     if(section==='apariencia')return <Apariencia />;
     if(section==='generales')return <PreferenciasGenerales />;
+    if(section==='mi-plan' && miPlan)return <ResumenSuscripcion usuario={usuario} apiAutenticada={apiAutenticada} detalle />;
     if(section==='monedas'&&empresarial)return <Suspense fallback={<p role="status">Cargando monedas…</p>}><MonedasCotizaciones /></Suspense>;
     if(section==='notificaciones'&&permite('notificaciones.preferencias'))return <Suspense fallback={<CargaPagina variante="preferencias" />}><PreferenciasNotificaciones onNavegar={onNavegar} /></Suspense>;
     if(['empresa','operativas'].includes(section) && empresarial) return <PanelConfiguracion key={section} tipo={section} />;

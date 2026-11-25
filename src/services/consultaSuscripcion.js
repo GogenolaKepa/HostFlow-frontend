@@ -1,4 +1,5 @@
 const tiempoMaximo = 15000;
+export const consultaSuscripcionHabilitada = typeof import.meta.env !== 'undefined' && import.meta.env.VITE_CONSULTA_SUSCRIPCION === '1';
 const planesV1 = ['inicial', 'profesional', 'gestion'];
 const nombreCiclo = { mensual: 'Mensual', anual: 'Anual' };
 // Base64url canónico sin relleno para los 32 bytes que emite el backend.
@@ -40,6 +41,7 @@ function validarResumen(datos, idEmpresa) {
     throw errorConsulta('SUSCRIPCION_NO_ACREDITADA');
   }
   return {
+    codigoPlan: plan.codigo,
     nombrePlan: plan.nombre,
     ciclo: nombreCiclo[ciclo],
     limitePropiedades: plan.propiedades,

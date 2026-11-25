@@ -1,4 +1,5 @@
 import {puedeGestionarUsuarios} from './cuentas.js';
+import {consultaSuscripcionHabilitada} from './consultaSuscripcion.js';
 
 const titulos = {
   inicio: 'Inicio', propiedades: 'Propiedades', reservas: 'Reservas', huespedes: 'Huéspedes',
@@ -8,7 +9,7 @@ const titulos = {
 const apartados = {
   apariencia: 'Apariencia', generales: 'Preferencias generales', operativas: 'Preferencias operativas',
   empresa: 'Datos de empresa', monedas: 'Monedas y cotizaciones', notificaciones: 'Notificaciones',
-  integraciones: 'Integraciones', seguridad: 'Seguridad y acceso',
+  integraciones: 'Integraciones', seguridad: 'Seguridad y acceso', 'mi-plan': 'Mi plan',
 };
 const marca = 'hostflowNavegacion';
 
@@ -22,6 +23,7 @@ export function resolverRutaSistema(pathname, usuario) {
   const permisos = usuario?.permisos || [];
   if ((['empresa', 'operativas', 'monedas'].includes(apartado) && !permisos.includes('configuracion.ver')) ||
       (apartado === 'notificaciones' && !permisos.includes('notificaciones.preferencias')) ||
+      (apartado === 'mi-plan' && !(consultaSuscripcionHabilitada && permisos.includes('dashboard.ver'))) ||
       (['integraciones', 'seguridad'].includes(apartado) && !permisos.includes('usuarios.ver'))) apartado = 'apariencia';
   return {
     seccion, apartado,

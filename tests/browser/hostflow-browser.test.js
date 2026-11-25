@@ -29,6 +29,7 @@ import {probarReportesVisuales} from './casos-reportes-visuales.js';
 import { fechaNegocio } from '../../src/services/monedasCalculos.js';
 import { TIPOS_NOTIFICACION } from '../../src/services/notificaciones.js';
 import { cacheViteAislada } from '../helpers/cacheVite.js';
+import { capacidades, contextos, datosCosta, empresas } from '../fixtures/consultaSuscripcionSimulada.js';
 
 // Browser real ya instalado, sin dependencias nuevas y sin backend/SQL.
 const browserPath = process.env.HOSTFLOW_TEST_BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
@@ -78,6 +79,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloUsuarios = false;
   let datosVisuales = false;
   const soloApariencia = process.env.HOSTFLOW_TEST_APARIENCIA_ONLY === '1';
+  const soloMiPlan = process.env.HOSTFLOW_TEST_MI_PLAN_ONLY === '1';
+  let modoSuscripcion = 'vigente';
   let reservasEstabilizacion = null;
   const soloEstabilizacion=(process.env.HOSTFLOW_TEST_W3_ONLY==='1'||process.env.HOSTFLOW_TEST_SESION_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1'||process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'||process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1');
   let configuracionActivada = true, falloGuardarConfiguracion = false, conflictoConfiguracion = false, demoraPredeterminados = 0;
@@ -110,6 +113,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   const requests = []; const excepciones = []; const modulosCliente = [];
   try {
     vite = await createServer({ configFile: false, envDir: false, cacheDir: cache.ruta, plugins: [react()],
+      define: { 'import.meta.env.VITE_CONSULTA_SUSCRIPCION': JSON.stringify(soloMiPlan ? '1' : '0') },
       server: { host: "127.0.0.1", port: 0, ws: false, watch: null } });
     await vite.listen();
     const base = `http://127.0.0.1:${vite.httpServer.address().port}`;
@@ -160,6 +164,20 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
     const sesion = () => ({ token, usuario: { ...current, ...(sinNotificaciones?{permisos:current.permisos.filter(p=>!p.startsWith('notificaciones.'))}:{}), debeCambiarPassword: obligatorio }, expiraEn: expiry() });
 
     function api(method, ruta, body, params) {
+      if (soloMiPlan && ruta.startsWith('/suscripcion/')) {
+        if (method === 'GET' && ruta.endsWith('/capacidades')) return [200, capacidades];
+        if (method === 'GET' && ruta.endsWith('/empresas')) return [200, empresas.slice(0, 1)];
+        if (method === 'POST' && ruta.endsWith('/contexto') && body.idEmpresa === datosCosta.empresaId) {
+          return [200, { contexto: contextos.get(body.idEmpresa), expiraEn: new Date(Date.now() + 300000).toISOString() }];
+        }
+        if (method === 'GET' && ruta.endsWith('/actual')) {
+          if (modoSuscripcion === 'ausente') return [404, { codigo: 'SUSCRIPCION_NO_DISPONIBLE' }];
+          if (modoSuscripcion === 'denegada') return [403, { codigo: 'SIN_PERMISO' }];
+          if (modoSuscripcion === 'error') return [503, { codigo: 'SUSCRIPCION_NO_ACREDITADA' }];
+          return [200, datosCosta];
+        }
+        return [404, { codigo: 'RECURSO_NO_ENCONTRADO' }];
+      }
       if(skeletonModo==='error' && method==='GET' && rutasSkeleton.includes(ruta))return [503,{mensaje:'Fallo ficticio de carga'}];
       if(reservasEstabilizacion && method==='GET' && ruta==='/reservas')return [200,{reservas:reservasEstabilizacion}];
       if(apiUniversitaria&&/^\/(?:propiedades|huespedes|reservas|calendario|limpiezas|dashboard\/reportes)(?:\/|$)/.test(ruta))return apiUniversitaria.pedir(ruta+(params.size?'?'+params.toString():''),method,['GET','HEAD'].includes(method)?undefined:body,current.rol).then(r=>apiUniversitaria.transformar?.({method,ruta,params,respuesta:r})||[r.status,r.data]);
@@ -379,6 +397,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         const cuerpoJornada=(jornada.esActiva()||apiUniversitaria)&&/^\/(monedas|reservas|propiedades|huespedes)(\/|$)/.test(ruta)&&request.postData?JSON.parse(request.postData):undefined;
         requests.push({ method: request.method, ruta, params: Object.fromEntries(url.searchParams),...(cuerpoJornada?{body:cuerpoJornada}:{}) });
         if(ruta==='/auth/me' && request.method==='GET' && demoraSesion)await new Promise(r=>setTimeout(r,demoraSesion));
+        if (soloMiPlan && ruta === '/suscripcion/actual') await new Promise(resolver => setTimeout(resolver, 550));
         if(formularioRealPrueba && request.method==='GET' && ['/propiedades','/huespedes'].includes(ruta) && demoraCatalogosReserva) await new Promise(r=>setTimeout(r,demoraCatalogosReserva));
         if(ruta==='/configuracion/predeterminados-reserva' && falloRedPredeterminados) {
           await send('Fetch.failRequest',{requestId,errorReason:'ConnectionFailed'});return;
@@ -396,7 +415,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         etapa='entrega';
         await send("Fetch.fulfillRequest", { requestId, responseCode: status,
           responseHeaders: [{ name: "Content-Type", value: "application/json" }, { name: "Access-Control-Allow-Origin", value: base },
-            { name: "Access-Control-Allow-Headers", value: "authorization,content-type" }, { name: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,OPTIONS" }],
+            { name: "Access-Control-Allow-Headers", value: "authorization,content-type,x-hostflow-empresa" }, { name: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,OPTIONS" }],
           body: Buffer.from(status === 204 ? "" : JSON.stringify(data)).toString("base64") });
       } catch(error) { if(!solicitudesAbortadas.has(networkId)) excepciones.push({tipo:'API aislada',fase,etapa,ruta:new URL(request.url).pathname,clase:error.name}); }
     });
@@ -472,6 +491,96 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
+    if (soloMiPlan) {
+      await t.test('Inicio y Mi plan: datos, comparativa, temas, skeletons y permisos', async () => {
+        const panel = 'document.querySelector(".hf-suscripcion")';
+        const carga = `${panel}?.querySelector('[aria-busy=true]')`;
+        const consumo = `${panel}?.querySelector('.hf-suscripcion__consumo')`;
+        const irAlInicio = () => evaluate("[...document.querySelectorAll('.sidebar-nav button')].find(button => button.textContent.trim() === 'Inicio').click()");
+        const abrirPlan = () => click('.hf-suscripcion__enlace');
+        const ancho = width => send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 700 });
+        const comprobarAncho = () => evaluate("document.documentElement.scrollWidth <= innerWidth && document.querySelector('.main').scrollWidth <= document.querySelector('.main').clientWidth + 1");
+        const colores = new Set();
+        const fondo = () => evaluate(`getComputedStyle(${panel}).backgroundColor`);
+        fase = 'Mi plan en Inicio';
+        await login();
+        await esperar(inicioVisible);
+        await esperar(`!!${carga}`);
+        await esperar(`!!${consumo}`);
+        assert.deepEqual(await evaluate(`[...${panel}.querySelectorAll('progress')].map(el => [el.value, el.max])`), [[2, 10], [3, 3]]);
+        for (const [preferencia, tema] of [['claro', 'light'], ['oscuro', 'dark'], ['crema', 'cream'], ['grafito', 'graphite'], ['automatico', 'dark']]) {
+          fase = `Mi plan ${preferencia}`;
+          await ancho(1280);
+          await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
+          await evaluate(`HostFlowAppearance.setPreference('${preferencia}')`);
+          await esperar(`document.documentElement.dataset.theme === '${tema}'`);
+          const superficie = await fondo();
+          colores.add(superficie);
+          if (preferencia === 'crema') await capturar('inicio-plan-crema');
+          await ancho(320);
+          assert.ok(await comprobarAncho());
+          await abrirPlan();
+          await esperar("location.pathname === '/configuracion/mi-plan'");
+          await esperar(`!!${carga}`);
+          assert.equal(await fondo(), superficie);
+          assert.equal(await evaluate(`getComputedStyle(${carga}.querySelector('.hf-skeleton-trazo'), '::after').animationName`), 'none');
+          assert.ok(await comprobarAncho());
+          await esperar(`!!${consumo}`);
+          assert.ok(await comprobarAncho());
+          if (preferencia === 'grafito') await capturar('mi-plan-grafito-320');
+          assert.match(await evaluate(`${consumo}.innerText`), /Costa[\s\S]*Profesional[\s\S]*Activa[\s\S]*2 usuarios activos · 1 invitación pendiente/);
+          assert.equal(await evaluate("document.querySelector('.hf-suscripcion__plan[data-actual]').dataset.plan"), 'profesional');
+          await ancho(1280);
+          assert.ok(await comprobarAncho());
+          if (preferencia === 'grafito') await capturar('mi-plan-grafito');
+          await irAlInicio();
+          await esperar(inicioVisible);
+          await esperar(`!!${consumo}`);
+        }
+        assert.equal(colores.size, 4);
+        await abrirPlan();
+        await esperar(`!!${consumo}`);
+        const precios = () => evaluate("[...document.querySelectorAll('.hf-suscripcion__precio')].map(el => el.firstChild.textContent.trim())");
+        assert.deepEqual(await precios(), ['US$109,89', 'US$329,89', 'US$879,89']);
+        const solicitudes = requests.length;
+        await click('.hf-suscripcion__ciclos input[value=mensual]');
+        assert.deepEqual(await precios(), ['US$9,99', 'US$29,99', 'US$79,99']);
+        assert.equal(requests.length, solicitudes);
+        const recargar = async condicion => {
+          await evaluate("document.body.dataset.beforeReload = '1'");
+          await send('Page.reload');
+          await esperar(`!!document.body && !document.body.dataset.beforeReload && (${condicion})`);
+        };
+        await recargar(`!!${consumo}`);
+        assert.equal(await evaluate('location.pathname'), '/configuracion/mi-plan');
+        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'automatico');
+        assert.equal(await evaluate('document.documentElement.dataset.theme'), 'dark');
+        assert.doesNotMatch(await evaluate(`${panel}.innerText`), /Vence|Vigencia/i);
+        await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'no-preference' }] });
+        await evaluate("localStorage.setItem('hostflow.accesibilidad.movimiento', 'reducido')");
+        await recargar(`!!${carga}`);
+        assert.equal(await evaluate(`getComputedStyle(${carga}.querySelector('.hf-skeleton-trazo'), '::after').animationName`), 'none');
+        await esperar(`!!${consumo}`);
+
+        for (const [modo, texto, rol] of [
+          ['ausente', 'no tiene una suscripción vigente', 'status'],
+          ['denegada', 'no tiene acceso', 'alert'],
+          ['error', 'No pudimos verificar', 'alert'],
+        ]) {
+          modoSuscripcion = modo;
+          await recargar(`${panel}?.querySelector('[role=${rol}].hf-suscripcion__mensaje')?.textContent.includes('${texto}')`);
+          assert.equal(await evaluate(`!!${carga} || !!${consumo} || !!${panel}.querySelector('[data-actual]')`), false);
+          assert.equal(await evaluate(`!!${panel}.querySelector('.hf-suscripcion__comparativa')`), modo === 'ausente');
+        }
+        current = { ...current, permisos: current.permisos.filter(permiso => permiso !== 'dashboard.ver') };
+        const solicitudesSinPermiso = requests.length;
+        await recargar("!!document.querySelector('.theme-options')");
+        assert.equal(await evaluate('location.pathname'), '/configuracion');
+        assert.ok(!requests.slice(solicitudesSinPermiso).some(({ ruta }) => ruta.startsWith('/suscripcion/')));
+        assert.equal(excepciones.length, 0, JSON.stringify(excepciones));
+      });
+      return;
+    }
     if(process.env.HOSTFLOW_TEST_SESION_ONLY==='1'){
       await probarSesionPremium({t,evaluate,send,fill,click,esperar,login,inicioVisible,requests,
         configurar:({demora=0,fallo=false,caduca=false}={})=>{demoraSesion=demora;falloSesion=fallo;caducada=caduca;},

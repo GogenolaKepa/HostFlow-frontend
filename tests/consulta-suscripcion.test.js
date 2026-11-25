@@ -26,6 +26,7 @@ test('consulta solo las rutas de lectura y usa el contexto en la cabecera de su 
   const { signal } = new AbortController();
   assert.deepEqual(await listarEmpresasSuscripcion(api, signal), empresas);
   assert.deepEqual(await consultarSuscripcionEmpresa(api, 101, signal), {
+    codigoPlan: 'profesional',
     nombrePlan: 'Profesional',
     ciclo: 'Anual',
     limitePropiedades: 10,

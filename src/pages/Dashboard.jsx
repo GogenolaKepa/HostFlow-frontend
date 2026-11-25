@@ -19,6 +19,7 @@ import api from "../services/api";
 import {totalSinMoneda} from '../services/importes';
 import AvisoMonetarioInicio from '../components/monedas/AvisoMonetarioInicio';
 import ResumenSuscripcion from '../components/suscripciones/ResumenSuscripcion';
+import { consultaSuscripcionHabilitada } from '../services/consultaSuscripcion';
 
 
 
@@ -3707,7 +3708,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
         ) : seccionActiva === "usuarios" && puedeGestionarUsuarios(usuario) ? (
           <Usuarios usuarioActual={usuario} onSesionActualizada={onSesionActualizada} />
         ) : seccionActiva === "configuracion" ? (
-          <Configuracion key={apartadoConfiguracion} apartadoInicial={apartadoConfiguracion} onCambiarApartado={apartado => setSeccionActiva('configuracion', apartado)} onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} />
+          <Configuracion key={apartadoConfiguracion} apartadoInicial={apartadoConfiguracion} onCambiarApartado={apartado => setSeccionActiva('configuracion', apartado)} onNavegar={cambiarSeccion} gestionCuentasDisponible={puedeGestionarUsuarios(usuario)} usuario={usuario} apiAutenticada={api} />
         ) : seccionActiva === "mi-cuenta" ? (
           <MiCuenta usuario={usuario} onSesionActualizada={onSesionActualizada} onLogout={onLogout} />
         ) : (<>
@@ -3934,8 +3935,8 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
             {tienePermiso('dashboard.economia')&&<AvisoMonetarioInicio key={usuario.idUsuario} idUsuario={usuario.idUsuario} onVerReportes={()=>cambiarSeccion('reportes')} onVerMonedas={()=>protector.solicitar(()=>ejecutarCambioSeccion('configuracion','monedas'))} />}
-            {import.meta.env.VITE_CONSULTA_SUSCRIPCION === '1' && tienePermiso('dashboard.ver') && (
-              <ResumenSuscripcion usuario={usuario} apiAutenticada={api} />
+            {consultaSuscripcionHabilitada && tienePermiso('dashboard.ver') && (
+              <ResumenSuscripcion usuario={usuario} apiAutenticada={api} onVerPlan={() => protector.solicitar(() => ejecutarCambioSeccion('configuracion', 'mi-plan'))} />
             )}
             <section className="cards">
 

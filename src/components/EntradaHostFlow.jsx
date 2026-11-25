@@ -14,7 +14,7 @@ export default function EntradaHostFlow({esDemo,esRegistro,esLoginClientes,esAcc
  if (esLoginClientes) contenido=<LoginClientes/>;
  if (esAccesoPublico) contenido=<AccesoPublico/>;
  if (entradaVerificacion) contenido=<VerificarCorreoClientes token={entradaVerificacion.token}/>;
- return <Suspense fallback={<div role="status" style={{minHeight:'100vh',display:'grid',placeItems:'center'}}>Preparando HostFlow…</div>}>
+ return <Suspense fallback={<div className="hf-arranque" role="status">Preparando HostFlow…</div>}>
   {contenido}
  </Suspense>;
 }

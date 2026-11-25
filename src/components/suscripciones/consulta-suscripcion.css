@@ -156,6 +156,23 @@
 .hf-suscripcion__ciclos label:has(input:checked) { background: var(--hf-info-soft); color: var(--hf-info-text); font-weight: 700; }
 .hf-suscripcion__ciclos label:has(input:focus-visible) { outline: 2px solid var(--hf-focus); }
 .hf-suscripcion__plan[data-actual] { border-color: var(--hf-accent-border); }
+
+@media (hover: hover) and (pointer: fine) {
+  .hf-suscripcion__plan:hover {
+    z-index: 1;
+    border-color: var(--hf-focus);
+    box-shadow: 0 12px 30px color-mix(in srgb, var(--hf-nav-bg) 27%, transparent);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* Mismo realce y duración que en la landing, aplicado solo a la tarjeta bajo el cursor. */
+  :root:not([data-reduce-motion="true"]) .hf-suscripcion__plan {
+    transition: scale 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+  }
+  :root:not([data-reduce-motion="true"]) .hf-suscripcion__plan:hover { scale: 1.025; }
+}
+
 .hf-suscripcion__badge {
   display: inline-block;
   justify-self: start;

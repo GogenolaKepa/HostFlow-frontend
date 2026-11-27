@@ -80,6 +80,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let datosVisuales = false;
   const soloApariencia = process.env.HOSTFLOW_TEST_APARIENCIA_ONLY === '1';
   const soloMiPlan = process.env.HOSTFLOW_TEST_MI_PLAN_ONLY === '1';
+  const soloIngresos = process.env.HOSTFLOW_TEST_INGRESOS_ONLY === '1';
+  let modoIngresos = 'pendiente';
   let modoSuscripcion = 'vigente';
   let reservasEstabilizacion = null;
   const soloEstabilizacion=(process.env.HOSTFLOW_TEST_W3_ONLY==='1'||process.env.HOSTFLOW_TEST_SESION_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTABILIZACION_ONLY==='1'||process.env.HOSTFLOW_TEST_FLOWIA_ONLY==='1'||process.env.HOSTFLOW_TEST_LOGIN_ONLY==='1'||process.env.HOSTFLOW_TEST_ESTADOS_ONLY==='1');
@@ -179,10 +181,21 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         return [404, { codigo: 'RECURSO_NO_ENCONTRADO' }];
       }
       if(skeletonModo==='error' && method==='GET' && rutasSkeleton.includes(ruta))return [503,{mensaje:'Fallo ficticio de carga'}];
+      if (soloIngresos && ruta === '/monedas/resumen') {
+        const filtros = Object.fromEntries(params);
+        if (modoIngresos === 'pendiente') return [200, {disponible: false, motivo: 'Acuerdos desactivados.'}];
+        if (modoIngresos === 'error') return [503, {mensaje: 'Fallo ficticio'}];
+        const porMoneda = modoIngresos === 'mixto' ? [
+          {moneda: 'ARS', importe: '1234.50', cantidad: '1'}, {moneda: 'USD', importe: '91.20', cantidad: '1'},
+        ] : [];
+        const sinMoneda = modoIngresos === 'sin-moneda' || modoIngresos === 'mixto' ? 1 : 0;
+        return [200, {disponible: true, criterio: 'IMPORTES_ACORDADOS_ORIGINALES_SIN_COBROS', filtros, porMoneda, sinMoneda: String(sinMoneda), totalReservas: String(sinMoneda + porMoneda.length)}];
+      }
       if(reservasEstabilizacion && method==='GET' && ruta==='/reservas')return [200,{reservas:reservasEstabilizacion}];
       if(apiUniversitaria&&/^\/(?:propiedades|huespedes|reservas|calendario|limpiezas|dashboard\/reportes)(?:\/|$)/.test(ruta))return apiUniversitaria.pedir(ruta+(params.size?'?'+params.toString():''),method,['GET','HEAD'].includes(method)?undefined:body,current.rol).then(r=>apiUniversitaria.transformar?.({method,ruta,params,respuesta:r})||[r.status,r.data]);
       const respuestaJornada=jornada.responder(method,ruta,body,params,current);if(respuestaJornada)return respuestaJornada;
       if(ruta.startsWith('/monedas/')){
+        if(ruta==='/monedas/resumen'&&!monedasActivas)return [200,{disponible:false,motivo:'Acuerdos desactivados.'}];
         if(ruta==='/monedas/estado')return [200,{activado:monedasActivas,escritura:monedasEscritura,persistencia:monedasActivas?'sql':'pendiente',fechaNegocio:fechaNegocio(),fuentes:[{id:'MANUAL',disponible:true},{id:'BCRA',disponible:true},{id:'BNA',disponible:false}]}];
         if(ruta==='/monedas/consultar-bcra')return falloBcraMonedas?[503,{mensaje:'Fuente oficial ficticia no disponible.'}]:[200,{cotizacion:{id:'consulta-oficial-ficticia',fuente:'BCRA',tipo:'BCRA_TIPO_COTIZACION',valor:'1250.00000000',fecha:fechaNegocio(),horaPublicacion:null,consultadaEn:new Date().toISOString()},persistida:false}];
         if(ruta==='/monedas/alertas')return [200,{disponible:monedasActivas,motivo:monedasActivas?'':'Referencias pendientes de aprobación.',alertas:avisoTarifaMonedas?[1,2].map(i=>({id:`tarifa-ficticia-${i}`,idPropiedad:1,propiedad:'Alojamiento ficticio',titulo:'Revisar tarifa en ARS',mensaje:'La equivalencia de referencia varió -20.00 %. El precio no cambió.',fuente:'BCRA',tipo:'BCRA_TIPO_COTIZACION',fecha:fechaNegocio()})):[]}];
@@ -491,13 +504,70 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
+    if (soloIngresos) {
+      await t.test('Ingresos en Inicio: permisos, moneda, Reportes y Configuración', async () => {
+        const tarjeta = 'document.querySelector(".dashboard-ingresos")';
+        const texto = fragmento => esperar(`${tarjeta}?.innerText.includes(${JSON.stringify(fragmento)})`);
+        const accion = nombre => evaluate(`[...${tarjeta}.querySelectorAll('button')].find(e => e.textContent === ${JSON.stringify(nombre)}).click()`);
+        await login();
+        await texto('Los acuerdos monetarios no están habilitados');
+        assert.equal(await evaluate("!!document.querySelector('.main .hf-suscripcion')"), false);
+        await accion('Monedas y cotizaciones');
+        await esperar("location.pathname === '/configuracion/monedas' && document.querySelector('.settings-nav [aria-current=page]').textContent.includes('Monedas')");
+
+        async function abrirInicio(modo) {
+          modoIngresos = modo;
+          await evaluate("[...document.querySelectorAll('.sidebar-nav button')].find(e => e.textContent.trim() === 'Inicio').click()");
+        }
+        await abrirInicio('mixto');
+        await texto('ARS 1.234,50');
+        await texto('USD 91,20');
+        await texto('Reservas sin moneda declarada: 1');
+        const mes = fechaNegocio().slice(0,7);
+        assert.ok(requests.some(r=>r.ruta==='/monedas/resumen'&&r.params.fechaDesde===mes+'-01'&&r.params.fechaHasta?.startsWith(mes)));
+        for (const width of [1440, 390, 320]) {
+          await send('Emulation.setDeviceMetricsOverride', {width,height:900,deviceScaleFactor:1,mobile:width<700});
+          const fondos = new Set();
+          for (const tema of ['claro','oscuro','crema','grafito','automatico']) {
+            await evaluate(`HostFlowAppearance.setPreference('${tema}')`);
+            assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth + 1 && document.querySelector(".main").scrollWidth <= document.querySelector(".main").clientWidth+1'));
+            fondos.add(await evaluate(`getComputedStyle(${tarjeta}).backgroundColor`));
+          }
+          assert.equal(fondos.size,4);
+        }
+        await send('Emulation.setDeviceMetricsOverride', {width:1440,height:900,deviceScaleFactor:1,mobile:false});
+        await accion('Ver histórico');
+        await esperar("location.pathname === '/reportes' && document.querySelector('.monedas-resumen')?.open && document.querySelector('.monedas-resumen').innerText.includes('USD 91,20')");
+        await abrirInicio('sin-moneda');
+        await texto('Reservas sin moneda declarada: 1');
+        assert.equal(await evaluate(`${tarjeta}.querySelectorAll('li').length`),0);
+        for (const [modo, estado] of [['vacio','Sin importes acordados este mes'], ['error','No se pudieron consultar los importes del mes']]) {
+          await accion('Ver histórico');
+          await esperar("location.pathname === '/reportes'");
+          await abrirInicio(modo);
+          await texto(estado);
+        }
+        const previas = requests.length;
+        current = {...current, permisos: current.permisos.filter(p => p !== 'reportes.economia')};
+        await recargarInicio();
+        await texto('Tu perfil no tiene acceso a los importes monetarios');
+        assert.equal(await evaluate(`${tarjeta}.querySelectorAll('button').length`),0);
+        assert.ok(!requests.slice(previas).some(({ruta})=>ruta==='/monedas/resumen'));
+        assert.deepEqual(excepciones, []);
+      });
+      return;
+    }
     if (soloMiPlan) {
       await t.test('Inicio y Mi plan: datos, comparativa, temas, skeletons y permisos', async () => {
         const panel = 'document.querySelector(".hf-suscripcion")';
         const carga = `${panel}?.querySelector('[aria-busy=true]')`;
         const consumo = `${panel}?.querySelector('.hf-suscripcion__consumo')`;
         const irAlInicio = () => evaluate("[...document.querySelectorAll('.sidebar-nav button')].find(button => button.textContent.trim() === 'Inicio').click()");
-        const abrirPlan = () => click('.hf-suscripcion__enlace');
+        const abrirPlan = async () => {
+          await evaluate("document.querySelector('.sidebar-settings').click()");
+          await esperar("!!document.querySelector('.settings-nav')");
+          await evaluate("[...document.querySelectorAll('.settings-nav button')].find(e => e.textContent.trim() === 'Mi plan').click()");
+        };
         const ancho = width => send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 700 });
         const comprobarAncho = () => evaluate("document.documentElement.scrollWidth <= innerWidth && document.querySelector('.main').scrollWidth <= document.querySelector('.main').clientWidth + 1");
         const colores = new Set();
@@ -505,27 +575,24 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         fase = 'Mi plan en Inicio';
         await login();
         await esperar(inicioVisible);
-        await esperar(`!!${carga}`);
-        await esperar(`!!${consumo}`);
-        assert.deepEqual(await evaluate(`[...${panel}.querySelectorAll('progress')].map(el => [el.value, el.max])`), [[2, 10], [3, 3]]);
+        assert.equal(await evaluate(`!!${panel}`),false);
+        assert.ok(!requests.some(({ruta})=>ruta.startsWith('/suscripcion/')));
         for (const [preferencia, tema] of [['claro', 'light'], ['oscuro', 'dark'], ['crema', 'cream'], ['grafito', 'graphite'], ['automatico', 'dark']]) {
           fase = `Mi plan ${preferencia}`;
           await ancho(1280);
           await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
           await evaluate(`HostFlowAppearance.setPreference('${preferencia}')`);
           await esperar(`document.documentElement.dataset.theme === '${tema}'`);
-          const superficie = await fondo();
-          colores.add(superficie);
-          if (preferencia === 'crema') await capturar('inicio-plan-crema');
           await ancho(320);
           assert.ok(await comprobarAncho());
           await abrirPlan();
           await esperar("location.pathname === '/configuracion/mi-plan'");
           await esperar(`!!${carga}`);
-          assert.equal(await fondo(), superficie);
+          colores.add(await fondo());
           assert.equal(await evaluate(`getComputedStyle(${carga}.querySelector('.hf-skeleton-trazo'), '::after').animationName`), 'none');
           assert.ok(await comprobarAncho());
           await esperar(`!!${consumo}`);
+          assert.deepEqual(await evaluate(`[...${panel}.querySelectorAll('progress')].map(el => [el.value, el.max])`), [[2, 10], [3, 3]]);
           assert.ok(await comprobarAncho());
           if (preferencia === 'grafito') await capturar('mi-plan-grafito-320');
           assert.match(await evaluate(`${consumo}.innerText`), /Costa[\s\S]*Profesional[\s\S]*Activa[\s\S]*2 usuarios activos · 1 invitación pendiente/);
@@ -535,7 +602,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
           if (preferencia === 'grafito') await capturar('mi-plan-grafito');
           await irAlInicio();
           await esperar(inicioVisible);
-          await esperar(`!!${consumo}`);
+          assert.equal(await evaluate(`!!${panel}`),false);
         }
         assert.equal(colores.size, 4);
         await abrirPlan();
@@ -601,7 +668,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelector('.main').textContent.includes('Ingresos del mes')"),true);
       const previas = requests.length;
       await recargarInicio();
-      assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico','/monedas/estado'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
+      assert.ok(requests.slice(previas).every(r=>['/auth/me','/dashboard/resumen','/dashboard/historico','/monedas/estado','/monedas/resumen'].includes(r.ruta) && ['GET','OPTIONS'].includes(r.method)));
       await click('.sidebar-logout'); await esperar("Boolean(document.querySelector('#login-email'))");
     });
 
@@ -677,7 +744,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         demoraSesion = 0;
         assert.equal(await evaluate("document.documentElement.dataset.theme"), theme);
         assert.equal(await estilo('.sidebar', 'backgroundColor'), navColor);
-        await navegar('Inicio', '.dashboard-metric-card');
+        await navegar('Inicio', '.dashboard-ingresos');
         if (soloApariencia) await esperar("!document.querySelector('.dashboard-occupancy-preview-empty')");
         await capturar(`${preference}-inicio`);
         await navegar('Usuarios', '.security-role--admin');

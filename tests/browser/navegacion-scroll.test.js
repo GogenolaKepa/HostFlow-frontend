@@ -68,12 +68,12 @@ test('navegación y scroll: build Pages, API completamente simulada',{skip:!fs.e
     await command('Network.enable');await command('Fetch.enable',{patterns:[{urlPattern:'*',requestStage:'Request'}]});await command('Page.enable');await command('Runtime.enable');
     await command('Emulation.setDeviceMetricsOverride',{width:1440,height:800,deviceScaleFactor:1,mobile:false});
     await navegar('/login');await esperar("!!document.querySelector('#login-email')");
-    await evaluate("localStorage.setItem('token','JWT-SOLO-FICTICIO')");await navegar('/login');await esperar("!!document.querySelector('.dashboard-greeting') || !!document.querySelector('.dashboard-metric-card')");
+    await evaluate("localStorage.setItem('token','JWT-SOLO-FICTICIO')");await navegar('/login');await esperar("!!document.querySelector('.dashboard-greeting') || !!document.querySelector('.dashboard-ingresos')");
     const diagnostico=await evaluate(`(()=>{const m=document.querySelector('.main'),d=document.querySelector('.dashboard');return {url:location.pathname,title:document.title,main:{height:m.clientHeight,scrollHeight:m.scrollHeight,overflow:getComputedStyle(m).overflow,minHeight:getComputedStyle(m).minHeight,style:m.getAttribute('style')},dashboard:{height:d.clientHeight,scrollHeight:d.scrollHeight,display:getComputedStyle(d).display,rows:getComputedStyle(d).gridTemplateRows},modales:[...document.querySelectorAll('dialog,[aria-modal="true"],.mobile-nav-drawer')].map(e=>({tag:e.tagName,clase:e.className,open:e.open,display:getComputedStyle(e).display,rect:e.getBoundingClientRect().height}))}})()`);
     fs.writeFileSync(path.join(out,process.env.HF_BASELINE?'antes.json':'despues.json'),JSON.stringify(diagnostico,null,2));
     await captura(process.env.HF_BASELINE?'antes-escritorio':'despues-escritorio');
     if(process.env.HF_BASELINE){console.log(JSON.stringify(diagnostico));return;}
-    const inicio="!!document.querySelector('.dashboard-metric-card')";
+    const inicio="!!document.querySelector('.dashboard-ingresos')";
     const ruta=async p=>esperar(`location.pathname===${JSON.stringify(p)}`);
     const nav=async (label,p)=>{await evaluate(`[...document.querySelectorAll('.sidebar button')].find(e=>e.textContent.trim()===${JSON.stringify(label)}).click()`);await ruta(p);};
     const scroll=()=>evaluate("document.querySelector('.main').scrollTop");

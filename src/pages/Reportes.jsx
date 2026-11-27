@@ -22,7 +22,7 @@ const FILTROS_INICIALES = {
   estado: "",
 };
 
-function Reportes() {
+function Reportes({mostrarImportes = false}) {
   // El contrato historico no acredita divisas: no graficar ni sumar importes mixtos.
   const agregadosComparables = false;
   const tienePermiso = usePermisos();
@@ -2351,7 +2351,7 @@ function Reportes() {
         </div>
       </div>
 
-      {tienePermiso('reportes.economia')&&datos?.periodo&&<ResumenMonetario filtros={{fechaDesde:datos.periodo.fechaDesde,fechaHasta:datos.periodo.fechaHasta,...datos.filtros}} exportable />}
+      {tienePermiso('reportes.economia')&&datos?.periodo&&<ResumenMonetario filtros={{fechaDesde:datos.periodo.fechaDesde,fechaHasta:datos.periodo.fechaHasta,...datos.filtros}} exportable abierto={mostrarImportes} />}
 
       {mostrarFiltros && (
         <form

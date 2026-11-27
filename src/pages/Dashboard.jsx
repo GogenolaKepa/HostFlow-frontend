@@ -17,9 +17,8 @@ const Notificaciones = lazy(() => import('./Notificaciones'));
 
 import api from "../services/api";
 import {totalSinMoneda} from '../services/importes';
+import IngresosDashboard from '../components/monedas/IngresosDashboard';
 import AvisoMonetarioInicio from '../components/monedas/AvisoMonetarioInicio';
-import ResumenSuscripcion from '../components/suscripciones/ResumenSuscripcion';
-import { consultaSuscripcionHabilitada } from '../services/consultaSuscripcion';
 
 
 
@@ -860,6 +859,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
   const { seccion: seccionActiva, apartado: apartadoConfiguracion, navegar: setSeccionActiva } = useNavegacionSistema(usuario, protector);
+  const [mostrarImportesReportes, setMostrarImportesReportes] = useState(false);
   const vistaConBuscador = ["reservas", "huespedes", "limpiezas", "usuarios"].includes(seccionActiva);
   const [flowIAAbierta, setFlowIAAbierta] = useState(false);
   const flowIAPanelId = useId();
@@ -2080,6 +2080,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
     protector.solicitar(() => ejecutarCambioSeccion(seccion));
   };
   const ejecutarCambioSeccion = (seccion, apartado = 'apariencia') => {
+    setMostrarImportesReportes(seccion === 'reportes' && apartado === 'importes');
 
 
 
@@ -3825,7 +3826,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
           "reportes" ? (
 
-          <Reportes />
+          <Reportes mostrarImportes={mostrarImportesReportes} />
 
 
 
@@ -3935,10 +3936,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
             {tienePermiso('dashboard.economia')&&<AvisoMonetarioInicio key={usuario.idUsuario} idUsuario={usuario.idUsuario} onVerReportes={()=>cambiarSeccion('reportes')} onVerMonedas={()=>protector.solicitar(()=>ejecutarCambioSeccion('configuracion','monedas'))} />}
-            {consultaSuscripcionHabilitada && tienePermiso('dashboard.ver') && (
-              <ResumenSuscripcion usuario={usuario} apiAutenticada={api} onVerPlan={() => protector.solicitar(() => ejecutarCambioSeccion('configuracion', 'mi-plan'))} />
-            )}
-            <section className="cards">
+            <section className={`cards dashboard-summary-grid${tienePermiso('dashboard.economia') ? '' : ' dashboard-summary-grid--operativo'}`}>
 
 
 
@@ -4086,96 +4084,13 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-              {tienePermiso("dashboard.economia") && (<button
-                disabled
-
-
-
-                type="button"
-
-
-
-                className="card dashboard-metric-card"
-
-
-
-                onClick={() =>
-
-
-
-                  abrirModalMetrica(
-
-
-
-                    "ingresos"
-
-
-
-                  )
-
-
-
-                }
-
-
-
-              >
-
-
-
-                <div className="dashboard-metric-card-top">
-
-
-
-                  <p>
-
-
-
-                    Ingresos del mes
-
-
-
-                  </p>
-
-
-
-
-
-
-
-                  <span>
-
-
-
-                    Ver histórico
-
-
-
-                  </span>
-
-
-
-                </div>
-
-
-
-
-
-
-
-                <h2>
-
-
-
-                  Moneda no declarada
-
-
-
-                </h2>
-
-
-
-              </button>)}
+              {tienePermiso('dashboard.economia') && (
+              <IngresosDashboard
+                key={usuario.idUsuario}
+                onVerHistorico={() => protector.solicitar(() => ejecutarCambioSeccion('reportes', 'importes'))}
+                onVerMonedas={() => protector.solicitar(() => ejecutarCambioSeccion('configuracion', 'monedas'))}
+              />
+            )}
 
 
 

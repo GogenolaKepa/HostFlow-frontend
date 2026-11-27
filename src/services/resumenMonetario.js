@@ -1,5 +1,17 @@
 import {fechaValida} from './monedasCalculos.js';
 import {celdaCsv} from './exportacionTabular.js';
+export async function leerResumenMonetario(cliente, filtros, signal) {
+ try {
+  const {data}=await cliente.get('/monedas/resumen',{params:filtros,signal});
+  if(!resumenMonetarioValido(data,filtros))throw Error('Resumen monetario incompleto');
+  return data;
+ } catch(error) {
+  if(['MONEDAS_PENDIENTES','MONEDAS_MODELO_PENDIENTE'].includes(error.response?.data?.codigo)){
+   return {disponible:false,motivo:'Los acuerdos monetarios no están habilitados.'};
+  }
+  throw error;
+ }
+}
 export function resumenMonetarioValido(data,filtros){
  if(!data||typeof data.disponible!=='boolean')return false;
  if(!data.disponible)return typeof data.motivo==='string';

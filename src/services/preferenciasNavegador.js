@@ -1,20 +1,31 @@
-// Preferencia explícitamente del navegador; nunca representa una preferencia SQL.
+import { guardarPreferenciaCuenta, leerPreferenciaCuenta } from './preferenciasCuenta.js';
+
 const CLAVE='hostflow.accesibilidad.movimiento';
-let preferencia='sistema',cargada=false;
+let ambito=null,preferencia='sistema';
 const listeners=new Set();
 const normalizar=v=>v==='reducido'?'reducido':'sistema';
-export function snapshotMovimiento(){
-  if(!cargada){try{preferencia=normalizar(window.localStorage.getItem(CLAVE));}catch{/* Valor seguro sin almacenamiento. */}cargada=true;}
-  return preferencia;
+const publicar = valor => {
+  if (valor === preferencia) return;
+  preferencia=valor;
+  for(const fn of listeners)fn();
+};
+export function establecerAmbitoMovimiento(siguiente){
+  if(ambito===siguiente)return;
+  ambito=siguiente;
+  publicar(normalizar(leerPreferenciaCuenta(CLAVE,ambito)));
 }
-const storage=e=>{if(e.key!==CLAVE&&e.key!==null)return;preferencia=normalizar(e.key===null?null:e.newValue);for(const fn of listeners)fn();};
+export const snapshotMovimiento=()=>preferencia;
+const storage=e=>{
+  if(!ambito||(e.key!==`${CLAVE}:${ambito}`&&e.key!==null))return;
+  publicar(normalizar(e.key===null?null:e.newValue));
+};
 export function suscribirMovimiento(fn){
   if(!listeners.size)window.addEventListener('storage',storage);listeners.add(fn);
   return()=>{listeners.delete(fn);if(!listeners.size)window.removeEventListener('storage',storage);};
 }
 export function guardarMovimiento(valor){
-  if(!['sistema','reducido'].includes(valor))return false;
-  cargada=true;preferencia=valor;let guardada=true;
-  try{window.localStorage.setItem(CLAVE,valor);}catch{guardada=false;}
-  for(const fn of listeners)fn();return guardada;
+  if(!ambito||!['sistema','reducido'].includes(valor))return false;
+  const guardada=guardarPreferenciaCuenta(CLAVE,ambito,valor);
+  publicar(valor);
+  return guardada;
 }

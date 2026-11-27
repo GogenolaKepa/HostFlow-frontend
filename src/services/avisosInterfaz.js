@@ -1,8 +1,5 @@
-// Preferencia local por cuenta; no representa una notificación ni una lectura SQL.
-export const claveAvisoMonetario=id=>`hostflow:aviso-monetario:v1:${id}`;
-export function avisoMonetarioOculto(id,storage){
- try{return (storage??window.localStorage).getItem(claveAvisoMonetario(id))==='oculto';}catch{return false;}
-}
-export function ocultarAvisoMonetario(id,storage){
- try{(storage??window.localStorage).setItem(claveAvisoMonetario(id),'oculto');return true;}catch{return false;}
-}
+import { guardarPreferenciaCuenta, leerPreferenciaCuenta } from './preferenciasCuenta.js';
+
+const AVISO_MONETARIO = 'hostflow:aviso-monetario:v1';
+export const avisoMonetarioOculto = (ambito, storage) => leerPreferenciaCuenta(AVISO_MONETARIO, ambito, storage) === 'oculto';
+export const ocultarAvisoMonetario = (ambito, storage) => guardarPreferenciaCuenta(AVISO_MONETARIO, ambito, 'oculto', storage);

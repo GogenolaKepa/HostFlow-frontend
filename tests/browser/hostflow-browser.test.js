@@ -79,6 +79,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
   let falloUsuarios = false;
   let datosVisuales = false;
   const soloApariencia = process.env.HOSTFLOW_TEST_APARIENCIA_ONLY === '1';
+  const soloPreferencias = process.env.HOSTFLOW_TEST_PREFERENCIAS_ONLY === '1';
   const soloMiPlan = process.env.HOSTFLOW_TEST_MI_PLAN_ONLY === '1';
   const soloIngresos = process.env.HOSTFLOW_TEST_INGRESOS_ONLY === '1';
   let modoIngresos = 'pendiente';
@@ -504,6 +505,105 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       assert.equal(await evaluate("document.querySelectorAll('.sidebar-footer button.active').length"), 1);
     };
 
+    if (soloPreferencias) {
+      await t.test('Dos administradores y un operador conservan sus preferencias; el arranque instalado permanece neutro', async () => {
+        fase = 'aislamiento visual';
+        const html = 'document.documentElement';
+        const logout = async () => {
+          await click('.sidebar-logout');
+          await esperar("!!document.querySelector('#login-email')");
+          assert.equal(await evaluate(`${html}.dataset.theme`), 'light');
+          assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'false');
+          assert.equal(await evaluate(`${html}.hasAttribute('data-hf-apariencia-publica')`), true);
+        };
+        const abrirGenerales = async () => {
+          await click('.sidebar-settings');
+          await esperar("!!document.querySelector('.theme-options')");
+          await evaluate("[...document.querySelectorAll('.settings-nav button')].find(e=>e.textContent.trim()==='Preferencias generales').click()");
+          await esperar("!!document.querySelector('#preferencia-movimiento')");
+        };
+        const tema = value => evaluate(`HostFlowAppearance.setPreference('${value}')`);
+        const sidebar = () => evaluate("!!document.querySelector('.dashboard--sidebar-collapsed')");
+        await send('Emulation.setDeviceMetricsOverride', {width:1440,height:900,deviceScaleFactor:1,mobile:false});
+        await evaluate("localStorage.setItem('hostflow.apariencia.v1','grafito'); localStorage.setItem('hostflow.accesibilidad.movimiento','reducido'); localStorage.setItem('hostflowSidebarColapsada','true')");
+        assert.equal(await tema('oscuro'), false);
+        assert.equal(await evaluate(`${html}.dataset.theme`), 'light');
+        await login(); await esperar(inicioVisible);
+        assert.equal(await evaluate(`${html}.dataset.theme`), 'light');
+        assert.equal(await sidebar(), false);
+        for (const [preferencia, esperado] of [['oscuro','dark'], ['crema','cream'], ['grafito','graphite'], ['claro','light']]) {
+          assert.equal(await tema(preferencia), true);
+          assert.equal(await evaluate(`${html}.dataset.theme`), esperado);
+        }
+        await tema('grafito');
+        await click('.sidebar-collapse-toggle');
+        assert.equal(await sidebar(), true);
+        await click('.notice-dismiss');
+        await abrirGenerales();
+        await evaluate("(()=>{const e=document.querySelector('#preferencia-movimiento');e.value='reducido';e.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        await esperar(`${html}.dataset.reduceMotion === 'true'`);
+        await logout();
+
+        const primero = current;
+        const segundo = {...cuenta(3, 'Administrador'), nombre:'Segundo administrador ficticio', email:'segundo@example.invalid', idEmpresa:2};
+        current = segundo;
+        await login(); await esperar(inicioVisible);
+        assert.equal(await evaluate(`${html}.dataset.theme`), 'light');
+        assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'false');
+        assert.equal(await sidebar(), false);
+        assert.equal(await evaluate("!!document.querySelector('.monetary-notice')"), true);
+        await send('Emulation.setEmulatedMedia', {features:[{name:'prefers-color-scheme',value:'dark'}]});
+        await tema('automatico');
+        await esperar(`${html}.dataset.theme === 'dark'`);
+        await send('Emulation.setEmulatedMedia', {features:[{name:'prefers-color-scheme',value:'light'}]});
+        await esperar(`${html}.dataset.theme === 'light'`);
+        await logout();
+
+        current = users.get(2);
+        await login(); await esperar(inicioVisible);
+        assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'false');
+        await tema('crema');
+        await logout();
+        current = primero;
+        await login(); await esperar(inicioVisible);
+        assert.equal(await evaluate(`${html}.dataset.theme`), 'graphite');
+        assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'true');
+        assert.equal(await sidebar(), true);
+        assert.equal(await evaluate("!!document.querySelector('.monetary-notice')"), false);
+
+        await send('Emulation.setDeviceMetricsOverride',{width:390,height:830,deviceScaleFactor:1,mobile:true});
+        await send('Page.addScriptToEvaluateOnNewDocument',{source:"Object.defineProperty(navigator,'standalone',{value:true})"});
+        demoraSesion = 900;
+        await send('Page.reload');
+        await esperar("!!document.querySelector('.sesion-preparando[data-hf-workspace]')");
+        assert.equal(await evaluate(`${html}.hasAttribute('data-hf-standalone')`), true);
+        assert.equal(await evaluate(`${html}.hasAttribute('data-hf-apariencia-publica')`), true);
+        assert.equal(await evaluate("document.querySelector('meta[name=theme-color]').content"), '#0b1626');
+        assert.equal(await evaluate("getComputedStyle(document.querySelector('.sesion-preparando')).backgroundColor"), 'rgb(11, 22, 38)');
+        assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'false');
+        await esperar(`(${inicioVisible}) && ${html}.dataset.theme === 'graphite'`);
+        assert.equal(await evaluate("document.querySelector('meta[name=theme-color]').content"), '#111319');
+        assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'true');
+        assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'));
+        await capturar('preferencias-grafito-pwa');
+        await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+        await logout();
+
+        current = segundo;
+        await login(); await esperar(inicioVisible);
+        assert.equal(await evaluate("HostFlowAppearance.getSnapshot().preference"), 'automatico');
+        assert.equal(await evaluate(`${html}.dataset.reduceMotion`), 'false');
+        assert.equal(await sidebar(), false);
+        assert.deepEqual(await evaluate("Object.fromEntries(Object.entries(localStorage).filter(([k])=>/:(sql|mock):/.test(k)))"), {
+          'hostflow.apariencia.v1:sql:1:1':'grafito', 'hostflow.apariencia.v1:sql:2:3':'automatico',
+          'hostflow.apariencia.v1:sql:1:2':'crema', 'hostflow.accesibilidad.movimiento:sql:1:1':'reducido',
+          'hostflowSidebarColapsada:sql:1:1':'true', 'hostflow:aviso-monetario:v1:sql:1:1':'oculto',
+        });
+        assert.ok(requests.every(({method,ruta})=>['GET','OPTIONS'].includes(method)||['/auth/login','/auth/logout'].includes(ruta)));
+        assert.deepEqual(excepciones, []);
+      });
+      return;
+    }
     if (soloIngresos) {
       await t.test('Ingresos en Inicio: permisos, moneda, Reportes y Configuración', async () => {
         const tarjeta = 'document.querySelector(".dashboard-ingresos")';
@@ -620,11 +720,11 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         };
         await recargar(`!!${consumo}`);
         assert.equal(await evaluate('location.pathname'), '/configuracion/mi-plan');
-        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'automatico');
+        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1:sql:1:1')"), 'automatico');
         assert.equal(await evaluate('document.documentElement.dataset.theme'), 'dark');
         assert.doesNotMatch(await evaluate(`${panel}.innerText`), /Vence|Vigencia/i);
         await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'no-preference' }] });
-        await evaluate("localStorage.setItem('hostflow.accesibilidad.movimiento', 'reducido')");
+        await evaluate("localStorage.setItem('hostflow.accesibilidad.movimiento:sql:1:1', 'reducido')");
         await recargar(`!!${carga}`);
         assert.equal(await evaluate(`getComputedStyle(${carga}.querySelector('.hf-skeleton-trazo'), '::after').animationName`), 'none');
         await esperar(`!!${consumo}`);
@@ -726,7 +826,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         const before = requests.length;
         await click(radio(preference));
         await esperar(`document.documentElement.dataset.theme === '${theme}'`);
-        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), preference);
+        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1:sql:1:1')"), preference);
         assert.equal(requests.length, before, 'Cambiar el tema no consulta ni escribe en la API');
         assert.equal(await estilo('.settings-card', 'backgroundColor'), surface);
         assert.equal(await estilo('.sidebar', 'backgroundColor'), navColor);
@@ -737,8 +837,8 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         await evaluate("document.body.dataset.beforeReload = '1'");
         await send('Page.reload');
         await esperar("Boolean(document.querySelector('.sesion-preparando[data-hf-workspace]'))");
-        assert.equal(await estilo('html', 'colorScheme'), scheme);
-        assert.equal(await estilo('.sesion-preparando', 'backgroundColor'), await estilo('html', 'backgroundColor'));
+        assert.equal(await evaluate("document.documentElement.hasAttribute('data-hf-apariencia-publica')"), true);
+        assert.equal(await estilo('.sesion-preparando', 'backgroundColor'), 'rgb(11, 22, 38)');
         assert.equal(await evaluate("Boolean(document.querySelector('.dashboard'))"), false);
         await esperar(`!document.body?.dataset.beforeReload && document.querySelector('${radio(preference)}')?.checked`);
         demoraSesion = 0;
@@ -801,7 +901,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
         assert.equal(await evaluate("document.querySelector('.theme-option.is-selected input').value"), 'automatico');
         assert.equal(await evaluate("document.querySelector('.theme-status strong').textContent"), 'Apariencia según el sistema activa');
         assert.equal(await estilo('html', 'colorScheme'), theme);
-        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'automatico');
+        assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1:sql:1:1')"), 'automatico');
       };
       await sistema('dark');
       assert.equal(await evaluate('document.documentElement.dataset.theme'), 'cream');
@@ -823,7 +923,7 @@ test("navegador real: sesiones, cuentas, perfil, movil y regresion con API aisla
       await comprobarSistema('dark');
       await click('.sidebar-logout');
       await esperar("Boolean(document.querySelector('#login-email'))");
-      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1')"), 'automatico');
+      assert.equal(await evaluate("localStorage.getItem('hostflow.apariencia.v1:sql:1:1')"), 'automatico');
       assert.deepEqual(await publicColors(), loginColors);
       await send('Emulation.setEmulatedMedia', { features: [] });
       for (const [preference] of themes) {

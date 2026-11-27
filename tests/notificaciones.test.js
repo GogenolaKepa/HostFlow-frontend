@@ -26,22 +26,25 @@ test('Avisos: no acepta lecturas personales ficticias, destinos arbitrarios ni c
   for(const cambio of [{tipo:'SISTEMA_INVENTADO'},{fecha:'inexistente'},{idAviso:'1'},{prioridad:'Urgente'},{destino:{seccion:'usuarios'}},{titulo:''}])assert.equal(avisosValidos({...feed(),avisos:[{...feed().avisos[0],...cambio}]}),false);
 });
 test('Movimiento: persistencia exclusivamente del navegador, suscripción y sincronización entre pestañas',async()=>{
-  const listeners=new Map(),datos=new Map([['hostflow.accesibilidad.movimiento','reducido']]);
+  const listeners=new Map(),clave='hostflow.accesibilidad.movimiento:sql:1:1',datos=new Map([[clave,'reducido']]);
   globalThis.window={localStorage:{getItem:k=>datos.get(k),setItem:(k,v)=>datos.set(k,v)},addEventListener:(n,f)=>listeners.set(n,f),removeEventListener:n=>listeners.delete(n)};
   try{
-    const store=await import('../src/services/preferenciasNavegador.js?normal');assert.equal(store.snapshotMovimiento(),'reducido');
+    const store=await import('../src/services/preferenciasNavegador.js?normal');assert.equal(store.snapshotMovimiento(),'sistema');
+    store.establecerAmbitoMovimiento('sql:1:1');assert.equal(store.snapshotMovimiento(),'reducido');
     let cambios=0;const cerrar=store.suscribirMovimiento(()=>cambios++);
     assert.equal(store.guardarMovimiento('otra'),false);assert.equal(cambios,0);assert.equal(store.guardarMovimiento('sistema'),true);assert.equal(cambios,1);
-    assert.equal(datos.get('hostflow.accesibilidad.movimiento'),'sistema');
+    assert.equal(datos.get(clave),'sistema');
     listeners.get('storage')({key:'token',newValue:'otro'});assert.equal(cambios,1);
-    listeners.get('storage')({key:'hostflow.accesibilidad.movimiento',newValue:'reducido'});assert.equal(store.snapshotMovimiento(),'reducido');assert.equal(cambios,2);
+    listeners.get('storage')({key:'hostflow.accesibilidad.movimiento:sql:2:1',newValue:'reducido'});assert.equal(cambios,1);
+    listeners.get('storage')({key:clave,newValue:'reducido'});assert.equal(store.snapshotMovimiento(),'reducido');assert.equal(cambios,2);
     listeners.get('storage')({key:null,newValue:null});assert.equal(store.snapshotMovimiento(),'sistema');assert.equal(cambios,3);
-    cerrar();assert.equal(listeners.size,0);assert.deepEqual([...datos.keys()],['hostflow.accesibilidad.movimiento']);
+    store.establecerAmbitoMovimiento(null);assert.equal(store.guardarMovimiento('reducido'),false);
+    cerrar();assert.equal(listeners.size,0);assert.deepEqual([...datos.keys()],[clave]);
   }finally{delete globalThis.window;}
 });
 test('Movimiento: almacenamiento denegado aplica solo en memoria e informa que no persistió',async()=>{
   globalThis.window={get localStorage(){throw Error('Almacenamiento bloqueado');}};
-  try{const store=await import('../src/services/preferenciasNavegador.js?bloqueado');assert.equal(store.snapshotMovimiento(),'sistema');assert.equal(store.guardarMovimiento('reducido'),false);assert.equal(store.snapshotMovimiento(),'reducido');}
+  try{const store=await import('../src/services/preferenciasNavegador.js?bloqueado');store.establecerAmbitoMovimiento('sql:1:1');assert.equal(store.snapshotMovimiento(),'sistema');assert.equal(store.guardarMovimiento('reducido'),false);assert.equal(store.snapshotMovimiento(),'reducido');}
   finally{delete globalThis.window;}
 });
 test('Avisos: singular/plural y estados de activación, esquema, sesión y contrato separados',()=>{

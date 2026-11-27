@@ -19,6 +19,7 @@ import api from "../services/api";
 import {totalSinMoneda} from '../services/importes';
 import IngresosDashboard from '../components/monedas/IngresosDashboard';
 import AvisoMonetarioInicio from '../components/monedas/AvisoMonetarioInicio';
+import { guardarPreferenciaCuenta, leerPreferenciaCuenta } from '../services/preferenciasCuenta';
 
 
 
@@ -842,7 +843,7 @@ function IconoSidebarToggle() {
 
 
 
-function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
+function Dashboard({ usuario, ambitoVisual, onLogout: cerrarSesion, onSesionActualizada }) {
   const { protector } = useProtectorBorradores();
   const onLogout = () => protector.solicitar(cerrarSesion);
   const tienePermiso = usePermisos();
@@ -963,155 +964,17 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-  const [
-
-
-
-    sidebarColapsada,
-
-
-
-    setSidebarColapsada,
-
-
-
-  ] = useState(() => {
-
-
-
-    if (
-
-
-
-      typeof window ===
-
-
-
-      "undefined"
-
-
-
-    ) {
-
-
-
-      return false;
-
-
-
-    }
-
-
-
-
-
-
-
-    const preferenciaGuardada =
-
-
-
-      window.localStorage.getItem(
-
-
-
-        "hostflowSidebarColapsada"
-
-
-
-      );
-
-
-
-
-
-
-
-    if (
-
-
-
-      preferenciaGuardada !==
-
-
-
-      null
-
-
-
-    ) {
-
-
-
-      return (
-
-
-
-        preferenciaGuardada ===
-
-
-
-        "true"
-
-
-
-      );
-
-
-
-    }
-
-
-
-
-
-
-
-    /*
-
-
-
-     * En tablet la dejamos contraída por defecto
-
-
-
-     * para conservar espacio útil.
-
-
-
-     * En escritorio queda expandida.
-
-
-
-     */
-
-
-
-    return (
-
-
-
-      window.innerWidth <=
-
-
-
-        1100 &&
-
-
-
-      window.innerWidth >
-
-
-
-        700
-
-
-
-    );
-
-
-
+  const [sidebarColapsada, setSidebarColapsada] = useState(() => {
+    const guardada = leerPreferenciaCuenta('hostflowSidebarColapsada', ambitoVisual);
+    if (guardada === 'true' || guardada === 'false') return guardada === 'true';
+    return typeof window !== 'undefined' && window.innerWidth <= 1100 && window.innerWidth > 700;
   });
+
+  const alternarSidebar = () => {
+    const siguiente = !sidebarColapsada;
+    setSidebarColapsada(siguiente);
+    guardarPreferenciaCuenta('hostflowSidebarColapsada', ambitoVisual, String(siguiente));
+  };
 
 
 
@@ -1132,50 +995,6 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
   ] = useState(false);
-
-
-
-
-
-
-
-  useEffect(() => {
-
-
-
-    window.localStorage.setItem(
-
-
-
-      "hostflowSidebarColapsada",
-
-
-
-      String(
-
-
-
-        sidebarColapsada
-
-
-
-      )
-
-
-
-    );
-
-
-
-  }, [
-
-
-
-    sidebarColapsada,
-
-
-
-  ]);
 
 
 
@@ -3243,27 +3062,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-            onClick={() =>
-
-
-
-              setSidebarColapsada(
-
-
-
-                (valor) =>
-
-
-
-                  !valor
-
-
-
-              )
-
-
-
-            }
+            onClick={alternarSidebar}
 
 
 
@@ -3935,7 +3734,7 @@ function Dashboard({ usuario, onLogout: cerrarSesion, onSesionActualizada }) {
 
 
 
-            {tienePermiso('dashboard.economia')&&<AvisoMonetarioInicio key={usuario.idUsuario} idUsuario={usuario.idUsuario} onVerReportes={()=>cambiarSeccion('reportes')} onVerMonedas={()=>protector.solicitar(()=>ejecutarCambioSeccion('configuracion','monedas'))} />}
+            {tienePermiso('dashboard.economia')&&<AvisoMonetarioInicio ambitoVisual={ambitoVisual} onVerReportes={()=>cambiarSeccion('reportes')} onVerMonedas={()=>protector.solicitar(()=>ejecutarCambioSeccion('configuracion','monedas'))} />}
             <section className={`cards dashboard-summary-grid${tienePermiso('dashboard.economia') ? '' : ' dashboard-summary-grid--operativo'}`}>
 
 

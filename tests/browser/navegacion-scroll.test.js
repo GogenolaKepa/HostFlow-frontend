@@ -142,7 +142,7 @@ test('navegación y scroll: build Pages, API completamente simulada',{skip:!fs.e
       await command('Emulation.setDeviceMetricsOverride',{width:1440,height:800,deviceScaleFactor:1,mobile:false});
     });
     await t.test('tema oscuro, sidebar contraída y acceso a Mi cuenta conservan navegación y scroll',async()=>{
-      await evaluate("localStorage.setItem('hostflow.apariencia.v1','oscuro')");await navegar('/inicio');await esperar(inicio);
+      await evaluate("HostFlowAppearance.setPreference('oscuro')");await navegar('/inicio');await esperar(inicio);
       await click('.sidebar-collapse-toggle');await esperar("!!document.querySelector('.dashboard--sidebar-collapsed')");
       await esperar("Math.abs(document.querySelector('.sidebar').getBoundingClientRect().width-78)<1");
       assert.equal(await evaluate("document.querySelector('.main').getBoundingClientRect().left"),78,'El contenido no debe sumar otro margen a la sidebar contraída.');

@@ -61,7 +61,7 @@ export default function Configuracion({ onNavegar, onCambiarApartado, gestionCue
     <div className="settings-layout">
       <nav className="settings-nav" aria-label="Secciones de configuración">
         {visibles.map(item=><button key={item.id} type="button" disabled={busy} className={section===item.id?'is-active':''} aria-current={section===item.id?'page':undefined} onClick={()=>navegar(item.id)}><SecurityIcon name={item.icon} /><span>{item.title}</span>{!item.disponible&&<small>Próximamente</small>}</button>)}
-        <p><SecurityIcon name="monitor" />La apariencia se guarda en este navegador. Los datos de empresa y los horarios corresponden a la empresa vinculada a HostFlow.</p>
+        <p><SecurityIcon name="monitor" />La apariencia se guarda para tu cuenta en este navegador. Los datos de empresa y los horarios corresponden a la empresa vinculada a HostFlow.</p>
       </nav>
       <div className="settings-content">{contenido()}</div>
     </div>

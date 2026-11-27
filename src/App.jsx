@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Login from "./pages/Login";
 import ValidandoSesion from "./components/ValidandoSesion";
 import Dashboard from "./pages/Dashboard";
@@ -6,6 +6,8 @@ import MiCuenta from "./pages/MiCuenta";
 import api from "./services/api";
 import {SERVICIO_DESCONECTADO} from './services/disponibilidadApi';
 import { PermisosContext } from "./context/PermisosContext";
+import { ambitoPreferencias } from "./services/preferenciasCuenta";
+import { establecerAmbitoMovimiento } from "./services/preferenciasNavegador";
 import {
   SESION_CERRADA,
   CAMBIO_PASSWORD_REQUERIDO,
@@ -52,9 +54,19 @@ function Aplicacion({entradaInicial,conexionComercial}) {
   const [usuario, setUsuario] = useState(null);
   const [expiraEn, setExpiraEn] = useState(null);
   const [estadoSesion, setEstadoSesion] = useState("validando");
+  const ambitoVisual = estadoSesion === "lista" && !entrada ? ambitoPreferencias(usuario) : null;
   const [aviso, setAviso] = useState("");
   const intentoValidacion = useRef(0);
   const tuvoSesion = useRef(false);
+
+  useLayoutEffect(() => {
+    globalThis.HostFlowAppearance.setScope(ambitoVisual);
+    establecerAmbitoMovimiento(ambitoVisual);
+    return () => {
+      globalThis.HostFlowAppearance.setScope(null);
+      establecerAmbitoMovimiento(null);
+    };
+  }, [ambitoVisual]);
 
   useEffect(() => {
     if (usuario) {
@@ -198,7 +210,7 @@ function Aplicacion({entradaInicial,conexionComercial}) {
       {usuario ? (
         usuario.debeCambiarPassword ? (
           <MiCuenta obligatorio usuario={usuario} onSesionActualizada={actualizarSesion} onLogout={cerrarSesionRemota} />
-        ) : <Dashboard usuario={usuario} onLogout={cerrarSesionRemota} onSesionActualizada={actualizarSesion} />
+        ) : <Dashboard key={ambitoVisual} usuario={usuario} ambitoVisual={ambitoVisual} onLogout={cerrarSesionRemota} onSesionActualizada={actualizarSesion} />
       ) : (
         rutaPublica==='/' ? <Suspense fallback={<ValidandoSesion/>}><Landing/></Suspense> :
         <Login aviso={aviso} onLogin={() => { setAviso(""); validarSesion(); }} />

@@ -4,8 +4,8 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const code = fs.readFileSync(new URL("../public/appearance.js", import.meta.url), "utf8");
-const KEY = "hostflow.apariencia.v1";
-function browser({ saved, dark = false, denied = false } = {}) {
+const LEGACY = "hostflow.apariencia.v1", SCOPE = "sql:1:7", KEY = `${LEGACY}:${SCOPE}`;
+function browser({ saved, dark = false, denied = false, activate = true } = {}) {
   const data = new Map(saved === undefined ? [] : [[KEY, saved]]), reads = [], events = {}, callbacks = new Set();
   const media = { matches: dark, addEventListener(_type, listener) { callbacks.add(listener); } };
   const root = { document: { documentElement: { dataset: {}, style: {} } },
@@ -13,20 +13,45 @@ function browser({ saved, dark = false, denied = false } = {}) {
       setItem(key, value) { if (denied) throw Error(); data.set(key, value); } },
     matchMedia: () => media, addEventListener(type, callback) { events[type] = callback; } };
   vm.createContext(root); vm.runInContext(code, root);
+  if (activate) root.HostFlowAppearance.setScope(SCOPE);
   return { root, data, reads, events, store: root.HostFlowAppearance,
     system(value) { media.matches = value; callbacks.forEach(fn => fn()); }, rerun() { vm.runInContext(code, root); }, callbacks };
 }
-test("inicio claro sin preferencia aun con sistema oscuro; solo lee apariencia antes de React", () => {
-  const b = browser({ dark: true });
+test("arranque público no lee almacenamiento; la sesión sin preferencia conserva Claro", () => {
+  const b = browser({ dark: true, activate: false });
+  b.data.set(LEGACY, "oscuro");
+  b.data.set("usuario", JSON.stringify({idUsuario:7}));
   assert.equal(b.root.document.documentElement.dataset.theme, "light");
+  assert.equal(b.root.document.documentElement.dataset.hfAparienciaPublica, "");
+  assert.equal(b.store.setPreference("grafito"), false);
+  assert.deepEqual(b.reads, []);
+  b.store.setScope(SCOPE);
+  assert.equal(b.root.document.documentElement.dataset.theme, "light");
+  assert.equal(b.root.document.documentElement.dataset.hfAparienciaPublica, undefined);
   assert.equal(b.root.document.documentElement.style.colorScheme, undefined);
-  assert.deepEqual(b.reads, [KEY]); assert.equal(b.data.size, 0);
+  assert.deepEqual(b.reads, [KEY]); assert.equal(b.data.size, 2);
   assert.equal(b.store.getSnapshot().persisted, false);
 });
-test("tema oscuro persistido se aplica antes de React; no se aceptan valores arbitrarios", () => {
+test("tema oscuro persistido se aplica al seleccionar la identidad; no se aceptan valores arbitrarios", () => {
   assert.equal(browser({ saved: "oscuro" }).root.document.documentElement.dataset.theme, "dark");
   for (const saved of ["dark", '{"token":"invalido"}', "<script>", ""]) assert.equal(browser({ saved }).store.getSnapshot().preference, "claro");
   const b = browser(); assert.equal(b.store.setPreference("desconocido"), false); assert.equal(b.data.size, 0);
+});
+test("cambiar de usuario o empresa y cerrar sesión reinicia la apariencia activa", () => {
+  const b = browser({ saved: "crema" });
+  b.store.setScope("sql:2:7");
+  assert.equal(b.store.getSnapshot().theme,"light");
+  b.store.setPreference("grafito");
+  b.store.setScope("sql:1:8");
+  assert.equal(b.store.getSnapshot().theme,"light");
+  b.store.setScope(null);
+  assert.equal(b.store.setPreference("oscuro"),false);
+  b.events.storage({ key: KEY, newValue: "crema" });
+  assert.equal(b.store.getSnapshot().theme,"light");
+  b.store.setScope(SCOPE);
+  assert.equal(b.store.getSnapshot().theme,"cream");
+  b.store.setScope("sql:2:7");
+  assert.equal(b.store.getSnapshot().theme,"graphite");
 });
 test("elegir persiste solo el valor no sensible y sobrevive una nueva carga", () => {
   for (const [preference, theme] of [["claro", "light"], ["oscuro", "dark"], ["crema", "cream"], ["grafito", "graphite"]]) {

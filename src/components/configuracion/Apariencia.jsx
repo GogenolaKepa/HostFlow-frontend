@@ -13,9 +13,9 @@ export default function Apariencia() {
   const appearance = useTheme();
   const active = choices.find(choice => choice.theme === appearance.theme);
   const status = appearance.preference === 'automatico' ? 'Apariencia según el sistema activa' : `Tema ${active.title} activo`;
-  let storageMessage = 'La elección se guarda en este navegador.';
+  let storageMessage = 'La elección se guarda para tu cuenta en este navegador.';
   if (!appearance.storageAvailable) storageMessage = 'El navegador no permite guardar el tema. La elección se perderá al recargar.';
-  else if (appearance.persisted) storageMessage = 'Preferencia guardada en este navegador. Se conserva al recargar y cerrar sesión.';
+  else if (appearance.persisted) storageMessage = 'Preferencia guardada para tu cuenta en este navegador.';
 
   return (
     <div className="settings-card settings-appearance">

@@ -113,7 +113,7 @@ export async function probarNotificaciones({t,evaluate,send,click,esperar,inicio
   await t.test('Generales: movimiento real por navegador, persistencia, sistema y ambos roles',async()=>{
     fase('accesibilidad navegador');await click('.sidebar-settings');await boton('.settings-nav','Preferencias generales');
     const antes=requests.length;await select('#preferencia-movimiento','reducido');await esperar("document.documentElement.dataset.reduceMotion==='true'");
-    assert.equal(await evaluate("localStorage.getItem('hostflow.accesibilidad.movimiento')"),'reducido');
+    assert.equal(await evaluate("localStorage.getItem('hostflow.accesibilidad.movimiento:sql:1:1')"),'reducido');
     await recargar();assert.equal(await evaluate("document.documentElement.dataset.reduceMotion"),'true');
     fixture({rol:'Operador'});await recargar();await click('.sidebar-settings');await boton('.settings-nav','Preferencias generales');
     assert.equal(await evaluate("document.querySelector('#preferencia-movimiento').value"),'reducido');

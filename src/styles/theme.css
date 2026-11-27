@@ -1,5 +1,5 @@
-/* La preferencia se lee antes de React. Solo el espacio autenticado activa la paleta
-   en la raíz para incluir también los modales que se montan en document.body. */
+/* El espacio autenticado activa la paleta en la raíz, incluidos los modales
+   que se montan en document.body. */
 :root, [data-hf-preview] {
   color-scheme: light;
   --hf-canvas: #f1f3f6;
@@ -180,6 +180,7 @@
 
 html { background: var(--hf-canvas); }
 body { color: var(--hf-text); }
+html[data-hf-apariencia-publica], html[data-hf-apariencia-publica] body { background: #0b1626; }
 
 :root:has([data-hf-workspace]):not([data-hf-chrome]) body { background: var(--hf-canvas); }
 
@@ -215,6 +216,11 @@ input::placeholder, textarea::placeholder { color: var(--hf-text-faint); }
   min-height: var(--hf-viewport-seguro, 100vh);
   color: var(--hf-edge-text, var(--hf-text));
 }
+html[data-hf-apariencia-publica] .hf-arranque { color: #f3f8fc; }
+html[data-hf-apariencia-publica] .sesion-preparando[data-hf-workspace] {
+  background: #0b1626;
+  color: #f3f8fc;
+}
 
 /* La franja superior prolonga la navegación; la inferior prolonga el lienzo. */
 html[data-hf-chrome] {
@@ -244,6 +250,11 @@ html[data-hf-chrome="espacio"] {
   --hf-browser-background: var(--hf-nav-bg);
   --hf-edge-bottom: var(--hf-canvas);
   --hf-edge-text: var(--hf-text);
+}
+html[data-hf-apariencia-publica][data-hf-chrome="espacio"] {
+  --hf-browser-background: var(--hf-public-chrome);
+  --hf-edge-bottom: var(--hf-public-chrome);
+  --hf-edge-text: var(--hf-on-brand);
 }
 html[data-hf-chrome], html[data-hf-chrome] body {
   margin: 0;

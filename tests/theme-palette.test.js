@@ -35,8 +35,9 @@ test("WCAG AA en los tokens de texto, badges, controles y foco de las cuatro pal
 });
 test("bootstrap bloqueante precede a React y los módulos usan tokens sin filtros de inversión",()=>{
   const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  assert.ok(html.indexOf('src="/appearance.js"')<html.indexOf('<body>'));
-  assert.ok(html.indexOf('src="/appearance.js"')<html.indexOf('src="/src/main.jsx"'));
+  const arranque=html.search(/src="\/appearance\.js(?:\?[^"]+)?"/);
+  assert.ok(arranque>=0 && arranque<html.indexOf('<body>'));
+  assert.ok(arranque<html.indexOf('src="/src/main.jsx"'));
   assert.equal(/filter:\s*invert\(/.test(appCss),false);
   for(const prefix of ['calendar-','limpiezas-','reportes-','alertas-','flowia-','security-'])assert.ok(appCss.includes(prefix));
   assert.ok(appCss.includes('var(--hf-surface-raised)'));
